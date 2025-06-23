@@ -228,10 +228,12 @@ def _combat_stats(player: Player):
     return atk, df, spd
 
 
+
 def fight_brawler(player: Player) -> str:
     if player.energy < 10:
         return "Too tired to fight!"
     player.energy -= 10
+
     enemy = {
         "attack": random.randint(3, 7),
         "defense": random.randint(1, 4),
@@ -256,6 +258,14 @@ def fight_brawler(player: Player) -> str:
     player.money += 20
     return "You won the fight! +$20"
 
+    opponent = random.randint(1, 6)
+    if player.strength >= opponent:
+        player.money += 20
+        return "You won the fight! +$20"
+    player.health = max(player.health - 10, 0)
+    return "You lost the fight! -10 health"
+
+
 
 def save_game(player):
     data = {
@@ -267,8 +277,10 @@ def save_game(player):
         "strength": player.strength,
         "intelligence": player.intelligence,
         "charisma": player.charisma,
+
         "defense": player.defense,
         "speed": player.speed,
+
         "office_level": player.office_level,
         "office_shifts": player.office_shifts,
         "dealer_level": player.dealer_level,
@@ -276,11 +288,13 @@ def save_game(player):
         "clinic_level": player.clinic_level,
         "clinic_shifts": player.clinic_shifts,
         "tokens": player.tokens,
+
         "has_skateboard": player.has_skateboard,
         "inventory": [item.__dict__ for item in player.inventory],
         "equipment": {
             slot: (it.__dict__ if it else None) for slot, it in player.equipment.items()
         },
+
         "x": player.rect.x,
         "y": player.rect.y,
         "quests": [q.completed for q in QUESTS],
@@ -310,8 +324,10 @@ def load_game():
     player.strength = data.get("strength", player.strength)
     player.intelligence = data.get("intelligence", player.intelligence)
     player.charisma = data.get("charisma", player.charisma)
+
     player.defense = data.get("defense", player.defense)
     player.speed = data.get("speed", player.speed)
+
     player.office_level = data.get("office_level", player.office_level)
     player.office_shifts = data.get("office_shifts", player.office_shifts)
     player.dealer_level = data.get("dealer_level", player.dealer_level)
@@ -319,12 +335,14 @@ def load_game():
     player.clinic_level = data.get("clinic_level", player.clinic_level)
     player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
     player.tokens = data.get("tokens", player.tokens)
+
     player.has_skateboard = data.get("has_skateboard", player.has_skateboard)
     for item in data.get("inventory", []):
         player.inventory.append(InventoryItem(**item))
     for slot, item in data.get("equipment", {}).items():
         if item:
             player.equipment[slot] = InventoryItem(**item)
+
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
     return player
