@@ -6,9 +6,17 @@ strength, intelligence, and charisma stats that can be improved by visiting
 these locations. The world runs on a 24-hour clock with automatic day changes.
 Buildings keep regular hours and the city darkens at night.
 
+Jobs now offer promotions based on your stats. The office rewards
+intelligence and charisma while dealing drugs in the park relies on strength
+and charisma. A new clinic job values intelligence and strength. Higher stats
+increase your job level and the pay you receive. The park offers a riskier
+"drug dealer" job at night that pays more but depends on strength and
+charisma.
 
-these locations. The world runs on a 24-hour clock with automatic day changes.
-Buildings keep regular hours and the city darkens at night.
+A new bar sells $10 tokens that can be used to play blackjack or the slots.
+Win games to earn extra tokens, or lose them if luck is not on your side.
+There is also a brawler waiting for challengers. If your strength is higher,
+you win the fight and pocket some cash.
 
 The game now features simple sound effects, looping background music, and a
 stick-figure sprite with a two-frame walking animation.
@@ -45,6 +53,7 @@ starts.
 
 - **Arrow keys/WASD**: Move
 - **E**: Interact with nearby buildings
+- **B/J/S/F**: Actions inside the bar
 - **Q**: Leave a building
 - **F5**: Save game
 - **F9**: Load game
