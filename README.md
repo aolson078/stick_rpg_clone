@@ -40,22 +40,6 @@ starts.
    ```
    The window will open in 800x600 resolution. Use the arrow keys or WASD to move around.
 
-### Asset setup
-
-Binary assets (images and sound files) are not included in this repository. Create an
-`assets` folder alongside the Python files and place the following files in it:
-
-```
-assets/enter.wav
-assets/music.wav
-assets/quest.wav
-assets/step.wav
-assets/player_0.png
-assets/player_1.png
-assets/player_2.png
-```
-
-You can supply your own audio and sprite files or copy them from another source.
 
 ## Controls
 
