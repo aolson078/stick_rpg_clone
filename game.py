@@ -4,7 +4,7 @@ import json
 import random
 import pygame
 
-from entities import Player, Building, Quest, Event
+from entities import Player, Building, Quest, Event, InventoryItem
 from rendering import (
     draw_player,
     draw_player_sprite,
@@ -14,6 +14,7 @@ from rendering import (
     draw_city_walls,
     draw_day_night,
     draw_ui,
+    draw_inventory_screen,
 )
 from settings import (
     SCREEN_WIDTH,
@@ -22,6 +23,7 @@ from settings import (
     MAP_HEIGHT,
     PLAYER_SIZE,
     PLAYER_SPEED,
+    SKATEBOARD_SPEED_MULT,
     BG_COLOR,
     MINUTES_PER_FRAME,
 
@@ -99,6 +101,57 @@ EVENTS = [
     Event("A thief stole $10 from you!", _ev_theft),
 ]
 
+# Items sold at the shop: name, cost, and effect function
+SHOP_ITEMS = [
+    ("Cola", 3, lambda p: setattr(p, "energy", min(100, p.energy + 5))),
+    ("Protein Bar", 7, lambda p: setattr(p, "health", min(100, p.health + 5))),
+    ("Book", 10, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
+    ("Gym Pass", 15, lambda p: setattr(p, "strength", p.strength + 1)),
+    ("Charm Pendant", 20, lambda p: setattr(p, "charisma", p.charisma + 1)),
+    ("Skateboard", 40, lambda p: setattr(p, "has_skateboard", True)),
+    (
+        "Leather Helmet",
+        25,
+        lambda p: p.inventory.append(
+            InventoryItem("Leather Helmet", "head", defense=1)
+        ),
+    ),
+    (
+        "Leather Armor",
+        40,
+        lambda p: p.inventory.append(
+            InventoryItem("Leather Armor", "chest", defense=2)
+        ),
+    ),
+    (
+        "Leather Boots",
+        20,
+        lambda p: p.inventory.append(
+            InventoryItem("Leather Boots", "legs", defense=1, speed=1)
+        ),
+    ),
+    (
+        "Wooden Sword",
+        35,
+        lambda p: p.inventory.append(
+            InventoryItem("Wooden Sword", "weapon", attack=2)
+        ),
+    ),
+]
+
+def buy_shop_item(player: Player, index: int) -> str:
+    """Attempt to buy an item from SHOP_ITEMS by index."""
+    if index < 0 or index >= len(SHOP_ITEMS):
+        return "Invalid item"
+    name, cost, effect = SHOP_ITEMS[index]
+    if name == "Skateboard" and player.has_skateboard:
+        return "Already have skateboard"
+    if player.money < cost:
+        return "Not enough money!"
+    player.money -= cost
+    effect(player)
+    return f"Bought {name}"
+
 EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
 
 SAVE_FILE = "savegame.json"
@@ -163,16 +216,55 @@ def play_slots(player: Player) -> str:
     return "No win"
 
 
+def _combat_stats(player: Player):
+    atk = player.strength
+    df = player.defense
+    spd = player.speed
+    for item in player.equipment.values():
+        if item:
+            atk += item.attack
+            df += item.defense
+            spd += item.speed
+    return atk, df, spd
+
+
+
 def fight_brawler(player: Player) -> str:
     if player.energy < 10:
         return "Too tired to fight!"
     player.energy -= 10
+
+    enemy = {
+        "attack": random.randint(3, 7),
+        "defense": random.randint(1, 4),
+        "speed": random.randint(1, 5),
+        "health": 20,
+    }
+    p_atk, p_def, p_spd = _combat_stats(player)
+    p_hp = player.health
+    e_hp = enemy["health"]
+    turn_player = p_spd >= enemy["speed"]
+    while p_hp > 0 and e_hp > 0:
+        if turn_player:
+            dmg = max(1, p_atk - enemy["defense"])
+            e_hp -= dmg
+        else:
+            dmg = max(1, enemy["attack"] - p_def)
+            p_hp -= dmg
+        turn_player = not turn_player
+    player.health = max(p_hp, 0)
+    if p_hp <= 0:
+        return "You lost the fight!"
+    player.money += 20
+    return "You won the fight! +$20"
+
     opponent = random.randint(1, 6)
     if player.strength >= opponent:
         player.money += 20
         return "You won the fight! +$20"
     player.health = max(player.health - 10, 0)
     return "You lost the fight! -10 health"
+
 
 
 def save_game(player):
@@ -185,6 +277,10 @@ def save_game(player):
         "strength": player.strength,
         "intelligence": player.intelligence,
         "charisma": player.charisma,
+
+        "defense": player.defense,
+        "speed": player.speed,
+
         "office_level": player.office_level,
         "office_shifts": player.office_shifts,
         "dealer_level": player.dealer_level,
@@ -192,6 +288,13 @@ def save_game(player):
         "clinic_level": player.clinic_level,
         "clinic_shifts": player.clinic_shifts,
         "tokens": player.tokens,
+
+        "has_skateboard": player.has_skateboard,
+        "inventory": [item.__dict__ for item in player.inventory],
+        "equipment": {
+            slot: (it.__dict__ if it else None) for slot, it in player.equipment.items()
+        },
+
         "x": player.rect.x,
         "y": player.rect.y,
         "quests": [q.completed for q in QUESTS],
@@ -221,6 +324,10 @@ def load_game():
     player.strength = data.get("strength", player.strength)
     player.intelligence = data.get("intelligence", player.intelligence)
     player.charisma = data.get("charisma", player.charisma)
+
+    player.defense = data.get("defense", player.defense)
+    player.speed = data.get("speed", player.speed)
+
     player.office_level = data.get("office_level", player.office_level)
     player.office_shifts = data.get("office_shifts", player.office_shifts)
     player.dealer_level = data.get("dealer_level", player.dealer_level)
@@ -228,6 +335,14 @@ def load_game():
     player.clinic_level = data.get("clinic_level", player.clinic_level)
     player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
     player.tokens = data.get("tokens", player.tokens)
+
+    player.has_skateboard = data.get("has_skateboard", player.has_skateboard)
+    for item in data.get("inventory", []):
+        player.inventory.append(InventoryItem(**item))
+    for slot, item in data.get("equipment", {}).items():
+        if item:
+            player.equipment[slot] = InventoryItem(**item)
+
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
     return player
@@ -261,6 +376,17 @@ def main():
         shop_message_timer = 0
     in_building = None
     frame = 0
+    show_inventory = False
+    dragging_item = None
+    drag_origin = None
+    drag_pos = (0, 0)
+    slot_rects = {
+        "head": pygame.Rect(150, 150, 100, 60),
+        "chest": pygame.Rect(150, 220, 100, 60),
+        "arms": pygame.Rect(150, 290, 100, 60),
+        "legs": pygame.Rect(150, 360, 100, 60),
+        "weapon": pygame.Rect(150, 430, 100, 60),
+    }
 
     while True:
         frame += 1
@@ -268,6 +394,14 @@ def main():
         if player.time >= 1440:
             player.time -= 1440
             player.day += 1
+        item_rects = []
+        if show_inventory:
+            for i, item in enumerate(player.inventory):
+                col = i % 5
+                row = i // 5
+                item_rects.append(
+                    (pygame.Rect(320 + col * 120, 150 + row * 70, 100, 60), item)
+                )
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -285,6 +419,42 @@ def main():
                     else:
                         shop_message = "No save found!"
                     shop_message_timer = 60
+                elif event.key == pygame.K_i:
+                    show_inventory = not show_inventory
+                    dragging_item = None
+            if show_inventory:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = event.pos
+                    handled = False
+                    for i, (rect, item) in enumerate(item_rects):
+                        if rect.collidepoint(pos):
+                            dragging_item = item
+                            drag_origin = ('inventory', i)
+                            drag_pos = pos
+                            player.inventory.pop(i)
+                            handled = True
+                            break
+                    if not handled:
+                        for slot, rect in slot_rects.items():
+                            if rect.collidepoint(pos) and player.equipment.get(slot):
+                                dragging_item = player.equipment[slot]
+                                drag_origin = ('slot', slot)
+                                drag_pos = pos
+                                player.equipment[slot] = None
+                                break
+                elif event.type == pygame.MOUSEMOTION and dragging_item:
+                    drag_pos = event.pos
+                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and dragging_item:
+                    pos = event.pos
+                    placed = False
+                    for slot, rect in slot_rects.items():
+                        if rect.collidepoint(pos) and dragging_item.slot == slot and player.equipment.get(slot) is None:
+                            player.equipment[slot] = dragging_item
+                            placed = True
+                            break
+                    if not placed:
+                        player.inventory.append(dragging_item)
+                    dragging_item = None
             if event.type == pygame.KEYDOWN and in_building:
                 if in_building == "job":
                     if player.energy >= 20:
@@ -314,15 +484,18 @@ def main():
                     shop_message = "You slept. New day!"
                     shop_message_timer = 60
                 elif in_building == "shop":
-                    if player.money >= 20 and player.health < 100:
-                        player.money -= 20
-                        player.health = min(player.health + 30, 100)
-                        shop_message = "You bought food! +30 health"
-                    elif player.money < 20:
-                        shop_message = "Not enough money!"
-                    elif player.health == 100:
-                        shop_message = "Already full health!"
-                    shop_message_timer = 60
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        idx = event.key - pygame.K_1
+                        shop_message = buy_shop_item(player, idx)
+                        shop_message_timer = 60
+                    elif event.key == pygame.K_0:
+                        shop_message = buy_shop_item(player, 9)
+                        shop_message_timer = 60
+                    elif event.key == pygame.K_e:
+                        shop_message = "Press number keys to buy"
+                        shop_message_timer = 60
+                    else:
+                        continue
                 elif in_building == "gym":
                     if player.money >= 10 and player.energy >= 10:
                         player.money -= 10
@@ -414,15 +587,18 @@ def main():
 
         dx = dy = 0
         keys = pygame.key.get_pressed()
-        if not in_building:
+        speed = PLAYER_SPEED
+        if player.has_skateboard and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
+            speed = int(PLAYER_SPEED * SKATEBOARD_SPEED_MULT)
+        if not in_building and not show_inventory:
             if keys[pygame.K_w] or keys[pygame.K_UP]:
-                dy -= PLAYER_SPEED
+                dy -= speed
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-                dy += PLAYER_SPEED
+                dy += speed
             if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-                dx -= PLAYER_SPEED
+                dx -= speed
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-                dx += PLAYER_SPEED
+                dx += speed
 
             next_rect = player.rect.move(dx, dy)
             if 0 <= next_rect.x <= MAP_WIDTH - PLAYER_SIZE and 0 <= next_rect.y <= MAP_HEIGHT - PLAYER_SIZE:
@@ -452,7 +628,7 @@ def main():
                 shop_message_timer = 90
                 quest_sound.play()
 
-        if not in_building and near_building:
+        if not in_building and near_building and not show_inventory:
             if keys[pygame.K_e]:
                 if building_open(near_building.btype, player.time):
                     in_building = near_building.btype
@@ -489,6 +665,15 @@ def main():
 
 
         draw_ui(screen, font, player, QUESTS)
+        if show_inventory:
+            draw_inventory_screen(
+                screen,
+                font,
+                player,
+                slot_rects,
+                item_rects,
+                (dragging_item, drag_pos) if dragging_item else None,
+            )
 
         info_y = 46
         if near_building and not in_building:
@@ -505,7 +690,7 @@ def main():
             elif near_building.btype == "home":
                 msg = "[E] to Sleep (restore energy, next day)"
             elif near_building.btype == "shop":
-                msg = "[E] to buy food (+30 health, -$20)"
+                msg = "[E] to shop for items"
             elif near_building.btype == "gym":
                 msg = "[E] to train (+1 STR, +5 health, -10 energy, -$10)"
             elif near_building.btype == "library":
@@ -540,7 +725,7 @@ def main():
             elif in_building == "home":
                 txt = "[E] Sleep  [Q] Leave"
             elif in_building == "shop":
-                txt = "[E] Buy food  [Q] Leave"
+                txt = "[0-9] Buy items  [Q] Leave"
             elif in_building == "gym":
                 txt = "[E] Train  [Q] Leave"
             elif in_building == "library":
@@ -551,6 +736,12 @@ def main():
                 txt = "[B] Buy token  [J] Blackjack  [S] Slots  [F] Fight  [Q] Leave"
             tip_surf = font.render(f"Inside: {in_building.upper()}   {txt}", True, (80, 40, 40))
             screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
+            if in_building == "shop":
+                for i, (name, cost, _func) in enumerate(SHOP_ITEMS):
+                    item_surf = font.render(f"{(i+1)%10}:{name} ${cost}", True, (80, 40, 40))
+                    row = i // 5
+                    col = i % 5
+                    screen.blit(item_surf, (30 + col * 150, SCREEN_HEIGHT - 60 - row * 24))
 
         if shop_message_timer > 0:
             shop_message_timer -= 1

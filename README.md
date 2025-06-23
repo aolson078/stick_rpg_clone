@@ -15,8 +15,22 @@ charisma.
 
 A new bar sells $10 tokens that can be used to play blackjack or the slots.
 Win games to earn extra tokens, or lose them if luck is not on your side.
-There is also a brawler waiting for challengers. If your strength is higher,
-you win the fight and pocket some cash.
+
+There is also a brawler waiting for challengers. Combat now uses your
+strength, defense, and speed along with any bonuses from equipped gear. The
+fighter with the higher speed strikes first and damage is reduced by defense.
+Win a brawl and you pocket some cash.
+
+The shop now stocks a few useful items: a cola to restore a little energy, a
+protein bar for health, a book that teaches you intelligence, a gym pass that
+builds strength, and a charm pendant that boosts charisma. You can also buy a
+skateboard that lets you move 50% faster while holding the **Shift** key.
+Basic equipment pieces like a leather helmet, leather armor, and boots can be
+purchased and equipped through the inventory screen. A wooden sword is also
+available for the weapon slot. Each item lists its attack (A), defense (D) and
+speed (S) bonuses.
+
+
 
 The game now features simple sound effects, looping background music, and a
 stick-figure sprite with a two-frame walking animation.
@@ -54,6 +68,11 @@ starts.
 - **Arrow keys/WASD**: Move
 - **E**: Interact with nearby buildings
 - **B/J/S/F**: Actions inside the bar
+
+- **0-9**: Buy items in the shop
+- **I**: Open inventory and equip gear
+- **Shift**: Ride skateboard (if owned)
+
 - **Q**: Leave a building
 - **F5**: Save game
 - **F9**: Load game

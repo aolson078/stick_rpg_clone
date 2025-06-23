@@ -153,7 +153,8 @@ def draw_ui(surface, font, player, quests):
     time_str = f"{hour:02d}:{minute:02d}"
     text = font.render(
         f"Money: ${int(player.money)}  Tokens: {player.tokens}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
-        f"STR: {player.strength}  INT: {player.intelligence}  CHA: {player.charisma}  "
+        f"STR:{player.strength} DEF:{player.defense} SPD:{player.speed} INT:{player.intelligence} CHA:{player.charisma}  "
+
         f"Office Lv: {player.office_level}  Dealer Lv: {player.dealer_level}  Clinic Lv: {player.clinic_level}  Day: {player.day}  Time: {time_str}",
         True,
         FONT_COLOR,
@@ -169,3 +170,46 @@ def draw_ui(surface, font, player, quests):
         qbg.fill((255, 255, 255, 220))
         surface.blit(qbg, (16, 40))
         surface.blit(qsurf, (22, 42))
+
+
+def draw_inventory_screen(surface, font, player, slot_rects, item_rects, dragging):
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    surface.blit(overlay, (0, 0))
+
+    panel = pygame.Surface((SCREEN_WIDTH - 120, SCREEN_HEIGHT - 120))
+    panel.fill((240, 240, 220))
+    surface.blit(panel, (60, 60))
+
+    title = font.render("Inventory", True, FONT_COLOR)
+    surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+
+    for slot, rect in slot_rects.items():
+        pygame.draw.rect(surface, (210, 210, 210), rect)
+        label = font.render(slot.title(), True, FONT_COLOR)
+        surface.blit(label, (rect.x + 2, rect.y - 20))
+        item = player.equipment.get(slot)
+        if item:
+            it = font.render(
+                f"{item.name} A{item.attack} D{item.defense} S{item.speed}", True, FONT_COLOR
+            )
+            surface.blit(it, (rect.x + 4, rect.y + 20))
+
+    for rect, item in item_rects:
+        pygame.draw.rect(surface, (200, 220, 230), rect)
+        txt = font.render(
+            f"{item.name} A{item.attack} D{item.defense} S{item.speed}", True, FONT_COLOR
+        )
+        surface.blit(txt, (rect.x + 4, rect.y + 20))
+
+    if dragging:
+        item, pos = dragging
+        txt = font.render(
+            f"{item.name} A{item.attack} D{item.defense} S{item.speed}", True, FONT_COLOR
+        )
+        bg = pygame.Surface((60, 60), pygame.SRCALPHA)
+        bg.fill((230, 230, 240, 200))
+        bg_rect = bg.get_rect(center=pos)
+        surface.blit(bg, bg_rect.topleft)
+        surface.blit(txt, (bg_rect.x + 4, bg_rect.y + 20))
+
