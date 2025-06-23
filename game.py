@@ -42,8 +42,11 @@ BUILDINGS = [
     Building(pygame.Rect(600, 300, 180, 240), "Office", "job"),
     Building(pygame.Rect(1100, 700, 300, 100), "Shop", "shop"),
     Building(pygame.Rect(400, 900, 160, 180), "Park", "park"),
+    Building(pygame.Rect(460, 960, 80, 80), "Deal Spot", "dealer"),
     Building(pygame.Rect(900, 450, 220, 160), "Gym", "gym"),
     Building(pygame.Rect(1200, 250, 200, 160), "Library", "library"),
+    Building(pygame.Rect(300, 600, 180, 160), "Clinic", "clinic"),
+    Building(pygame.Rect(800, 750, 200, 150), "Bar", "bar"),
 ]
 
 OPEN_HOURS = {
@@ -53,6 +56,9 @@ OPEN_HOURS = {
     "gym": (6, 22),
     "library": (8, 20),
     "park": (6, 22),
+    "dealer": (20, 4),
+    "clinic": (8, 18),
+    "bar": (18, 2),
 }
 
 
@@ -126,6 +132,49 @@ def random_event(player: Player) -> str | None:
     return None
 
 
+def play_blackjack(player: Player) -> str:
+    if player.tokens < 1:
+        return "No tokens left!"
+    player.tokens -= 1
+    player_score = random.randint(16, 23)
+    dealer_score = random.randint(16, 23)
+    if player_score > 21:
+        return "Bust!"
+    if dealer_score > 21 or player_score > dealer_score:
+        player.tokens += 2
+        return "You win! +2 tokens"
+    if player_score == dealer_score:
+        player.tokens += 1
+        return "Push. Token returned"
+    return "Dealer wins"
+
+
+def play_slots(player: Player) -> str:
+    if player.tokens < 1:
+        return "No tokens left!"
+    player.tokens -= 1
+    roll = random.random()
+    if roll < 0.05:
+        player.tokens += 5
+        return "Jackpot! +5 tokens"
+    if roll < 0.2:
+        player.tokens += 2
+        return "You won 2 tokens"
+    return "No win"
+
+
+def fight_brawler(player: Player) -> str:
+    if player.energy < 10:
+        return "Too tired to fight!"
+    player.energy -= 10
+    opponent = random.randint(1, 6)
+    if player.strength >= opponent:
+        player.money += 20
+        return "You won the fight! +$20"
+    player.health = max(player.health - 10, 0)
+    return "You lost the fight! -10 health"
+
+
 def save_game(player):
     data = {
         "money": player.money,
@@ -136,6 +185,13 @@ def save_game(player):
         "strength": player.strength,
         "intelligence": player.intelligence,
         "charisma": player.charisma,
+        "office_level": player.office_level,
+        "office_shifts": player.office_shifts,
+        "dealer_level": player.dealer_level,
+        "dealer_shifts": player.dealer_shifts,
+        "clinic_level": player.clinic_level,
+        "clinic_shifts": player.clinic_shifts,
+        "tokens": player.tokens,
         "x": player.rect.x,
         "y": player.rect.y,
         "quests": [q.completed for q in QUESTS],
@@ -165,6 +221,13 @@ def load_game():
     player.strength = data.get("strength", player.strength)
     player.intelligence = data.get("intelligence", player.intelligence)
     player.charisma = data.get("charisma", player.charisma)
+    player.office_level = data.get("office_level", player.office_level)
+    player.office_shifts = data.get("office_shifts", player.office_shifts)
+    player.dealer_level = data.get("dealer_level", player.dealer_level)
+    player.dealer_shifts = data.get("dealer_shifts", player.dealer_shifts)
+    player.clinic_level = data.get("clinic_level", player.clinic_level)
+    player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
+    player.tokens = data.get("tokens", player.tokens)
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
     return player
@@ -225,9 +288,22 @@ def main():
             if event.type == pygame.KEYDOWN and in_building:
                 if in_building == "job":
                     if player.energy >= 20:
-                        player.money += 30
+                        pay = 30 + 20 * (player.office_level - 1)
+                        player.money += pay
                         player.energy -= 20
-                        shop_message = "You worked! +$30, -20 energy"
+                        player.office_shifts += 1
+                        if (
+                            player.office_shifts >= 10
+                            and player.intelligence >= 5 * player.office_level
+                            and player.charisma >= 5 * player.office_level
+                        ):
+                            player.office_level += 1
+                            player.office_shifts = 0
+                            shop_message = (
+                                f"You were promoted! Office level {player.office_level}"
+                            )
+                        else:
+                            shop_message = f"You worked! +${pay}, -20 energy"
                     else:
                         shop_message = "Too tired to work!"
                     shop_message_timer = 60
@@ -277,6 +353,63 @@ def main():
                         shop_message = "You socialized! +1 CHA"
                     else:
                         shop_message = "Too tired to chat!"
+                    shop_message_timer = 60
+                elif in_building == "bar":
+                    if event.key == pygame.K_b:
+                        if player.money >= 10:
+                            player.money -= 10
+                            player.tokens += 1
+                            shop_message = "Bought a token"
+                        else:
+                            shop_message = "Need $10" 
+                    elif event.key == pygame.K_j:
+                        shop_message = play_blackjack(player)
+                    elif event.key == pygame.K_s:
+                        shop_message = play_slots(player)
+                    elif event.key == pygame.K_f:
+                        shop_message = fight_brawler(player)
+                    elif event.key == pygame.K_e:
+                        shop_message = "Buy tokens with B"  # hint when pressing E
+                    else:
+                        continue
+                    shop_message_timer = 60
+                elif in_building == "dealer":
+                    if player.energy >= 20:
+                        pay = 50 + 25 * (player.dealer_level - 1)
+                        player.money += pay
+                        player.energy -= 20
+                        player.dealer_shifts += 1
+                        if (
+                            player.dealer_shifts >= 10
+                            and player.strength >= 5 * player.dealer_level
+                            and player.charisma >= 5 * player.dealer_level
+                        ):
+                            player.dealer_level += 1
+                            player.dealer_shifts = 0
+                            shop_message = f"You were promoted! Dealer level {player.dealer_level}"
+                        else:
+                            shop_message = f"You dealt! +${pay}, -20 energy"
+                    else:
+                        shop_message = "Too tired to deal!"
+                    shop_message_timer = 60
+                elif in_building == "clinic":
+                    if player.energy >= 20:
+                        pay = 40 + 20 * (player.clinic_level - 1)
+                        player.money += pay
+                        player.energy -= 20
+                        player.clinic_shifts += 1
+                        if (
+                            player.clinic_shifts >= 10
+                            and player.intelligence >= 5 * player.clinic_level
+                            and player.strength >= 5 * player.clinic_level
+                        ):
+                            player.clinic_level += 1
+                            player.clinic_shifts = 0
+                            shop_message = f"You were promoted! Clinic level {player.clinic_level}"
+                        else:
+                            shop_message = f"You treated patients! +${pay}, -20 energy"
+                    else:
+                        shop_message = "Too tired to work here!"
                     shop_message_timer = 60
 
         dx = dy = 0
@@ -361,7 +494,14 @@ def main():
         if near_building and not in_building:
             msg = ""
             if near_building.btype == "job":
-                msg = "[E] to Work here (+$30, -20 energy)"
+                pay = 30 + 20 * (player.office_level - 1)
+                msg = f"[E] to Work here (+${pay}, -20 energy)"
+            elif near_building.btype == "dealer":
+                pay = 50 + 25 * (player.dealer_level - 1)
+                msg = f"[E] to Deal drugs (+${pay}, -20 energy)"
+            elif near_building.btype == "clinic":
+                pay = 40 + 20 * (player.clinic_level - 1)
+                msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "home":
                 msg = "[E] to Sleep (restore energy, next day)"
             elif near_building.btype == "shop":
@@ -372,6 +512,8 @@ def main():
                 msg = "[E] to study (+1 INT, -5 energy, -$5)"
             elif near_building.btype == "park":
                 msg = "[E] to chat (+1 CHA, -5 energy)"
+            elif near_building.btype == "bar":
+                msg = "[E] to gamble and fight"
             if msg:
                 if not building_open(near_building.btype, player.time):
                     msg += " (Closed)"
@@ -387,7 +529,14 @@ def main():
             screen.blit(panel, (0, SCREEN_HEIGHT - 100))
             txt = ""
             if in_building == "job":
-                txt = "[E] Work  [Q] Leave"
+                pay = 30 + 20 * (player.office_level - 1)
+                txt = f"[E] Work (+${pay})  [Q] Leave"
+            elif in_building == "dealer":
+                pay = 50 + 25 * (player.dealer_level - 1)
+                txt = f"[E] Deal (+${pay})  [Q] Leave"
+            elif in_building == "clinic":
+                pay = 40 + 20 * (player.clinic_level - 1)
+                txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "home":
                 txt = "[E] Sleep  [Q] Leave"
             elif in_building == "shop":
@@ -398,6 +547,8 @@ def main():
                 txt = "[E] Study  [Q] Leave"
             elif in_building == "park":
                 txt = "[E] Chat  [Q] Leave"
+            elif in_building == "bar":
+                txt = "[B] Buy token  [J] Blackjack  [S] Slots  [F] Fight  [Q] Leave"
             tip_surf = font.render(f"Inside: {in_building.upper()}   {txt}", True, (80, 40, 40))
             screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
 

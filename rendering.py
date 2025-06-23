@@ -13,6 +13,8 @@ from settings import (
     PARK_COLOR,
     GYM_COLOR,
     LIBRARY_COLOR,
+    CLINIC_COLOR,
+    BAR_COLOR,
     ROAD_COLOR,
     SIDEWALK_COLOR,
     CITY_WALL_COLOR,
@@ -81,6 +83,10 @@ def building_color(btype):
         return GYM_COLOR
     if btype == "library":
         return LIBRARY_COLOR
+    if btype == "clinic":
+        return CLINIC_COLOR
+    if btype == "bar":
+        return BAR_COLOR
     return BUILDING_COLOR
 
 
@@ -146,9 +152,9 @@ def draw_ui(surface, font, player, quests):
     minute = int(player.time) % 60
     time_str = f"{hour:02d}:{minute:02d}"
     text = font.render(
-        f"Money: ${int(player.money)}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
+        f"Money: ${int(player.money)}  Tokens: {player.tokens}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
         f"STR: {player.strength}  INT: {player.intelligence}  CHA: {player.charisma}  "
-        f"Day: {player.day}  Time: {time_str}",
+        f"Office Lv: {player.office_level}  Dealer Lv: {player.dealer_level}  Clinic Lv: {player.clinic_level}  Day: {player.day}  Time: {time_str}",
         True,
         FONT_COLOR,
     )
