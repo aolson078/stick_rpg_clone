@@ -95,12 +95,30 @@ def draw_city_walls(surface, cam_x, cam_y):
     pygame.draw.rect(surface, CITY_WALL_COLOR, (MAP_WIDTH - 12 - cam_x, -cam_y, 12, MAP_HEIGHT))
 
 
+def draw_day_night(surface, current_time):
+    hour = (current_time / 60) % 24
+    alpha = 0
+    if 18 <= hour or hour < 6:
+        if hour >= 18:
+            alpha = min(int((hour - 18) / 6 * 120), 120)
+        else:
+            alpha = min(int((6 - hour) / 6 * 120), 120)
+    if alpha:
+        overlay = pygame.Surface((SCREEN_WIDTH, MAP_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, alpha))
+        surface.blit(overlay, (0, 0))
+
+
 def draw_ui(surface, font, player):
     bar = pygame.Surface((SCREEN_WIDTH, 36), pygame.SRCALPHA)
     bar.fill(UI_BG)
+    hour = int(player.time) // 60
+    minute = int(player.time) % 60
+    time_str = f"{hour:02d}:{minute:02d}"
     text = font.render(
         f"Money: ${int(player.money)}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
-        f"STR: {player.strength}  INT: {player.intelligence}  CHA: {player.charisma}  Day: {player.day}",
+        f"STR: {player.strength}  INT: {player.intelligence}  CHA: {player.charisma}  "
+        f"Day: {player.day}  Time: {time_str}",
         True,
         FONT_COLOR,
     )

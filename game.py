@@ -7,6 +7,7 @@ from rendering import (
     draw_building,
     draw_road_and_sidewalks,
     draw_city_walls,
+    draw_day_night,
     draw_ui,
 )
 from settings import (
@@ -17,6 +18,7 @@ from settings import (
     PLAYER_SIZE,
     PLAYER_SPEED,
     BG_COLOR,
+    MINUTES_PER_FRAME,
 )
 
 pygame.init()
@@ -29,6 +31,23 @@ BUILDINGS = [
     Building(pygame.Rect(900, 450, 220, 160), "Gym", "gym"),
     Building(pygame.Rect(1200, 250, 200, 160), "Library", "library"),
 ]
+
+OPEN_HOURS = {
+    "home": (0, 24),
+    "job": (8, 18),
+    "shop": (9, 21),
+    "gym": (6, 22),
+    "library": (8, 20),
+    "park": (6, 22),
+}
+
+
+def building_open(btype, minutes):
+    start, end = OPEN_HOURS.get(btype, (0, 24))
+    hour = (minutes / 60) % 24
+    if start <= end:
+        return start <= hour < end
+    return hour >= start or hour < end
 
 def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -44,6 +63,10 @@ def main():
 
     while True:
         frame += 1
+        player.time += MINUTES_PER_FRAME
+        if player.time >= 1440:
+            player.time -= 1440
+            player.day += 1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -59,6 +82,7 @@ def main():
                     shop_message_timer = 60
                 elif in_building == "home":
                     player.energy = 100
+                    player.time = 8 * 60
                     player.day += 1
                     shop_message = "You slept. New day!"
                     shop_message_timer = 60
@@ -137,7 +161,11 @@ def main():
 
         if not in_building and near_building:
             if keys[pygame.K_e]:
-                in_building = near_building.btype
+                if building_open(near_building.btype, player.time):
+                    in_building = near_building.btype
+                else:
+                    shop_message = "Closed right now"
+                    shop_message_timer = 60
 
         if in_building:
             if keys[pygame.K_q]:
@@ -161,6 +189,8 @@ def main():
         pr = player.rect.move(-cam_x, -cam_y)
         draw_player(screen, pr, frame if dx or dy else 0)
 
+        draw_day_night(screen, player.time)
+
         draw_ui(screen, font, player)
 
         info_y = 46
@@ -179,6 +209,8 @@ def main():
             elif near_building.btype == "park":
                 msg = "[E] to chat (+1 CHA, -5 energy)"
             if msg:
+                if not building_open(near_building.btype, player.time):
+                    msg += " (Closed)"
                 msg_surf = font.render(msg, True, (30, 30, 30))
                 bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA)
                 bg.fill((255, 255, 255, 210))
