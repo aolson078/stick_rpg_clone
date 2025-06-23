@@ -24,12 +24,14 @@ from settings import (
     PLAYER_SPEED,
     BG_COLOR,
     MINUTES_PER_FRAME,
+
     MUSIC_FILE,
     STEP_SOUND_FILE,
     ENTER_SOUND_FILE,
     QUEST_SOUND_FILE,
     MUSIC_VOLUME,
     SFX_VOLUME,
+
 )
 
 pygame.init()
@@ -52,6 +54,7 @@ OPEN_HOURS = {
     "library": (8, 20),
     "park": (6, 22),
 }
+
 
 # Simple quests that encourage visiting different locations
 QUESTS = [
@@ -95,12 +98,14 @@ EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
 SAVE_FILE = "savegame.json"
 
 
+
 def building_open(btype, minutes):
     start, end = OPEN_HOURS.get(btype, (0, 24))
     hour = (minutes / 60) % 24
     if start <= end:
         return start <= hour < end
     return hour >= start or hour < end
+
 
 
 def check_quests(player):
@@ -163,6 +168,7 @@ def load_game():
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
     return player
+
 
 def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -317,7 +323,9 @@ def main():
             if keys[pygame.K_e]:
                 if building_open(near_building.btype, player.time):
                     in_building = near_building.btype
+
                     enter_sound.play()
+
                 else:
                     shop_message = "Closed right now"
                     shop_message_timer = 60
@@ -345,6 +353,7 @@ def main():
         draw_player_sprite(screen, pr, frame if dx or dy else 0)
 
         draw_day_night(screen, player.time)
+
 
         draw_ui(screen, font, player, QUESTS)
 

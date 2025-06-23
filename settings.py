@@ -32,3 +32,4 @@ ENTER_SOUND_FILE = "assets/enter.wav"
 QUEST_SOUND_FILE = "assets/quest.wav"
 MUSIC_VOLUME = 0.3
 SFX_VOLUME = 0.5
+
