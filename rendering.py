@@ -145,8 +145,10 @@ def draw_ui(surface, font, player, quests):
     time_str = f"{hour:02d}:{minute:02d}"
     text = font.render(
         f"Money: ${int(player.money)}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
+
         f"STR: {player.strength}  INT: {player.intelligence}  CHA: {player.charisma}  "
         f"Day: {player.day}  Time: {time_str}",
+
         True,
         FONT_COLOR,
     )
