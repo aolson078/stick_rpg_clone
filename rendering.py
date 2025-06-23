@@ -10,6 +10,8 @@ from settings import (
     JOB_COLOR,
     SHOP_COLOR,
     PARK_COLOR,
+    GYM_COLOR,
+    LIBRARY_COLOR,
     ROAD_COLOR,
     SIDEWALK_COLOR,
     CITY_WALL_COLOR,
@@ -47,6 +49,10 @@ def building_color(btype):
         return SHOP_COLOR
     if btype == "park":
         return PARK_COLOR
+    if btype == "gym":
+        return GYM_COLOR
+    if btype == "library":
+        return LIBRARY_COLOR
     return BUILDING_COLOR
 
 
@@ -93,7 +99,8 @@ def draw_ui(surface, font, player):
     bar = pygame.Surface((SCREEN_WIDTH, 36), pygame.SRCALPHA)
     bar.fill(UI_BG)
     text = font.render(
-        f"Money: ${int(player.money)}   Energy: {int(player.energy)}   Health: {int(player.health)} Day: {player.day}",
+        f"Money: ${int(player.money)}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
+        f"STR: {player.strength}  INT: {player.intelligence}  CHA: {player.charisma}  Day: {player.day}",
         True,
         FONT_COLOR,
     )
