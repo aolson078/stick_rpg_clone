@@ -23,3 +23,12 @@ SHADOW_COLOR = (40, 40, 40, 60)
 
 FONT_COLOR = (30, 30, 30)
 UI_BG = (255, 255, 255, 230)
+MINUTES_PER_FRAME = 0.1
+
+# Simple audio settings and asset locations
+MUSIC_FILE = "assets/music.wav"
+STEP_SOUND_FILE = "assets/step.wav"
+ENTER_SOUND_FILE = "assets/enter.wav"
+QUEST_SOUND_FILE = "assets/quest.wav"
+MUSIC_VOLUME = 0.3
+SFX_VOLUME = 0.5

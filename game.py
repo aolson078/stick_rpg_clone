@@ -1,12 +1,18 @@
 import sys
+import os
+import json
+import random
 import pygame
 
-from entities import Player, Building
+from entities import Player, Building, Quest, Event
 from rendering import (
     draw_player,
+    draw_player_sprite,
+    load_player_sprites,
     draw_building,
     draw_road_and_sidewalks,
     draw_city_walls,
+    draw_day_night,
     draw_ui,
 )
 from settings import (
@@ -17,9 +23,17 @@ from settings import (
     PLAYER_SIZE,
     PLAYER_SPEED,
     BG_COLOR,
+    MINUTES_PER_FRAME,
+    MUSIC_FILE,
+    STEP_SOUND_FILE,
+    ENTER_SOUND_FILE,
+    QUEST_SOUND_FILE,
+    MUSIC_VOLUME,
+    SFX_VOLUME,
 )
 
 pygame.init()
+pygame.mixer.init()
 
 BUILDINGS = [
     Building(pygame.Rect(200, 150, 200, 120), "Home", "home"),
@@ -30,24 +44,178 @@ BUILDINGS = [
     Building(pygame.Rect(1200, 250, 200, 160), "Library", "library"),
 ]
 
+OPEN_HOURS = {
+    "home": (0, 24),
+    "job": (8, 18),
+    "shop": (9, 21),
+    "gym": (6, 22),
+    "library": (8, 20),
+    "park": (6, 22),
+}
+
+# Simple quests that encourage visiting different locations
+QUESTS = [
+    Quest("Earn $200", lambda p: p.money >= 200),
+    Quest("Reach STR 5", lambda p: p.strength >= 5),
+    Quest("Reach INT 5", lambda p: p.intelligence >= 5),
+]
+
+
+# Random events that may occur while exploring
+def _ev_found_money(p: Player) -> None:
+    p.money += 5
+
+
+def _ev_gain_int(p: Player) -> None:
+    p.intelligence += 1
+
+
+def _ev_gain_cha(p: Player) -> None:
+    p.charisma += 1
+
+
+def _ev_trip(p: Player) -> None:
+    p.health = max(p.health - 5, 0)
+
+
+def _ev_theft(p: Player) -> None:
+    p.money = max(p.money - 10, 0)
+
+
+EVENTS = [
+    Event("You found $5 on the ground!", _ev_found_money),
+    Event("Someone shared a study tip. +1 INT", _ev_gain_int),
+    Event("You chatted with locals. +1 CHA", _ev_gain_cha),
+    Event("You tripped and hurt yourself. -5 health", _ev_trip),
+    Event("A thief stole $10 from you!", _ev_theft),
+]
+
+EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
+
+SAVE_FILE = "savegame.json"
+
+
+def building_open(btype, minutes):
+    start, end = OPEN_HOURS.get(btype, (0, 24))
+    hour = (minutes / 60) % 24
+    if start <= end:
+        return start <= hour < end
+    return hour >= start or hour < end
+
+
+def check_quests(player):
+    new = False
+    for q in QUESTS:
+        if not q.completed and q.check(player):
+            q.completed = True
+            new = True
+    return new
+
+
+def random_event(player: Player) -> str | None:
+    """Possibly trigger a random event and return its description."""
+    if random.random() < EVENT_CHANCE:
+        ev = random.choice(EVENTS)
+        ev.apply(player)
+        return ev.description
+    return None
+
+
+def save_game(player):
+    data = {
+        "money": player.money,
+        "energy": player.energy,
+        "health": player.health,
+        "day": player.day,
+        "time": player.time,
+        "strength": player.strength,
+        "intelligence": player.intelligence,
+        "charisma": player.charisma,
+        "x": player.rect.x,
+        "y": player.rect.y,
+        "quests": [q.completed for q in QUESTS],
+    }
+    with open(SAVE_FILE, "w") as f:
+        json.dump(data, f)
+
+
+def load_game():
+    if not os.path.exists(SAVE_FILE):
+        return None
+    with open(SAVE_FILE) as f:
+        data = json.load(f)
+    player = Player(
+        pygame.Rect(
+            data.get("x", MAP_WIDTH // 2),
+            data.get("y", MAP_HEIGHT // 2),
+            PLAYER_SIZE,
+            PLAYER_SIZE,
+        )
+    )
+    player.money = data.get("money", player.money)
+    player.energy = data.get("energy", player.energy)
+    player.health = data.get("health", player.health)
+    player.day = data.get("day", player.day)
+    player.time = data.get("time", player.time)
+    player.strength = data.get("strength", player.strength)
+    player.intelligence = data.get("intelligence", player.intelligence)
+    player.charisma = data.get("charisma", player.charisma)
+    for completed, q in zip(data.get("quests", []), QUESTS):
+        q.completed = completed
+    return player
+
 def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 28)
 
+    step_sound = pygame.mixer.Sound(STEP_SOUND_FILE)
+    enter_sound = pygame.mixer.Sound(ENTER_SOUND_FILE)
+    quest_sound = pygame.mixer.Sound(QUEST_SOUND_FILE)
+    for snd in (step_sound, enter_sound, quest_sound):
+        snd.set_volume(SFX_VOLUME)
+    pygame.mixer.music.load(MUSIC_FILE)
+    pygame.mixer.music.set_volume(MUSIC_VOLUME)
+    pygame.mixer.music.play(-1)
+
+    load_player_sprites()
+
     player = Player(pygame.Rect(MAP_WIDTH // 2, MAP_HEIGHT // 2, PLAYER_SIZE, PLAYER_SIZE))
-    in_building = None
+    loaded_player = load_game()
     shop_message = ""
-    shop_message_timer = 0
+    if loaded_player:
+        player = loaded_player
+        shop_message = "Game loaded!"
+        shop_message_timer = 60
+    else:
+        shop_message_timer = 0
+    in_building = None
     frame = 0
 
     while True:
         frame += 1
+        player.time += MINUTES_PER_FRAME
+        if player.time >= 1440:
+            player.time -= 1440
+            player.day += 1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F5:
+                    save_game(player)
+                    shop_message = "Game saved!"
+                    shop_message_timer = 60
+                elif event.key == pygame.K_F9:
+                    loaded = load_game()
+                    if loaded:
+                        player = loaded
+                        shop_message = "Game loaded!"
+                    else:
+                        shop_message = "No save found!"
+                    shop_message_timer = 60
             if event.type == pygame.KEYDOWN and in_building:
                 if in_building == "job":
                     if player.energy >= 20:
@@ -59,6 +227,7 @@ def main():
                     shop_message_timer = 60
                 elif in_building == "home":
                     player.energy = 100
+                    player.time = 8 * 60
                     player.day += 1
                     shop_message = "You slept. New day!"
                     shop_message_timer = 60
@@ -126,6 +295,8 @@ def main():
                         break
                 if not collision:
                     if dx != 0 or dy != 0:
+                        if frame % 12 == 0:
+                            step_sound.play()
                         player.energy = max(player.energy - 0.04, 0)
                     player.rect = next_rect
 
@@ -135,9 +306,21 @@ def main():
                 near_building = b
                 break
 
+        if not in_building and shop_message_timer == 0:
+            desc = random_event(player)
+            if desc:
+                shop_message = desc
+                shop_message_timer = 90
+                quest_sound.play()
+
         if not in_building and near_building:
             if keys[pygame.K_e]:
-                in_building = near_building.btype
+                if building_open(near_building.btype, player.time):
+                    in_building = near_building.btype
+                    enter_sound.play()
+                else:
+                    shop_message = "Closed right now"
+                    shop_message_timer = 60
 
         if in_building:
             if keys[pygame.K_q]:
@@ -159,9 +342,11 @@ def main():
             draw_building(screen, Building(draw_rect, b.name, b.btype))
 
         pr = player.rect.move(-cam_x, -cam_y)
-        draw_player(screen, pr, frame if dx or dy else 0)
+        draw_player_sprite(screen, pr, frame if dx or dy else 0)
 
-        draw_ui(screen, font, player)
+        draw_day_night(screen, player.time)
+
+        draw_ui(screen, font, player, QUESTS)
 
         info_y = 46
         if near_building and not in_building:
@@ -179,6 +364,8 @@ def main():
             elif near_building.btype == "park":
                 msg = "[E] to chat (+1 CHA, -5 energy)"
             if msg:
+                if not building_open(near_building.btype, player.time):
+                    msg += " (Closed)"
                 msg_surf = font.render(msg, True, (30, 30, 30))
                 bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA)
                 bg.fill((255, 255, 255, 210))
@@ -219,6 +406,9 @@ def main():
             pygame.display.flip()
             pygame.time.wait(2500)
             return
+
+        if check_quests(player):
+            quest_sound.play()
 
         pygame.display.flip()
         clock.tick(60)
