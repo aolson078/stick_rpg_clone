@@ -1,4 +1,5 @@
 import math
+import os
 import pygame
 from settings import (
     PLAYER_HEAD_COLOR,
@@ -21,6 +22,33 @@ from settings import (
     MAP_HEIGHT,
     SCREEN_WIDTH,
 )
+
+PLAYER_SPRITES = []
+
+
+def load_player_sprites():
+    """Load player sprite frames from the assets folder."""
+    global PLAYER_SPRITES
+    if PLAYER_SPRITES:
+        return PLAYER_SPRITES
+    for i in range(3):
+        path = os.path.join("assets", f"player_{i}.png")
+        if os.path.exists(path):
+            PLAYER_SPRITES.append(pygame.image.load(path).convert_alpha())
+    return PLAYER_SPRITES
+
+
+def draw_player_sprite(surface, rect, frame=0):
+    sprites = load_player_sprites()
+    if not sprites:
+        return draw_player(surface, rect, frame)
+    image = sprites[frame % len(sprites)]
+    x = rect.x + rect.width // 2 - image.get_width() // 2
+    y = rect.y + rect.height - image.get_height()
+    shadow = pygame.Surface((40, 14), pygame.SRCALPHA)
+    pygame.draw.ellipse(shadow, (40, 40, 40, 80), (0, 0, 40, 14))
+    surface.blit(shadow, (x + image.get_width() // 2 - 20, y + image.get_height() - 6))
+    surface.blit(image, (x, y))
 
 
 def draw_player(surface, rect, frame=0):
@@ -109,7 +137,9 @@ def draw_day_night(surface, current_time):
         surface.blit(overlay, (0, 0))
 
 
-def draw_ui(surface, font, player):
+
+def draw_ui(surface, font, player, quests):
+
     bar = pygame.Surface((SCREEN_WIDTH, 36), pygame.SRCALPHA)
     bar.fill(UI_BG)
     hour = int(player.time) // 60
@@ -124,3 +154,12 @@ def draw_ui(surface, font, player):
     )
     bar.blit(text, (16, 6))
     surface.blit(bar, (0, 0))
+
+    # Show current quest below the stat bar
+    quest_text = next((q.description for q in quests if not q.completed), None)
+    if quest_text:
+        qsurf = font.render(f"Quest: {quest_text}", True, FONT_COLOR)
+        qbg = pygame.Surface((qsurf.get_width() + 12, qsurf.get_height() + 4), pygame.SRCALPHA)
+        qbg.fill((255, 255, 255, 220))
+        surface.blit(qbg, (16, 40))
+        surface.blit(qsurf, (22, 42))
