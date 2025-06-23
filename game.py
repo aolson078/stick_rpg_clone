@@ -99,6 +99,26 @@ EVENTS = [
     Event("A thief stole $10 from you!", _ev_theft),
 ]
 
+# Items sold at the shop: name, cost, and effect function
+SHOP_ITEMS = [
+    ("Cola", 3, lambda p: setattr(p, "energy", min(100, p.energy + 5))),
+    ("Protein Bar", 7, lambda p: setattr(p, "health", min(100, p.health + 5))),
+    ("Book", 10, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
+    ("Gym Pass", 15, lambda p: setattr(p, "strength", p.strength + 1)),
+    ("Charm Pendant", 20, lambda p: setattr(p, "charisma", p.charisma + 1)),
+]
+
+def buy_shop_item(player: Player, index: int) -> str:
+    """Attempt to buy an item from SHOP_ITEMS by index."""
+    if index < 0 or index >= len(SHOP_ITEMS):
+        return "Invalid item"
+    name, cost, effect = SHOP_ITEMS[index]
+    if player.money < cost:
+        return "Not enough money!"
+    player.money -= cost
+    effect(player)
+    return f"Bought {name}"
+
 EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
 
 SAVE_FILE = "savegame.json"
@@ -314,15 +334,21 @@ def main():
                     shop_message = "You slept. New day!"
                     shop_message_timer = 60
                 elif in_building == "shop":
-                    if player.money >= 20 and player.health < 100:
-                        player.money -= 20
-                        player.health = min(player.health + 30, 100)
-                        shop_message = "You bought food! +30 health"
-                    elif player.money < 20:
-                        shop_message = "Not enough money!"
-                    elif player.health == 100:
-                        shop_message = "Already full health!"
-                    shop_message_timer = 60
+                    if event.key in (
+                        pygame.K_1,
+                        pygame.K_2,
+                        pygame.K_3,
+                        pygame.K_4,
+                        pygame.K_5,
+                    ):
+                        idx = event.key - pygame.K_1
+                        shop_message = buy_shop_item(player, idx)
+                        shop_message_timer = 60
+                    elif event.key == pygame.K_e:
+                        shop_message = "Press 1-5 to buy items"
+                        shop_message_timer = 60
+                    else:
+                        continue
                 elif in_building == "gym":
                     if player.money >= 10 and player.energy >= 10:
                         player.money -= 10
@@ -505,7 +531,7 @@ def main():
             elif near_building.btype == "home":
                 msg = "[E] to Sleep (restore energy, next day)"
             elif near_building.btype == "shop":
-                msg = "[E] to buy food (+30 health, -$20)"
+                msg = "[E] to shop for items"
             elif near_building.btype == "gym":
                 msg = "[E] to train (+1 STR, +5 health, -10 energy, -$10)"
             elif near_building.btype == "library":
@@ -540,7 +566,7 @@ def main():
             elif in_building == "home":
                 txt = "[E] Sleep  [Q] Leave"
             elif in_building == "shop":
-                txt = "[E] Buy food  [Q] Leave"
+                txt = "[1-5] Buy items  [Q] Leave"
             elif in_building == "gym":
                 txt = "[E] Train  [Q] Leave"
             elif in_building == "library":
@@ -551,6 +577,10 @@ def main():
                 txt = "[B] Buy token  [J] Blackjack  [S] Slots  [F] Fight  [Q] Leave"
             tip_surf = font.render(f"Inside: {in_building.upper()}   {txt}", True, (80, 40, 40))
             screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
+            if in_building == "shop":
+                for i, (name, cost, _func) in enumerate(SHOP_ITEMS):
+                    item_surf = font.render(f"{i+1}:{name} ${cost}", True, (80, 40, 40))
+                    screen.blit(item_surf, (30 + i * 150, SCREEN_HEIGHT - 60))
 
         if shop_message_timer > 0:
             shop_message_timer -= 1

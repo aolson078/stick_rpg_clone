@@ -18,6 +18,10 @@ Win games to earn extra tokens, or lose them if luck is not on your side.
 There is also a brawler waiting for challengers. If your strength is higher,
 you win the fight and pocket some cash.
 
+The shop now stocks a few useful items: a cola to restore a little energy, a
+protein bar for health, a book that teaches you intelligence, a gym pass that
+builds strength, and a charm pendant that boosts charisma.
+
 The game now features simple sound effects, looping background music, and a
 stick-figure sprite with a two-frame walking animation.
 
@@ -54,6 +58,7 @@ starts.
 - **Arrow keys/WASD**: Move
 - **E**: Interact with nearby buildings
 - **B/J/S/F**: Actions inside the bar
+- **1-5**: Buy items in the shop
 - **Q**: Leave a building
 - **F5**: Save game
 - **F9**: Load game
