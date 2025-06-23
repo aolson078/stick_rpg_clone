@@ -1,0 +1,3 @@
+# Ignore asset files
+assets/*.png
+assets/*.wav

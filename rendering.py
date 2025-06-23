@@ -1,4 +1,5 @@
 import math
+import os
 import pygame
 from settings import (
     PLAYER_HEAD_COLOR,
@@ -10,6 +11,8 @@ from settings import (
     JOB_COLOR,
     SHOP_COLOR,
     PARK_COLOR,
+    GYM_COLOR,
+    LIBRARY_COLOR,
     ROAD_COLOR,
     SIDEWALK_COLOR,
     CITY_WALL_COLOR,
@@ -19,6 +22,33 @@ from settings import (
     MAP_HEIGHT,
     SCREEN_WIDTH,
 )
+
+PLAYER_SPRITES = []
+
+
+def load_player_sprites():
+    """Load player sprite frames from the assets folder."""
+    global PLAYER_SPRITES
+    if PLAYER_SPRITES:
+        return PLAYER_SPRITES
+    for i in range(3):
+        path = os.path.join("assets", f"player_{i}.png")
+        if os.path.exists(path):
+            PLAYER_SPRITES.append(pygame.image.load(path).convert_alpha())
+    return PLAYER_SPRITES
+
+
+def draw_player_sprite(surface, rect, frame=0):
+    sprites = load_player_sprites()
+    if not sprites:
+        return draw_player(surface, rect, frame)
+    image = sprites[frame % len(sprites)]
+    x = rect.x + rect.width // 2 - image.get_width() // 2
+    y = rect.y + rect.height - image.get_height()
+    shadow = pygame.Surface((40, 14), pygame.SRCALPHA)
+    pygame.draw.ellipse(shadow, (40, 40, 40, 80), (0, 0, 40, 14))
+    surface.blit(shadow, (x + image.get_width() // 2 - 20, y + image.get_height() - 6))
+    surface.blit(image, (x, y))
 
 
 def draw_player(surface, rect, frame=0):
@@ -47,6 +77,10 @@ def building_color(btype):
         return SHOP_COLOR
     if btype == "park":
         return PARK_COLOR
+    if btype == "gym":
+        return GYM_COLOR
+    if btype == "library":
+        return LIBRARY_COLOR
     return BUILDING_COLOR
 
 
@@ -89,13 +123,41 @@ def draw_city_walls(surface, cam_x, cam_y):
     pygame.draw.rect(surface, CITY_WALL_COLOR, (MAP_WIDTH - 12 - cam_x, -cam_y, 12, MAP_HEIGHT))
 
 
-def draw_ui(surface, font, player):
+def draw_day_night(surface, current_time):
+    hour = (current_time / 60) % 24
+    alpha = 0
+    if 18 <= hour or hour < 6:
+        if hour >= 18:
+            alpha = min(int((hour - 18) / 6 * 120), 120)
+        else:
+            alpha = min(int((6 - hour) / 6 * 120), 120)
+    if alpha:
+        overlay = pygame.Surface((SCREEN_WIDTH, MAP_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, alpha))
+        surface.blit(overlay, (0, 0))
+
+
+def draw_ui(surface, font, player, quests):
     bar = pygame.Surface((SCREEN_WIDTH, 36), pygame.SRCALPHA)
     bar.fill(UI_BG)
+    hour = int(player.time) // 60
+    minute = int(player.time) % 60
+    time_str = f"{hour:02d}:{minute:02d}"
     text = font.render(
-        f"Money: ${int(player.money)}   Energy: {int(player.energy)}   Health: {int(player.health)} Day: {player.day}",
+        f"Money: ${int(player.money)}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
+        f"STR: {player.strength}  INT: {player.intelligence}  CHA: {player.charisma}  "
+        f"Day: {player.day}  Time: {time_str}",
         True,
         FONT_COLOR,
     )
     bar.blit(text, (16, 6))
     surface.blit(bar, (0, 0))
+
+    # Show current quest below the stat bar
+    quest_text = next((q.description for q in quests if not q.completed), None)
+    if quest_text:
+        qsurf = font.render(f"Quest: {quest_text}", True, FONT_COLOR)
+        qbg = pygame.Surface((qsurf.get_width() + 12, qsurf.get_height() + 4), pygame.SRCALPHA)
+        qbg.fill((255, 255, 255, 220))
+        surface.blit(qbg, (16, 40))
+        surface.blit(qsurf, (22, 42))
