@@ -26,6 +26,8 @@ BUILDINGS = [
     Building(pygame.Rect(600, 300, 180, 240), "Office", "job"),
     Building(pygame.Rect(1100, 700, 300, 100), "Shop", "shop"),
     Building(pygame.Rect(400, 900, 160, 180), "Park", "park"),
+    Building(pygame.Rect(900, 450, 220, 160), "Gym", "gym"),
+    Building(pygame.Rect(1200, 250, 200, 160), "Library", "library"),
 ]
 
 def main():
@@ -69,6 +71,37 @@ def main():
                         shop_message = "Not enough money!"
                     elif player.health == 100:
                         shop_message = "Already full health!"
+                    shop_message_timer = 60
+                elif in_building == "gym":
+                    if player.money >= 10 and player.energy >= 10:
+                        player.money -= 10
+                        player.energy -= 10
+                        player.health = min(player.health + 5, 100)
+                        player.strength += 1
+                        shop_message = "You worked out! +1 STR, +5 health"
+                    elif player.money < 10:
+                        shop_message = "Need $10 to train"
+                    else:
+                        shop_message = "Too tired to train!"
+                    shop_message_timer = 60
+                elif in_building == "library":
+                    if player.money >= 5 and player.energy >= 5:
+                        player.money -= 5
+                        player.energy -= 5
+                        player.intelligence += 1
+                        shop_message = "You studied! +1 INT"
+                    elif player.money < 5:
+                        shop_message = "Need $5 to study"
+                    else:
+                        shop_message = "Too tired to study!"
+                    shop_message_timer = 60
+                elif in_building == "park":
+                    if player.energy >= 5:
+                        player.energy -= 5
+                        player.charisma += 1
+                        shop_message = "You socialized! +1 CHA"
+                    else:
+                        shop_message = "Too tired to chat!"
                     shop_message_timer = 60
 
         dx = dy = 0
@@ -139,6 +172,12 @@ def main():
                 msg = "[E] to Sleep (restore energy, next day)"
             elif near_building.btype == "shop":
                 msg = "[E] to buy food (+30 health, -$20)"
+            elif near_building.btype == "gym":
+                msg = "[E] to train (+1 STR, +5 health, -10 energy, -$10)"
+            elif near_building.btype == "library":
+                msg = "[E] to study (+1 INT, -5 energy, -$5)"
+            elif near_building.btype == "park":
+                msg = "[E] to chat (+1 CHA, -5 energy)"
             if msg:
                 msg_surf = font.render(msg, True, (30, 30, 30))
                 bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA)
@@ -157,6 +196,12 @@ def main():
                 txt = "[E] Sleep  [Q] Leave"
             elif in_building == "shop":
                 txt = "[E] Buy food  [Q] Leave"
+            elif in_building == "gym":
+                txt = "[E] Train  [Q] Leave"
+            elif in_building == "library":
+                txt = "[E] Study  [Q] Leave"
+            elif in_building == "park":
+                txt = "[E] Chat  [Q] Leave"
             tip_surf = font.render(f"Inside: {in_building.upper()}   {txt}", True, (80, 40, 40))
             screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
 

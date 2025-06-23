@@ -14,3 +14,6 @@ class Player:
     energy: float = 100
     health: float = 100
     day: int = 1
+    strength: int = 1
+    intelligence: int = 1
+    charisma: int = 1
