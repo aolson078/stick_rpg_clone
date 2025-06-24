@@ -1,5 +1,6 @@
 import math
 import os
+import math
 import pygame
 from settings import (
     PLAYER_HEAD_COLOR,
@@ -28,6 +29,7 @@ from settings import (
 
 PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
+FOREST_ENEMY_IMAGES = []
 
 
 def load_player_sprites():
@@ -35,10 +37,14 @@ def load_player_sprites():
     global PLAYER_SPRITES
     if PLAYER_SPRITES:
         return PLAYER_SPRITES
-    for i in range(3):
+    # Load all sequentially numbered sprite frames until a file is missing
+    i = 0
+    while True:
         path = os.path.join("assets", f"player_{i}.png")
-        if os.path.exists(path):
-            PLAYER_SPRITES.append(pygame.image.load(path).convert_alpha())
+        if not os.path.exists(path):
+            break
+        PLAYER_SPRITES.append(pygame.image.load(path).convert_alpha())
+        i += 1
     return PLAYER_SPRITES
 
 
@@ -52,14 +58,117 @@ def draw_player_sprite(surface, rect, frame=0):
     shadow = pygame.Surface((40, 14), pygame.SRCALPHA)
     pygame.draw.ellipse(shadow, (40, 40, 40, 80), (0, 0, 40, 14))
     surface.blit(shadow, (x + image.get_width() // 2 - 20, y + image.get_height() - 6))
-@@ -138,78 +140,201 @@ def draw_day_night(surface, current_time):
+
+    surface.blit(image, (x, y))
+
+
+def draw_player(surface, rect, frame=0):
+    """Fallback stick figure drawing if sprites fail to load."""
+    x = rect.x + rect.width // 2
+    y = rect.y + rect.height
+    shadow = pygame.Surface((40, 14), pygame.SRCALPHA)
+    pygame.draw.ellipse(shadow, (40, 40, 40, 80), (0, 0, 40, 14))
+    surface.blit(shadow, (x - 20, y - 6))
+
+    swing = math.sin(frame / 6) * 7 if frame else 0
+    pygame.draw.circle(surface, PLAYER_HEAD_COLOR, (x, y - 24), 10)
+    pygame.draw.circle(surface, PLAYER_COLOR, (x, y - 24), 10, 2)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 14), (x, y), 3)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x - 13, y - 2 + int(swing)), 3)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x + 13, y - 2 - int(swing)), 3)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x - 9, y + 16 + int(swing)), 3)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x + 9, y + 16 - int(swing)), 3)
+
+
+def building_color(btype):
+    if btype == "home":
+        return HOME_COLOR
+    if btype == "job":
+        return JOB_COLOR
+    if btype == "shop":
+        return SHOP_COLOR
+    if btype == "park":
+        return PARK_COLOR
+    if btype == "gym":
+        return GYM_COLOR
+    if btype == "library":
+        return LIBRARY_COLOR
+    if btype == "clinic":
+        return CLINIC_COLOR
+    if btype == "bar":
+        return BAR_COLOR
+    if btype == "bank":
+        return BAR_COLOR
+    return BUILDING_COLOR
+
+
+def draw_building(surface, building):
+    b = building.rect
+    pygame.draw.rect(surface, building_color(building.btype), b, border_radius=9)
+    roof = pygame.Rect(b.x, b.y - 14, b.width, 18)
+    pygame.draw.rect(
+        surface,
+        (150, 140, 100),
+        roof,
+        border_top_left_radius=9,
+        border_top_right_radius=9,
+    )
+    if building.btype != "park":
+        for i in range(2, b.width // 50):
+            wx = b.x + 18 + i * 50
+            wy = b.y + 28
+            pygame.draw.rect(surface, WINDOW_COLOR, (wx, wy, 22, 22), border_radius=4)
+        dx = b.x + b.width // 2 - 18
+        dy = b.y + b.height - 38
+        pygame.draw.rect(surface, DOOR_COLOR, (dx, dy, 36, 38), border_radius=5)
+        pygame.draw.circle(surface, (220, 210, 120), (dx + 32, dy + 19), 3)
+    font = pygame.font.SysFont(None, 28)
+    label = font.render(building.name, True, FONT_COLOR)
+    label_bg = pygame.Surface((label.get_width() + 12, label.get_height() + 4), pygame.SRCALPHA)
+    label_bg.fill((255, 255, 255, 230))
+    surface.blit(label_bg, (b.x + b.width // 2 - label.get_width() // 2 - 6, b.y - 32))
+    surface.blit(label, (b.x + b.width // 2 - label.get_width() // 2, b.y - 30))
+
+
+def draw_road_and_sidewalks(surface, cam_x, cam_y):
+    road_rect = pygame.Rect(0 - cam_x, 470 - cam_y, MAP_WIDTH, 60)
+    pygame.draw.rect(surface, ROAD_COLOR, road_rect)
+    pygame.draw.rect(surface, SIDEWALK_COLOR, (0 - cam_x, 460 - cam_y, MAP_WIDTH, 10))
+    pygame.draw.rect(surface, SIDEWALK_COLOR, (0 - cam_x, 530 - cam_y, MAP_WIDTH, 10))
+    for x in range(0, MAP_WIDTH, 80):
+        pygame.draw.rect(surface, (230, 220, 100), (x - cam_x, 498 - cam_y, 36, 6), border_radius=3)
+
+
+def draw_city_walls(surface, cam_x, cam_y):
+    pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, -cam_y, MAP_WIDTH, 12))
+    pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, MAP_HEIGHT - 12 - cam_y, MAP_WIDTH, 12))
+    pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, -cam_y, 12, MAP_HEIGHT))
+    pygame.draw.rect(surface, CITY_WALL_COLOR, (MAP_WIDTH - 12 - cam_x, -cam_y, 12, MAP_HEIGHT))
+
+
+def draw_sky(surface):
+    """Draw a vertical gradient sky background."""
+    top_color = (120, 180, 255)
+    bottom_color = BG_COLOR
+    for y in range(SCREEN_HEIGHT):
+        ratio = y / SCREEN_HEIGHT
+        r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
+        g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
+        b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
+        pygame.draw.line(surface, (r, g, b), (0, y), (SCREEN_WIDTH, y))
+def draw_day_night(surface, current_time):
+    """Darken the city during nighttime hours."""
+    hour = int(current_time) // 60
+    alpha = 0
+    if hour >= 18 or hour < 6:
+        if hour >= 18:
+            alpha = min(int((hour - 18) / 6 * 120), 120)
         else:
             alpha = min(int((6 - hour) / 6 * 120), 120)
     if alpha:
         overlay = pygame.Surface((SCREEN_WIDTH, MAP_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, alpha))
         surface.blit(overlay, (0, 0))
-
 
 
 def draw_ui(surface, font, player, quests):
@@ -200,14 +309,36 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect):
     pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
 
     draw_player_sprite(surface, player.rect, frame)
-    if player.companion:
-        pos = (bed_rect.x + bed_rect.width + 60, bed_rect.y + bed_rect.height - 30)
-        color = (150, 120, 80)
-        if player.companion == "Cat":
-            color = (170, 170, 220)
-        elif player.companion == "Parrot":
-            color = (200, 200, 60)
-        pygame.draw.circle(surface, color, pos, 20)
+
+
+def load_forest_enemy_images():
+    """Load images for enemies in the forest area."""
+    global FOREST_ENEMY_IMAGES
+    if FOREST_ENEMY_IMAGES:
+        return FOREST_ENEMY_IMAGES
+    for i in range(3):
+        path = os.path.join("assets", f"enemy_{i}.png")
+        if os.path.exists(path):
+            FOREST_ENEMY_IMAGES.append(pygame.image.load(path).convert_alpha())
+        else:
+            s = pygame.Surface((60, 60))
+            s.fill((200, 0, 0))
+            FOREST_ENEMY_IMAGES.append(s)
+    return FOREST_ENEMY_IMAGES
+
+
+def draw_forest_area(surface, font, player, frame, enemy_rects, door_rect):
+    """Draw the separate forest combat area."""
+    surface.fill((50, 140, 70))
+
+    pygame.draw.rect(surface, (100, 80, 60), door_rect)
+    pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
+
+    images = load_forest_enemy_images()
+    for rect, img in zip(enemy_rects, images):
+        surface.blit(img, rect)
+
+    draw_player_sprite(surface, player.rect, frame)
 
 
 def draw_bar_interior(

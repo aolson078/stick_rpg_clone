@@ -6,6 +6,16 @@ strength, intelligence, and charisma stats that can be improved by visiting
 these locations. The world runs on a 24-hour clock with automatic day changes.
 Buildings keep regular hours and the city darkens at night.
 
+A colorful gradient sky and detailed buildings give the city a cleaner look.
+When the game launches you are greeted with a small start menu allowing you to
+load a save or begin anew.
+
+The city now includes a **Bank** where you can pick up a small delivery
+side quest. Accept the job, bring the papers to the Library, and earn $50.
+
+You can also deposit or withdraw cash at the bank. Any money left in the bank
+earns 1% interest each day.
+
 Jobs now offer promotions based on your stats. The office rewards
 intelligence and charisma while dealing drugs in the park relies on strength
 and charisma. A new clinic job values intelligence and strength. Higher stats
@@ -43,6 +53,10 @@ now a separate screen
 you can walk around in—approach the bed and press **E** to sleep, or step to the
 door and hit **E** to leave.
 
+Two larger homes can eventually be purchased: a small house and a luxurious
+mansion. Each new residence unlocks additional upgrades like a Home Gym or
+a Private Library, giving you more ways to build your stats.
+
 As your stats reach new milestones you earn perk points. Press **P** to open the
 Perk menu and spend these points to unlock or upgrade perks (up to level 3).
 Available perks include Gym Rat, Book Worm, Social Butterfly, Night Owl, Lucky,
@@ -56,6 +70,10 @@ the secret **Perk Master** perk.
 A shady **Alley** building lets you battle random enemies for cash and the
 occasional token. Victories count toward quest progress and scale in difficulty
 over time.
+
+Outside the city gates lies a small **Woods** area. Three stationary foes wait
+here, each tougher than the last. Approach an enemy and press **E** to engage
+in battle for a cash reward.
 
 The city also has a **Pet Shop** where you can adopt an animal companion.
 Pets grant small bonuses like extra defense or charisma and may help you find
@@ -76,8 +94,8 @@ every home upgrade unlocks **Home Owner**, and maxing out all other perks grants
 the secret **Perk Master** perk.
 
 
-The game now features simple sound effects, looping background music, and a
-stick-figure sprite with a two-frame walking animation.
+The game now features simple sound effects, looping background music, and
+a smoother multi-frame walking animation for the player sprite.
 
 A short quest line walks you through the basics: earning money, training, and
 taking on thugs in the new Alley location. Press **L** at any time to open the
