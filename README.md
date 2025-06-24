@@ -61,6 +61,19 @@ The city also has a **Pet Shop** where you can adopt an animal companion.
 Pets grant small bonuses like extra defense or charisma and may help you find
 money or tokens.
 
+Your apartment can also be improved. While inside the Home you can buy a Comfy
+Bed, Decorations, or a Study Desk. These upgrades boost your energy recovery
+and may grant daily bonuses when you sleep.
+
+As your stats reach new milestones you earn perk points. Press **P** to open the
+Perk menu and spend these points to unlock or upgrade perks (up to level 3).
+Available perks include Gym Rat, Book Worm, Social Butterfly, Night Owl, Lucky,
+and Iron Will. Higher perk levels further improve their bonuses.
+
+Winning fights in the bar now progresses through five increasingly tough
+challengers. Defeat them all to earn the hidden **Bar Champion** perk. Owning
+every home upgrade unlocks **Home Owner**, and maxing out all other perks grants
+the secret **Perk Master** perk.
 
 
 The game now features simple sound effects, looping background music, and a

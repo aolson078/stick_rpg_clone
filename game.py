@@ -41,6 +41,7 @@ from settings import (
 )
 
 pygame.init()
+pygame.mixer.init()
 try:
     pygame.mixer.init()
     SOUND_ENABLED = True
@@ -53,6 +54,7 @@ BUILDINGS = [
     Building(pygame.Rect(600, 300, 180, 240), "Office", "job"),
     Building(pygame.Rect(1100, 700, 300, 100), "Shop", "shop"),
     Building(pygame.Rect(400, 900, 160, 180), "Park", "park"),
+    Building(pygame.Rect(460, 960, 80, 80), "Deal Spot", "dealer"),
     # Move the deal spot just outside the park so the player can reach it
     Building(pygame.Rect(580, 960, 80, 80), "Deal Spot", "dealer"),
     Building(pygame.Rect(900, 450, 220, 160), "Gym", "gym"),
@@ -82,6 +84,7 @@ HOME_WIDTH, HOME_HEIGHT = SCREEN_WIDTH, SCREEN_HEIGHT
 BED_RECT = pygame.Rect(120, 160, 220, 120)
 DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
 
+# Simple quests that encourage visiting different locations
 # Layout for the bar interior
 BAR_WIDTH, BAR_HEIGHT = SCREEN_WIDTH, SCREEN_HEIGHT
 BAR_DOOR_RECT = pygame.Rect(BAR_WIDTH // 2 - 60, BAR_HEIGHT - 180, 120, 160)
@@ -93,6 +96,9 @@ BRAWL_RECT = pygame.Rect(BAR_WIDTH // 2 - 80, 80, 160, 120)
 
 # Storyline quests completed in order
 QUESTS = [
+    Quest("Earn $200", lambda p: p.money >= 200),
+    Quest("Reach STR 5", lambda p: p.strength >= 5),
+    Quest("Reach INT 5", lambda p: p.intelligence >= 5),
     Quest("Earn $300", lambda p: p.money >= 300, next_index=1),
     Quest("Reach STR 5", lambda p: p.strength >= 5, next_index=2),
     Quest(
@@ -110,15 +116,18 @@ QUESTS = [
 
 # Random events that may occur while exploring
 def _ev_found_money(p: Player) -> None:
+    p.money += 5
     bonus = 5 * p.perk_levels.get("Lucky", 0)
     p.money += 5 + bonus
 
 
 def _ev_gain_int(p: Player) -> None:
+    p.intelligence += 1
     p.intelligence += 1 + p.perk_levels.get("Lucky", 0)
 
 
 def _ev_gain_cha(p: Player) -> None:
+    p.charisma += 1
     p.charisma += 1 + p.perk_levels.get("Lucky", 0)
 
 
@@ -176,6 +185,12 @@ TIMED_EVENTS = [
 
 # Items sold at the shop: name, cost, and effect function
 SHOP_ITEMS = [
+    ("Cola", 3, lambda p: setattr(p, "energy", min(100, p.energy + 5))),
+    ("Protein Bar", 7, lambda p: setattr(p, "health", min(100, p.health + 5))),
+    ("Book", 10, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
+    ("Gym Pass", 15, lambda p: setattr(p, "strength", p.strength + 1)),
+    ("Charm Pendant", 20, lambda p: setattr(p, "charisma", p.charisma + 1)),
+    ("Skateboard", 40, lambda p: setattr(p, "has_skateboard", True)),
     ("Cola", 6, lambda p: setattr(p, "energy", min(100, p.energy + 5))),
     ("Protein Bar", 14, lambda p: setattr(p, "health", min(100, p.health + 5))),
     ("Book", 20, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
@@ -184,6 +199,7 @@ SHOP_ITEMS = [
     ("Skateboard", 80, lambda p: setattr(p, "has_skateboard", True)),
     (
         "Leather Helmet",
+        25,
         50,
         lambda p: p.inventory.append(
             InventoryItem("Leather Helmet", "head", defense=1)
@@ -191,6 +207,7 @@ SHOP_ITEMS = [
     ),
     (
         "Leather Armor",
+        40,
         80,
         lambda p: p.inventory.append(
             InventoryItem("Leather Armor", "chest", defense=2)
@@ -198,6 +215,7 @@ SHOP_ITEMS = [
     ),
     (
         "Leather Boots",
+        20,
         40,
         lambda p: p.inventory.append(
             InventoryItem("Leather Boots", "legs", defense=1, speed=1)
@@ -205,6 +223,7 @@ SHOP_ITEMS = [
     ),
     (
         "Wooden Sword",
+        35,
         70,
         lambda p: p.inventory.append(
             InventoryItem("Wooden Sword", "weapon", attack=2)
@@ -260,6 +279,7 @@ def buy_shop_item(player: Player, index: int) -> str:
     effect(player)
     return f"Bought {name}"
 
+EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
 
 def buy_home_upgrade(player: Player, index: int) -> str:
     """Attempt to purchase a home upgrade by index."""
@@ -309,6 +329,7 @@ def building_open(btype, minutes):
 
 def check_quests(player):
     new = False
+    for q in QUESTS:
     if player.current_quest < len(QUESTS):
         q = QUESTS[player.current_quest]
         if not q.completed and q.check(player):
@@ -397,6 +418,7 @@ def check_hidden_perks(player: Player) -> str | None:
 def random_event(player: Player) -> str | None:
     """Possibly trigger a random event and return its description."""
     if random.random() < EVENT_CHANCE:
+        ev = random.choice(EVENTS)
         hour = int(player.time) // 60
         pool = EVENTS.copy()
         for start, end, tev in TIMED_EVENTS:
@@ -465,10 +487,15 @@ def fight_brawler(player: Player) -> str:
         return "No challengers remain"
     if player.energy < 10:
         return "Too tired to fight!"
+    player.energy -= 10
     player.energy -= energy_cost(player, 10)
 
     stage = player.brawls_won + 1
     enemy = {
+        "attack": random.randint(3, 7),
+        "defense": random.randint(1, 4),
+        "speed": random.randint(1, 5),
+        "health": 20,
         "attack": random.randint(3 + stage, 6 + stage * 2),
         "defense": random.randint(1 + stage, 3 + stage),
         "speed": random.randint(1 + stage // 2, 5 + stage // 2),
@@ -489,6 +516,8 @@ def fight_brawler(player: Player) -> str:
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         return "You lost the fight!"
+    player.money += 20
+    return "You won the fight! +$20"
     reward = 20 + stage * 10
     player.money += reward
     player.brawls_won += 1
@@ -498,6 +527,12 @@ def fight_brawler(player: Player) -> str:
     return msg
 
 
+    opponent = random.randint(1, 6)
+    if player.strength >= opponent:
+        player.money += 20
+        return "You won the fight! +$20"
+    player.health = max(player.health - 10, 0)
+    return "You lost the fight! -10 health"
 def fight_enemy(player: Player) -> str:
     """Fight a random street enemy in the alley."""
     if player.energy < 10:
@@ -652,6 +687,14 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 28)
 
+    step_sound = pygame.mixer.Sound(STEP_SOUND_FILE)
+    enter_sound = pygame.mixer.Sound(ENTER_SOUND_FILE)
+    quest_sound = pygame.mixer.Sound(QUEST_SOUND_FILE)
+    for snd in (step_sound, enter_sound, quest_sound):
+        snd.set_volume(SFX_VOLUME)
+    pygame.mixer.music.load(MUSIC_FILE)
+    pygame.mixer.music.set_volume(MUSIC_VOLUME)
+    pygame.mixer.music.play(-1)
     if SOUND_ENABLED:
         step_sound = pygame.mixer.Sound(STEP_SOUND_FILE)
         enter_sound = pygame.mixer.Sound(ENTER_SOUND_FILE)
@@ -841,10 +884,13 @@ def main():
                     shop_message_timer = 60
 
             if event.type == pygame.KEYDOWN and in_building:
+                if in_building == "job":
                 if in_building == "job" and event.key == pygame.K_e:
                     if player.energy >= 20:
+                        pay = 30 + 20 * (player.office_level - 1)
                         pay = 20 + 15 * (player.office_level - 1)
                         player.money += pay
+                        player.energy -= 20
                         player.energy -= energy_cost(player, 20)
                         player.office_shifts += 1
                         if (
@@ -863,6 +909,11 @@ def main():
                         shop_message = "Too tired to work!"
                     shop_message_timer = 60
                 elif in_building == "home":
+                    player.energy = 100
+                    player.time = 8 * 60
+                    player.day += 1
+                    shop_message = "You slept. New day!"
+                    shop_message_timer = 60
                     if event.key == pygame.K_e:
                         extra = sleep(player)
                         shop_message = "You slept. New day!"
@@ -888,11 +939,15 @@ def main():
                         shop_message_timer = 60
                     else:
                         continue
+                elif in_building == "gym":
                 elif in_building == "gym" and event.key == pygame.K_e:
                     if player.money >= 10 and player.energy >= 10:
                         player.money -= 10
+                        player.energy -= 10
                         player.energy -= energy_cost(player, 10)
                         player.health = min(player.health + 5, 100)
+                        player.strength += 1
+                        shop_message = "You worked out! +1 STR, +5 health"
                         bonus = player.perk_levels.get("Gym Rat", 0)
                         gain = 1 + bonus
                         player.strength += gain
@@ -903,9 +958,13 @@ def main():
                     else:
                         shop_message = "Too tired to train!"
                     shop_message_timer = 60
+                elif in_building == "library":
                 elif in_building == "library" and event.key == pygame.K_e:
                     if player.money >= 5 and player.energy >= 5:
                         player.money -= 5
+                        player.energy -= 5
+                        player.intelligence += 1
+                        shop_message = "You studied! +1 INT"
                         player.energy -= energy_cost(player, 5)
                         bonus = player.perk_levels.get("Book Worm", 0)
                         gain = 1 + bonus
@@ -917,8 +976,12 @@ def main():
                     else:
                         shop_message = "Too tired to study!"
                     shop_message_timer = 60
+                elif in_building == "park":
                 elif in_building == "park" and event.key == pygame.K_e:
                     if player.energy >= 5:
+                        player.energy -= 5
+                        player.charisma += 1
+                        shop_message = "You socialized! +1 CHA"
                         player.energy -= energy_cost(player, 5)
                         bonus = player.perk_levels.get("Social Butterfly", 0)
                         gain = 1 + bonus
@@ -935,6 +998,7 @@ def main():
                             player.tokens += 1
                             shop_message = "Bought a token"
                         else:
+                            shop_message = "Need $10" 
                             shop_message = "Need $10"
                     elif event.key == pygame.K_j:
                         shop_message = play_blackjack(player)
@@ -947,6 +1011,7 @@ def main():
                     else:
                         continue
                     shop_message_timer = 60
+                elif in_building == "dealer":
                 elif in_building == "dungeon" and event.key == pygame.K_e:
                     shop_message = fight_enemy(player)
                     shop_message_timer = 60
@@ -956,8 +1021,10 @@ def main():
                     shop_message_timer = 60
                 elif in_building == "dealer" and event.key == pygame.K_e:
                     if player.energy >= 20:
+                        pay = 50 + 25 * (player.dealer_level - 1)
                         pay = 40 + 20 * (player.dealer_level - 1)
                         player.money += pay
+                        player.energy -= 20
                         player.energy -= energy_cost(player, 20)
                         player.dealer_shifts += 1
                         if (
@@ -973,10 +1040,13 @@ def main():
                     else:
                         shop_message = "Too tired to deal!"
                     shop_message_timer = 60
+                elif in_building == "clinic":
                 elif in_building == "clinic" and event.key == pygame.K_e:
                     if player.energy >= 20:
+                        pay = 40 + 20 * (player.clinic_level - 1)
                         pay = 30 + 15 * (player.clinic_level - 1)
                         player.money += pay
+                        player.energy -= 20
                         player.energy -= energy_cost(player, 20)
                         player.clinic_shifts += 1
                         if (
@@ -998,6 +1068,7 @@ def main():
         speed = PLAYER_SPEED
         if player.has_skateboard and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
             speed = int(PLAYER_SPEED * SKATEBOARD_SPEED_MULT)
+        if not in_building and not show_inventory:
         if inside_home and not show_inventory and not show_log:
             if keys[pygame.K_w] or keys[pygame.K_UP]:
                 dy -= speed
@@ -1052,8 +1123,10 @@ def main():
                         break
                 if not collision:
                     if dx != 0 or dy != 0:
+                        if frame % 12 == 0:
                         if frame % 12 == 0 and SOUND_ENABLED:
                             step_sound.play()
+                        player.energy = max(player.energy - 0.04, 0)
                         cost_mult = 1 - 0.05 * player.perk_levels.get("Iron Will", 0)
                         if player.companion == "Cat":
                             cost_mult *= 0.9
@@ -1061,23 +1134,33 @@ def main():
                     player.rect = next_rect
 
         near_building = None
+        for b in BUILDINGS:
+            if player.rect.colliderect(b.rect):
+                near_building = b
+                break
         if not inside_home and not inside_bar:
             for b in BUILDINGS:
                 if player.rect.colliderect(b.rect):
                     near_building = b
                     break
 
+        if not in_building and shop_message_timer == 0:
         if not inside_home and not inside_bar and not in_building and shop_message_timer == 0 and not show_log:
             desc = random_event(player)
             if desc:
                 shop_message = desc
                 shop_message_timer = 90
+                quest_sound.play()
                 if SOUND_ENABLED:
                     quest_sound.play()
 
+        if not in_building and near_building and not show_inventory:
         if not inside_home and not inside_bar and not in_building and near_building and not show_inventory and not show_log:
             if keys[pygame.K_e]:
                 if building_open(near_building.btype, player.time):
+                    in_building = near_building.btype
+
+                    enter_sound.play()
                     if near_building.btype == "home":
                         inside_home = True
                         home_return = (player.rect.x, player.rect.y)
@@ -1108,6 +1191,8 @@ def main():
         if player.energy == 0:
             player.health = max(player.health - 0.08, 0)
 
+        cam_x = min(max(0, player.rect.centerx - SCREEN_WIDTH // 2), MAP_WIDTH - SCREEN_WIDTH)
+        cam_y = min(max(0, player.rect.centery - SCREEN_HEIGHT // 2), MAP_HEIGHT - SCREEN_HEIGHT)
         if inside_home:
             cam_x = cam_y = 0
             draw_home_interior(screen, font, player, frame if dx or dy else 0, BED_RECT, DOOR_RECT)
@@ -1128,18 +1213,27 @@ def main():
             cam_x = min(max(0, player.rect.centerx - SCREEN_WIDTH // 2), MAP_WIDTH - SCREEN_WIDTH)
             cam_y = min(max(0, player.rect.centery - SCREEN_HEIGHT // 2), MAP_HEIGHT - SCREEN_HEIGHT)
 
+        screen.fill(BG_COLOR)
             screen.fill(BG_COLOR)
 
+        draw_road_and_sidewalks(screen, cam_x, cam_y)
+        draw_city_walls(screen, cam_x, cam_y)
             draw_road_and_sidewalks(screen, cam_x, cam_y)
             draw_city_walls(screen, cam_x, cam_y)
 
+        for b in BUILDINGS:
+            draw_rect = b.rect.move(-cam_x, -cam_y)
+            draw_building(screen, Building(draw_rect, b.name, b.btype))
             for b in BUILDINGS:
                 draw_rect = b.rect.move(-cam_x, -cam_y)
                 draw_building(screen, Building(draw_rect, b.name, b.btype))
 
+        pr = player.rect.move(-cam_x, -cam_y)
+        draw_player_sprite(screen, pr, frame if dx or dy else 0)
             pr = player.rect.move(-cam_x, -cam_y)
             draw_player_sprite(screen, pr, frame if dx or dy else 0)
 
+        draw_day_night(screen, player.time)
             draw_day_night(screen, player.time)
 
 
@@ -1162,15 +1256,19 @@ def main():
         if near_building and not in_building:
             msg = ""
             if near_building.btype == "job":
+                pay = 30 + 20 * (player.office_level - 1)
                 pay = 20 + 15 * (player.office_level - 1)
                 msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "dealer":
+                pay = 50 + 25 * (player.dealer_level - 1)
                 pay = 40 + 20 * (player.dealer_level - 1)
                 msg = f"[E] to Deal drugs (+${pay}, -20 energy)"
             elif near_building.btype == "clinic":
+                pay = 40 + 20 * (player.clinic_level - 1)
                 pay = 30 + 15 * (player.clinic_level - 1)
                 msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "home":
+                msg = "[E] to Sleep (restore energy, next day)"
                 msg = "[E] to enter home"
             elif near_building.btype == "shop":
                 msg = "[E] to shop for items"
@@ -1201,15 +1299,19 @@ def main():
             screen.blit(panel, (0, SCREEN_HEIGHT - 100))
             txt = ""
             if in_building == "job":
+                pay = 30 + 20 * (player.office_level - 1)
                 pay = 20 + 15 * (player.office_level - 1)
                 txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "dealer":
+                pay = 50 + 25 * (player.dealer_level - 1)
                 pay = 40 + 20 * (player.dealer_level - 1)
                 txt = f"[E] Deal (+${pay})  [Q] Leave"
             elif in_building == "clinic":
+                pay = 40 + 20 * (player.clinic_level - 1)
                 pay = 30 + 15 * (player.clinic_level - 1)
                 txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "home":
+                txt = "[E] Sleep  [Q] Leave"
                 txt = "[E] Sleep  [1-3] Buy upgrade  [Q] Leave"
             elif in_building == "shop":
                 txt = "[0-9] Buy items  [Q] Leave"
@@ -1232,6 +1334,7 @@ def main():
                     item_surf = font.render(f"{(i+1)%10}:{name} ${cost}", True, (80, 40, 40))
                     row = i // 5
                     col = i % 5
+                    screen.blit(item_surf, (30 + col * 150, SCREEN_HEIGHT - 60 - row * 24))
                     screen.blit(item_surf, (30 + col * 200, SCREEN_HEIGHT - 60 - row * 24))
             elif in_building == "home":
                 for i, (name, cost, _d) in enumerate(HOME_UPGRADES):
@@ -1275,6 +1378,7 @@ def main():
             return
 
         if check_quests(player):
+            quest_sound.play()
             if SOUND_ENABLED:
                 quest_sound.play()
 
