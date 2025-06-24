@@ -32,7 +32,15 @@ class Player:
     clinic_shifts: int = 0
     tokens: int = 0
 
+    brawls_won: int = 0
+
     has_skateboard: bool = False
+    home_upgrades: List[str] = field(default_factory=list)
+    perk_points: int = 0
+    perk_levels: Dict[str, int] = field(default_factory=dict)
+    next_strength_perk: int = 5
+    next_intelligence_perk: int = 5
+    next_charisma_perk: int = 5
     inventory: List["InventoryItem"] = field(default_factory=list)
     equipment: Dict[str, Optional["InventoryItem"]] = field(
         default_factory=lambda: {
