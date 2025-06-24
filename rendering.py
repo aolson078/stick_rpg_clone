@@ -25,6 +25,7 @@ from settings import (
     SCREEN_WIDTH,
 )
 
+PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
 
 
@@ -154,6 +155,7 @@ def draw_ui(surface, font, player, quests):
     text = font.render(
         f"Money: ${int(player.money)}  Tokens: {player.tokens}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
         f"STR:{player.strength} DEF:{player.defense} SPD:{player.speed} INT:{player.intelligence} CHA:{player.charisma}  "
+
         f"Office Lv: {player.office_level}  Dealer Lv: {player.dealer_level}  Clinic Lv: {player.clinic_level}  Day: {player.day}  Time: {time_str}",
         True,
         FONT_COLOR,
@@ -211,4 +213,28 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         bg_rect = bg.get_rect(center=pos)
         surface.blit(bg, bg_rect.topleft)
         surface.blit(txt, (bg_rect.x + 4, bg_rect.y + 20))
+
+
+
+def draw_perk_menu(surface, font, player, perks):
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    surface.blit(overlay, (0, 0))
+
+    panel = pygame.Surface((SCREEN_WIDTH - 120, SCREEN_HEIGHT - 120))
+    panel.fill((240, 240, 220))
+    surface.blit(panel, (60, 60))
+
+    title = font.render("Choose a Perk", True, FONT_COLOR)
+    surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+
+    for i, (name, desc) in enumerate(perks):
+        level = player.perk_levels.get(name, 0)
+        txt = font.render(
+            f"{i+1}: {name} Lv{level}/{PERK_MAX_LEVEL} - {desc}", True, FONT_COLOR
+        )
+        surface.blit(txt, (100, 120 + i * 40))
+
+    info = font.render(f"Points: {player.perk_points}   [Q] Exit", True, FONT_COLOR)
+    surface.blit(info, (100, 120 + len(perks) * 40 + 20))
 

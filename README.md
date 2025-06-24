@@ -15,6 +15,7 @@ charisma.
 
 A new bar sells $10 tokens that can be used to play blackjack or the slots.
 Win games to earn extra tokens, or lose them if luck is not on your side.
+
 There is also a brawler waiting for challengers. Combat now uses your
 strength, defense, and speed along with any bonuses from equipped gear. The
 fighter with the higher speed strikes first and damage is reduced by defense.
@@ -28,6 +29,21 @@ Basic equipment pieces like a leather helmet, leather armor, and boots can be
 purchased and equipped through the inventory screen. A wooden sword is also
 available for the weapon slot. Each item lists its attack (A), defense (D) and
 speed (S) bonuses.
+
+Your apartment can also be improved. While inside the Home you can buy a Comfy
+Bed, Decorations, or a Study Desk. These upgrades boost your energy recovery
+and may grant daily bonuses when you sleep.
+
+As your stats reach new milestones you earn perk points. Press **P** to open the
+Perk menu and spend these points to unlock or upgrade perks (up to level 3).
+Available perks include Gym Rat, Book Worm, Social Butterfly, Night Owl, Lucky,
+and Iron Will. Higher perk levels further improve their bonuses.
+
+Winning fights in the bar now progresses through five increasingly tough
+challengers. Defeat them all to earn the hidden **Bar Champion** perk. Owning
+every home upgrade unlocks **Home Owner**, and maxing out all other perks grants
+the secret **Perk Master** perk.
+
 
 The game now features simple sound effects, looping background music, and a
 stick-figure sprite with a two-frame walking animation.
@@ -65,9 +81,11 @@ starts.
 - **Arrow keys/WASD**: Move
 - **E**: Interact with nearby buildings
 - **B/J/S/F**: Actions inside the bar
+
 - **0-9**: Buy items in the shop
 - **I**: Open inventory and equip gear
 - **Shift**: Ride skateboard (if owned)
+
 - **Q**: Leave a building
 - **F5**: Save game
 - **F9**: Load game

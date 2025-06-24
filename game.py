@@ -15,6 +15,9 @@ from rendering import (
     draw_day_night,
     draw_ui,
     draw_inventory_screen,
+
+    draw_perk_menu,
+
 )
 from settings import (
     SCREEN_WIDTH,
@@ -74,15 +77,16 @@ QUESTS = [
 
 # Random events that may occur while exploring
 def _ev_found_money(p: Player) -> None:
-    p.money += 5
+    bonus = 5 * p.perk_levels.get("Lucky", 0)
+    p.money += 5 + bonus
 
 
 def _ev_gain_int(p: Player) -> None:
-    p.intelligence += 1
+    p.intelligence += 1 + p.perk_levels.get("Lucky", 0)
 
 
 def _ev_gain_cha(p: Player) -> None:
-    p.charisma += 1
+    p.charisma += 1 + p.perk_levels.get("Lucky", 0)
 
 
 def _ev_trip(p: Player) -> None:
@@ -139,6 +143,36 @@ SHOP_ITEMS = [
     ),
 ]
 
+
+# Upgrades available for purchase inside the home
+HOME_UPGRADES = [
+    ("Comfy Bed", 50, "Recover +20 energy when sleeping"),
+    ("Decorations", 40, "Gain +1 CHA each morning"),
+    ("Study Desk", 60, "Gain +1 INT each morning"),
+]
+
+# Perks that can be unlocked with perk points
+# Each perk can be upgraded up to PERK_MAX_LEVEL levels
+PERK_MAX_LEVEL = 3
+PERKS = [
+    ("Gym Rat", "STR training gives +1 per level"),
+    ("Book Worm", "INT studying gives +1 per level"),
+    ("Social Butterfly", "CHA chatting gives +1 per level"),
+    ("Night Owl", "Sleeping restores +10 energy per level"),
+    ("Lucky", "Random events yield extra rewards"),
+    ("Iron Will", "Energy costs reduced 5% per level"),
+]
+
+# Special hidden perks unlocked through achievements
+SECRET_PERKS = [
+    ("Bar Champion", "Win all 5 brawls"),
+    ("Home Owner", "Own every home upgrade"),
+    ("Perk Master", "Max out every other perk"),
+]
+
+BRAWLER_COUNT = 5
+
+
 def buy_shop_item(player: Player, index: int) -> str:
     """Attempt to buy an item from SHOP_ITEMS by index."""
     if index < 0 or index >= len(SHOP_ITEMS):
@@ -151,6 +185,22 @@ def buy_shop_item(player: Player, index: int) -> str:
     player.money -= cost
     effect(player)
     return f"Bought {name}"
+
+
+
+def buy_home_upgrade(player: Player, index: int) -> str:
+    """Attempt to purchase a home upgrade by index."""
+    if index < 0 or index >= len(HOME_UPGRADES):
+        return "Invalid upgrade"
+    name, cost, _ = HOME_UPGRADES[index]
+    if name in player.home_upgrades:
+        return "Already owned"
+    if player.money < cost:
+        return "Not enough money!"
+    player.money -= cost
+    player.home_upgrades.append(name)
+    return f"Bought {name}"
+
 
 EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
 
@@ -174,6 +224,56 @@ def check_quests(player):
             q.completed = True
             new = True
     return new
+
+
+def check_perk_unlocks(player: Player) -> bool:
+    """Grant perk points when stat thresholds are reached."""
+    gained = False
+    if player.strength >= player.next_strength_perk:
+        player.perk_points += 1
+        player.next_strength_perk += 5
+        gained = True
+    if player.intelligence >= player.next_intelligence_perk:
+        player.perk_points += 1
+        player.next_intelligence_perk += 5
+        gained = True
+    if player.charisma >= player.next_charisma_perk:
+        player.perk_points += 1
+        player.next_charisma_perk += 5
+        gained = True
+    return gained
+
+
+def energy_cost(player: Player, base: float) -> float:
+    """Return energy cost adjusted by Iron Will and hidden perks."""
+    level = player.perk_levels.get("Iron Will", 0)
+    cost = base * (1 - 0.05 * level)
+    if player.perk_levels.get("Perk Master"):
+        cost *= 0.9
+    return cost
+
+
+def check_hidden_perks(player: Player) -> str | None:
+    """Unlock secret perks when requirements are met."""
+    if (
+        player.brawls_won >= BRAWLER_COUNT
+        and "Bar Champion" not in player.perk_levels
+    ):
+        player.perk_levels["Bar Champion"] = 1
+        return "Secret perk unlocked: Bar Champion!"
+    if (
+        set(player.home_upgrades) == {u[0] for u in HOME_UPGRADES}
+        and "Home Owner" not in player.perk_levels
+    ):
+        player.perk_levels["Home Owner"] = 1
+        return "Secret perk unlocked: Home Owner!"
+    if (
+        all(player.perk_levels.get(name, 0) >= PERK_MAX_LEVEL for name, _ in PERKS)
+        and "Perk Master" not in player.perk_levels
+    ):
+        player.perk_levels["Perk Master"] = 1
+        return "Secret perk unlocked: Perk Master!"
+    return None
 
 
 def random_event(player: Player) -> str | None:
@@ -220,6 +320,10 @@ def _combat_stats(player: Player):
     atk = player.strength
     df = player.defense
     spd = player.speed
+
+    if player.perk_levels.get("Bar Champion"):
+        atk += 2
+
     for item in player.equipment.values():
         if item:
             atk += item.attack
@@ -228,15 +332,22 @@ def _combat_stats(player: Player):
     return atk, df, spd
 
 
+
+
 def fight_brawler(player: Player) -> str:
+    if player.brawls_won >= BRAWLER_COUNT:
+        return "No challengers remain"
     if player.energy < 10:
         return "Too tired to fight!"
-    player.energy -= 10
+    player.energy -= energy_cost(player, 10)
+
+    stage = player.brawls_won + 1
     enemy = {
-        "attack": random.randint(3, 7),
-        "defense": random.randint(1, 4),
-        "speed": random.randint(1, 5),
-        "health": 20,
+        "attack": random.randint(3 + stage, 6 + stage * 2),
+        "defense": random.randint(1 + stage, 3 + stage),
+        "speed": random.randint(1 + stage // 2, 5 + stage // 2),
+        "health": 20 + stage * 10,
+
     }
     p_atk, p_def, p_spd = _combat_stats(player)
     p_hp = player.health
@@ -253,8 +364,15 @@ def fight_brawler(player: Player) -> str:
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         return "You lost the fight!"
-    player.money += 20
-    return "You won the fight! +$20"
+
+    reward = 20 + stage * 10
+    player.money += reward
+    player.brawls_won += 1
+    msg = f"You won the fight {stage}! +${reward}"
+    if player.brawls_won == BRAWLER_COUNT:
+        msg += " All brawlers defeated!"
+    return msg
+
 
 
 def save_game(player):
@@ -267,8 +385,11 @@ def save_game(player):
         "strength": player.strength,
         "intelligence": player.intelligence,
         "charisma": player.charisma,
+
         "defense": player.defense,
         "speed": player.speed,
+
+
         "office_level": player.office_level,
         "office_shifts": player.office_shifts,
         "dealer_level": player.dealer_level,
@@ -276,11 +397,24 @@ def save_game(player):
         "clinic_level": player.clinic_level,
         "clinic_shifts": player.clinic_shifts,
         "tokens": player.tokens,
+
+        "brawls_won": player.brawls_won,
+
         "has_skateboard": player.has_skateboard,
+        "home_upgrades": player.home_upgrades,
+        "perk_points": player.perk_points,
+        "perk_levels": player.perk_levels,
+        "next_strength_perk": player.next_strength_perk,
+        "next_intelligence_perk": player.next_intelligence_perk,
+        "next_charisma_perk": player.next_charisma_perk,
+
         "inventory": [item.__dict__ for item in player.inventory],
         "equipment": {
             slot: (it.__dict__ if it else None) for slot, it in player.equipment.items()
         },
+
+
+
         "x": player.rect.x,
         "y": player.rect.y,
         "quests": [q.completed for q in QUESTS],
@@ -310,8 +444,11 @@ def load_game():
     player.strength = data.get("strength", player.strength)
     player.intelligence = data.get("intelligence", player.intelligence)
     player.charisma = data.get("charisma", player.charisma)
+
     player.defense = data.get("defense", player.defense)
     player.speed = data.get("speed", player.speed)
+
+
     player.office_level = data.get("office_level", player.office_level)
     player.office_shifts = data.get("office_shifts", player.office_shifts)
     player.dealer_level = data.get("dealer_level", player.dealer_level)
@@ -319,12 +456,23 @@ def load_game():
     player.clinic_level = data.get("clinic_level", player.clinic_level)
     player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
     player.tokens = data.get("tokens", player.tokens)
+
+    player.brawls_won = data.get("brawls_won", 0)
+
     player.has_skateboard = data.get("has_skateboard", player.has_skateboard)
+    player.home_upgrades = data.get("home_upgrades", [])
+    player.perk_points = data.get("perk_points", 0)
+    player.perk_levels = data.get("perk_levels", {})
+    player.next_strength_perk = data.get("next_strength_perk", 5)
+    player.next_intelligence_perk = data.get("next_intelligence_perk", 5)
+    player.next_charisma_perk = data.get("next_charisma_perk", 5)
+
     for item in data.get("inventory", []):
         player.inventory.append(InventoryItem(**item))
     for slot, item in data.get("equipment", {}).items():
         if item:
             player.equipment[slot] = InventoryItem(**item)
+
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
     return player
@@ -359,6 +507,9 @@ def main():
     in_building = None
     frame = 0
     show_inventory = False
+
+    show_perk_menu = False
+
     dragging_item = None
     drag_origin = None
     drag_pos = (0, 0)
@@ -376,6 +527,15 @@ def main():
         if player.time >= 1440:
             player.time -= 1440
             player.day += 1
+
+        if check_perk_unlocks(player):
+            shop_message = "Gained a perk point! Press P to spend"
+            shop_message_timer = 90
+        secret = check_hidden_perks(player)
+        if secret:
+            shop_message = secret
+            shop_message_timer = 90
+
         item_rects = []
         if show_inventory:
             for i, item in enumerate(player.inventory):
@@ -404,6 +564,11 @@ def main():
                 elif event.key == pygame.K_i:
                     show_inventory = not show_inventory
                     dragging_item = None
+
+                elif event.key == pygame.K_p and player.perk_points > 0:
+                    show_perk_menu = not show_perk_menu
+                    dragging_item = None
+
             if show_inventory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
@@ -437,12 +602,33 @@ def main():
                     if not placed:
                         player.inventory.append(dragging_item)
                     dragging_item = None
+
+            if show_perk_menu and event.type == pygame.KEYDOWN:
+                if pygame.K_1 <= event.key <= pygame.K_9:
+                    idx = event.key - pygame.K_1
+                    if idx < len(PERKS):
+                        name = PERKS[idx][0]
+                        level = player.perk_levels.get(name, 0)
+                        if level < PERK_MAX_LEVEL and player.perk_points > 0:
+                            player.perk_levels[name] = level + 1
+                            player.perk_points -= 1
+                            shop_message = f"Perk upgraded: {name} Lv{level+1}"
+                            shop_message_timer = 90
+                        else:
+                            shop_message = "Perk at max level"
+                            shop_message_timer = 60
+                    show_perk_menu = False
+                elif event.key in (pygame.K_q, pygame.K_p):
+                    show_perk_menu = False
+
             if event.type == pygame.KEYDOWN and in_building:
                 if in_building == "job":
                     if player.energy >= 20:
                         pay = 30 + 20 * (player.office_level - 1)
                         player.money += pay
-                        player.energy -= 20
+
+                        player.energy -= energy_cost(player, 20)
+
                         player.office_shifts += 1
                         if (
                             player.office_shifts >= 10
@@ -460,11 +646,27 @@ def main():
                         shop_message = "Too tired to work!"
                     shop_message_timer = 60
                 elif in_building == "home":
-                    player.energy = 100
-                    player.time = 8 * 60
-                    player.day += 1
-                    shop_message = "You slept. New day!"
-                    shop_message_timer = 60
+                    if event.key == pygame.K_e:
+                        player.energy = 100
+                        if "Comfy Bed" in player.home_upgrades:
+                            player.energy += 20
+                        player.energy += 10 * player.perk_levels.get("Night Owl", 0)
+                        player.time = 8 * 60
+                        player.day += 1
+                        if "Decorations" in player.home_upgrades:
+                            player.charisma += 1
+                        if "Study Desk" in player.home_upgrades:
+                            player.intelligence += 1
+                        if player.perk_levels.get("Home Owner"):
+                            player.health = min(player.health + 10, 100)
+                        shop_message = "You slept. New day!"
+                        shop_message_timer = 60
+                    elif pygame.K_1 <= event.key <= pygame.K_9:
+                        idx = event.key - pygame.K_1
+                        shop_message = buy_home_upgrade(player, idx)
+                        shop_message_timer = 60
+                    else:
+                        continue
                 elif in_building == "shop":
                     if pygame.K_1 <= event.key <= pygame.K_9:
                         idx = event.key - pygame.K_1
@@ -481,10 +683,13 @@ def main():
                 elif in_building == "gym":
                     if player.money >= 10 and player.energy >= 10:
                         player.money -= 10
-                        player.energy -= 10
+                        player.energy -= energy_cost(player, 10)
                         player.health = min(player.health + 5, 100)
-                        player.strength += 1
-                        shop_message = "You worked out! +1 STR, +5 health"
+                        bonus = player.perk_levels.get("Gym Rat", 0)
+                        gain = 1 + bonus
+                        player.strength += gain
+                        msg_gain = f" +{gain} STR"
+                        shop_message = "You worked out!" + msg_gain + ", +5 health"
                     elif player.money < 10:
                         shop_message = "Need $10 to train"
                     else:
@@ -493,9 +698,12 @@ def main():
                 elif in_building == "library":
                     if player.money >= 5 and player.energy >= 5:
                         player.money -= 5
-                        player.energy -= 5
-                        player.intelligence += 1
-                        shop_message = "You studied! +1 INT"
+                        player.energy -= energy_cost(player, 5)
+                        bonus = player.perk_levels.get("Book Worm", 0)
+                        gain = 1 + bonus
+                        player.intelligence += gain
+                        msg_gain = f" +{gain} INT"
+                        shop_message = "You studied!" + msg_gain
                     elif player.money < 5:
                         shop_message = "Need $5 to study"
                     else:
@@ -503,9 +711,12 @@ def main():
                     shop_message_timer = 60
                 elif in_building == "park":
                     if player.energy >= 5:
-                        player.energy -= 5
-                        player.charisma += 1
-                        shop_message = "You socialized! +1 CHA"
+                        player.energy -= energy_cost(player, 5)
+                        bonus = player.perk_levels.get("Social Butterfly", 0)
+                        gain = 1 + bonus
+                        player.charisma += gain
+                        msg_gain = f" +{gain} CHA"
+                        shop_message = "You socialized!" + msg_gain
                     else:
                         shop_message = "Too tired to chat!"
                     shop_message_timer = 60
@@ -532,7 +743,8 @@ def main():
                     if player.energy >= 20:
                         pay = 50 + 25 * (player.dealer_level - 1)
                         player.money += pay
-                        player.energy -= 20
+
+                        player.energy -= energy_cost(player, 20)
                         player.dealer_shifts += 1
                         if (
                             player.dealer_shifts >= 10
@@ -551,7 +763,8 @@ def main():
                     if player.energy >= 20:
                         pay = 40 + 20 * (player.clinic_level - 1)
                         player.money += pay
-                        player.energy -= 20
+                        player.energy -= energy_cost(player, 20)
+
                         player.clinic_shifts += 1
                         if (
                             player.clinic_shifts >= 10
@@ -594,7 +807,7 @@ def main():
                     if dx != 0 or dy != 0:
                         if frame % 12 == 0:
                             step_sound.play()
-                        player.energy = max(player.energy - 0.04, 0)
+                        player.energy = max(player.energy - 0.04 * (1 - 0.05 * player.perk_levels.get("Iron Will", 0)), 0)
                     player.rect = next_rect
 
         near_building = None
@@ -657,6 +870,10 @@ def main():
                 (dragging_item, drag_pos) if dragging_item else None,
             )
 
+        if show_perk_menu:
+            draw_perk_menu(screen, font, player, PERKS)
+
+
         info_y = 46
         if near_building and not in_building:
             msg = ""
@@ -670,7 +887,7 @@ def main():
                 pay = 40 + 20 * (player.clinic_level - 1)
                 msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "home":
-                msg = "[E] to Sleep (restore energy, next day)"
+                msg = "[E] to enter home"
             elif near_building.btype == "shop":
                 msg = "[E] to shop for items"
             elif near_building.btype == "gym":
@@ -705,7 +922,7 @@ def main():
                 pay = 40 + 20 * (player.clinic_level - 1)
                 txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "home":
-                txt = "[E] Sleep  [Q] Leave"
+                txt = "[E] Sleep  [1-3] Buy upgrade  [Q] Leave"
             elif in_building == "shop":
                 txt = "[0-9] Buy items  [Q] Leave"
             elif in_building == "gym":
@@ -724,6 +941,13 @@ def main():
                     row = i // 5
                     col = i % 5
                     screen.blit(item_surf, (30 + col * 150, SCREEN_HEIGHT - 60 - row * 24))
+
+            elif in_building == "home":
+                for i, (name, cost, _d) in enumerate(HOME_UPGRADES):
+                    status = "Owned" if name in player.home_upgrades else f"${cost}"
+                    item_surf = font.render(f"{i+1}:{name} {status}", True, (80, 40, 40))
+                    screen.blit(item_surf, (30 + i * 200, SCREEN_HEIGHT - 60))
+
 
         if shop_message_timer > 0:
             shop_message_timer -= 1
