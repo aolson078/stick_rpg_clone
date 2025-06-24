@@ -76,6 +76,29 @@ class Player:
     # 1=apartment, 2=house, 3=mansion
     home_level: int = 1
 
+    # Tracks per-NPC interaction states
+    npc_progress: Dict[str, int] = field(default_factory=dict)
+
+    # Story progression
+    story_stage: int = 0
+    story_branch: Optional[str] = None
+    gang_package_done: bool = False
+
+    # Crafting resources
+    resources: Dict[str, int] = field(
+        default_factory=lambda: {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0}
+    )
+
+    # Days when seeds were planted on the farm
+    crops: List[int] = field(default_factory=list)
+
+    # Seasonal state
+    season: str = "Spring"
+    weather: str = "Clear"
+
+    # List of unlocked achievements
+    achievements: List[str] = field(default_factory=list)
+
     inventory: List["InventoryItem"] = field(default_factory=list)
     equipment: Dict[str, Optional["InventoryItem"]] = field(
         default_factory=lambda: {
@@ -115,10 +138,19 @@ class SideQuest:
 
 
 @dataclass
+class NPC:
+    """Simple moving NPC that can give side quests."""
+    rect: pygame.Rect
+    name: str
+    quest: Optional[SideQuest] = None
+
+
+@dataclass
 class InventoryItem:
     name: str
     slot: str
     attack: int = 0
     defense: int = 0
     speed: int = 0
+    level: int = 0
 
