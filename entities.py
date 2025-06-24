@@ -20,6 +20,26 @@ class Player:
     strength: int = 1
     intelligence: int = 1
     charisma: int = 1
+    defense: int = 0
+    speed: int = 1
+    office_level: int = 1
+    office_shifts: int = 0
+    dealer_level: int = 1
+    dealer_shifts: int = 0
+    clinic_level: int = 1
+    clinic_shifts: int = 0
+    tokens: int = 0
+    has_skateboard: bool = False
+    inventory: List["InventoryItem"] = field(default_factory=list)
+    equipment: Dict[str, Optional["InventoryItem"]] = field(
+        default_factory=lambda: {
+            "head": None,
+            "chest": None,
+            "arms": None,
+            "legs": None,
+            "weapon": None,
+        }
+    )
 
     defense: int = 0
     speed: int = 1

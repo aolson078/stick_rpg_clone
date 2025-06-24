@@ -15,7 +15,9 @@ from rendering import (
     draw_day_night,
     draw_ui,
     draw_inventory_screen,
+
     draw_perk_menu,
+
 )
 from settings import (
     SCREEN_WIDTH,
@@ -141,6 +143,7 @@ SHOP_ITEMS = [
     ),
 ]
 
+
 # Upgrades available for purchase inside the home
 HOME_UPGRADES = [
     ("Comfy Bed", 50, "Recover +20 energy when sleeping"),
@@ -169,6 +172,7 @@ SECRET_PERKS = [
 
 BRAWLER_COUNT = 5
 
+
 def buy_shop_item(player: Player, index: int) -> str:
     """Attempt to buy an item from SHOP_ITEMS by index."""
     if index < 0 or index >= len(SHOP_ITEMS):
@@ -183,6 +187,7 @@ def buy_shop_item(player: Player, index: int) -> str:
     return f"Bought {name}"
 
 
+
 def buy_home_upgrade(player: Player, index: int) -> str:
     """Attempt to purchase a home upgrade by index."""
     if index < 0 or index >= len(HOME_UPGRADES):
@@ -195,6 +200,7 @@ def buy_home_upgrade(player: Player, index: int) -> str:
     player.money -= cost
     player.home_upgrades.append(name)
     return f"Bought {name}"
+
 
 EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
 
@@ -314,14 +320,17 @@ def _combat_stats(player: Player):
     atk = player.strength
     df = player.defense
     spd = player.speed
+
     if player.perk_levels.get("Bar Champion"):
         atk += 2
+
     for item in player.equipment.values():
         if item:
             atk += item.attack
             df += item.defense
             spd += item.speed
     return atk, df, spd
+
 
 
 
@@ -338,6 +347,7 @@ def fight_brawler(player: Player) -> str:
         "defense": random.randint(1 + stage, 3 + stage),
         "speed": random.randint(1 + stage // 2, 5 + stage // 2),
         "health": 20 + stage * 10,
+
     }
     p_atk, p_def, p_spd = _combat_stats(player)
     p_hp = player.health
@@ -354,6 +364,7 @@ def fight_brawler(player: Player) -> str:
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         return "You lost the fight!"
+
     reward = 20 + stage * 10
     player.money += reward
     player.brawls_won += 1
@@ -378,6 +389,7 @@ def save_game(player):
         "defense": player.defense,
         "speed": player.speed,
 
+
         "office_level": player.office_level,
         "office_shifts": player.office_shifts,
         "dealer_level": player.dealer_level,
@@ -395,10 +407,13 @@ def save_game(player):
         "next_strength_perk": player.next_strength_perk,
         "next_intelligence_perk": player.next_intelligence_perk,
         "next_charisma_perk": player.next_charisma_perk,
+
         "inventory": [item.__dict__ for item in player.inventory],
         "equipment": {
             slot: (it.__dict__ if it else None) for slot, it in player.equipment.items()
         },
+
+
 
         "x": player.rect.x,
         "y": player.rect.y,
@@ -433,6 +448,7 @@ def load_game():
     player.defense = data.get("defense", player.defense)
     player.speed = data.get("speed", player.speed)
 
+
     player.office_level = data.get("office_level", player.office_level)
     player.office_shifts = data.get("office_shifts", player.office_shifts)
     player.dealer_level = data.get("dealer_level", player.dealer_level)
@@ -440,6 +456,7 @@ def load_game():
     player.clinic_level = data.get("clinic_level", player.clinic_level)
     player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
     player.tokens = data.get("tokens", player.tokens)
+
     player.brawls_won = data.get("brawls_won", 0)
 
     player.has_skateboard = data.get("has_skateboard", player.has_skateboard)
@@ -449,6 +466,7 @@ def load_game():
     player.next_strength_perk = data.get("next_strength_perk", 5)
     player.next_intelligence_perk = data.get("next_intelligence_perk", 5)
     player.next_charisma_perk = data.get("next_charisma_perk", 5)
+
     for item in data.get("inventory", []):
         player.inventory.append(InventoryItem(**item))
     for slot, item in data.get("equipment", {}).items():
@@ -489,7 +507,9 @@ def main():
     in_building = None
     frame = 0
     show_inventory = False
+
     show_perk_menu = False
+
     dragging_item = None
     drag_origin = None
     drag_pos = (0, 0)
@@ -507,6 +527,7 @@ def main():
         if player.time >= 1440:
             player.time -= 1440
             player.day += 1
+
         if check_perk_unlocks(player):
             shop_message = "Gained a perk point! Press P to spend"
             shop_message_timer = 90
@@ -514,6 +535,7 @@ def main():
         if secret:
             shop_message = secret
             shop_message_timer = 90
+
         item_rects = []
         if show_inventory:
             for i, item in enumerate(player.inventory):
@@ -542,9 +564,11 @@ def main():
                 elif event.key == pygame.K_i:
                     show_inventory = not show_inventory
                     dragging_item = None
+
                 elif event.key == pygame.K_p and player.perk_points > 0:
                     show_perk_menu = not show_perk_menu
                     dragging_item = None
+
             if show_inventory:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
@@ -578,6 +602,7 @@ def main():
                     if not placed:
                         player.inventory.append(dragging_item)
                     dragging_item = None
+
             if show_perk_menu and event.type == pygame.KEYDOWN:
                 if pygame.K_1 <= event.key <= pygame.K_9:
                     idx = event.key - pygame.K_1
@@ -595,12 +620,15 @@ def main():
                     show_perk_menu = False
                 elif event.key in (pygame.K_q, pygame.K_p):
                     show_perk_menu = False
+
             if event.type == pygame.KEYDOWN and in_building:
                 if in_building == "job":
                     if player.energy >= 20:
                         pay = 30 + 20 * (player.office_level - 1)
                         player.money += pay
+
                         player.energy -= energy_cost(player, 20)
+
                         player.office_shifts += 1
                         if (
                             player.office_shifts >= 10
@@ -715,6 +743,7 @@ def main():
                     if player.energy >= 20:
                         pay = 50 + 25 * (player.dealer_level - 1)
                         player.money += pay
+
                         player.energy -= energy_cost(player, 20)
                         player.dealer_shifts += 1
                         if (
@@ -735,6 +764,7 @@ def main():
                         pay = 40 + 20 * (player.clinic_level - 1)
                         player.money += pay
                         player.energy -= energy_cost(player, 20)
+
                         player.clinic_shifts += 1
                         if (
                             player.clinic_shifts >= 10
@@ -839,8 +869,10 @@ def main():
                 item_rects,
                 (dragging_item, drag_pos) if dragging_item else None,
             )
+
         if show_perk_menu:
             draw_perk_menu(screen, font, player, PERKS)
+
 
         info_y = 46
         if near_building and not in_building:
@@ -909,11 +941,13 @@ def main():
                     row = i // 5
                     col = i % 5
                     screen.blit(item_surf, (30 + col * 150, SCREEN_HEIGHT - 60 - row * 24))
+
             elif in_building == "home":
                 for i, (name, cost, _d) in enumerate(HOME_UPGRADES):
                     status = "Owned" if name in player.home_upgrades else f"${cost}"
                     item_surf = font.render(f"{i+1}:{name} {status}", True, (80, 40, 40))
                     screen.blit(item_surf, (30 + i * 200, SCREEN_HEIGHT - 60))
+
 
         if shop_message_timer > 0:
             shop_message_timer -= 1

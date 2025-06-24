@@ -45,7 +45,6 @@ every home upgrade unlocks **Home Owner**, and maxing out all other perks grants
 the secret **Perk Master** perk.
 
 
-
 The game now features simple sound effects, looping background music, and a
 stick-figure sprite with a two-frame walking animation.
 

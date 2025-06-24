@@ -215,6 +215,7 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         surface.blit(txt, (bg_rect.x + 4, bg_rect.y + 20))
 
 
+
 def draw_perk_menu(surface, font, player, perks):
     overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
