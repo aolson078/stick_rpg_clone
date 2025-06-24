@@ -45,7 +45,8 @@ BUILDINGS = [
     Building(pygame.Rect(600, 300, 180, 240), "Office", "job"),
     Building(pygame.Rect(1100, 700, 300, 100), "Shop", "shop"),
     Building(pygame.Rect(400, 900, 160, 180), "Park", "park"),
-    Building(pygame.Rect(460, 960, 80, 80), "Deal Spot", "dealer"),
+    # Move the deal spot just outside the park so the player can reach it
+    Building(pygame.Rect(580, 960, 80, 80), "Deal Spot", "dealer"),
     Building(pygame.Rect(900, 450, 220, 160), "Gym", "gym"),
     Building(pygame.Rect(1200, 250, 200, 160), "Library", "library"),
     Building(pygame.Rect(300, 600, 180, 160), "Clinic", "clinic"),
