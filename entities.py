@@ -32,7 +32,18 @@ class Player:
     clinic_shifts: int = 0
     tokens: int = 0
 
+    brawls_won: int = 0
+    enemies_defeated: int = 0
+
     has_skateboard: bool = False
+    companion: Optional[str] = None
+    home_upgrades: List[str] = field(default_factory=list)
+    perk_points: int = 0
+    perk_levels: Dict[str, int] = field(default_factory=dict)
+    next_strength_perk: int = 5
+    next_intelligence_perk: int = 5
+    next_charisma_perk: int = 5
+    current_quest: int = 0
     inventory: List["InventoryItem"] = field(default_factory=list)
     equipment: Dict[str, Optional["InventoryItem"]] = field(
         default_factory=lambda: {
@@ -51,6 +62,8 @@ class Quest:
     description: str
     check: Callable[["Player"], bool]
     completed: bool = False
+    reward: Optional[Callable[["Player"], None]] = None
+    next_index: Optional[int] = None
 
 
 @dataclass
