@@ -33,7 +33,10 @@ brawling. Move to the door and press **E** to leave.
 There is also a brawler waiting for challengers. Combat now uses your
 strength, defense, and speed along with any bonuses from equipped gear. The
 fighter with the higher speed strikes first and damage is reduced by defense.
-Win a brawl and you pocket some cash.
+Win a brawl and you pocket some cash. Combat has been enhanced with a chance
+to dodge incoming hits based on your speed. You also have a small chance each
+turn to unleash a **power strike** that deals double damage and causes the
+opponent to bleed for a few turns.
 
 The shop now stocks a few useful items: a cola to restore a little energy, a
 protein bar for health, a book that teaches you intelligence, a gym pass that
@@ -67,6 +70,10 @@ challengers. Defeat them all to earn the hidden **Bar Champion** perk. Owning
 every home upgrade unlocks **Home Owner**, and maxing out all other perks grants
 the secret **Perk Master** perk.
 
+An achievement system tracks milestones like your first victory, amassing
+$1000, and finishing the main quest line. Clearing the story records your
+completion day and money in a local leaderboard shown on the title screen.
+
 A shady **Alley** building lets you battle random enemies for cash and the
 occasional token. Victories count toward quest progress and scale in difficulty
 over time.
@@ -78,6 +85,27 @@ in battle for a cash reward.
 The city also has a **Pet Shop** where you can adopt an animal companion.
 Pets grant small bonuses like extra defense or charisma and may help you find
 money or tokens.
+
+A new **Workshop** lets you craft and upgrade gear. Fights and events can
+yield metal, cloth, and herbs. Spend these resources to brew Health Potions,
+forge stronger weapons, or enhance your armor.
+
+A small **Farm** south of town lets you grow crops. Buy seeds in the shop, plant
+them at the farm, and harvest them three days later for extra cash.
+
+The city map now stretches further east with three new areas. The **Suburbs**
+contain friendly neighbors who sometimes need a hand, the bustling **Mall**
+offers a short delivery side quest, and a sunny **Beach** lets you relax. Random
+events at the beach may reward a valuable seashell.
+
+The bar, park, and library each feature a simple minigame. Throw darts in the
+bar to win extra tokens, fish at the park for cash or herbs, or solve a daily
+puzzle at the library for a small money reward.
+
+Weather now changes each day with rain or snow possible. The world cycles
+through Spring, Summer, Fall, and Winter, each lasting about a month.
+Bad weather closes the park and deal spots, and special seasonal encounters
+offer small bonuses or penalties.
 
 Your apartment can also be improved. While inside the Home you can buy a Comfy
 Bed, Decorations, or a Study Desk. These upgrades boost your energy recovery
@@ -137,6 +165,12 @@ starts.
 - **0-9**: Buy items in the shop
 - **1-3**: Adopt a pet in the Pet Shop
 - **I**: Open inventory and equip gear
+- **H**: Drink a Health Potion
+- **D** at the bar: Play darts
+- **F** at the park: Go fishing
+- **P** at the library: Solve puzzle
+- **P** at the farm: Plant seed
+- **H** at the farm: Harvest crops
 - **Shift**: Ride skateboard (if owned)
 - **T**: Skip 3 in-game hours
 - **L**: View quest log

@@ -4,7 +4,7 @@ import json
 import random
 import pygame
 
-from entities import Player, Building, Quest, Event, InventoryItem, SideQuest
+from entities import Player, Building, Quest, Event, InventoryItem, SideQuest, NPC
 from rendering import (
     draw_player,
     draw_player_sprite,
@@ -21,6 +21,7 @@ from rendering import (
     draw_bar_interior,
     draw_forest_area,
     draw_sky,
+    draw_npc,
 )
 from settings import (
     SCREEN_WIDTH,
@@ -66,7 +67,14 @@ BUILDINGS = [
     Building(pygame.Rect(1400, 950, 160, 120), "Alley", "dungeon"),
     Building(pygame.Rect(1300, 550, 180, 150), "Pet Shop", "petshop"),
     Building(pygame.Rect(1000, 100, 200, 140), "Bank", "bank"),
+    Building(pygame.Rect(400, 200, 200, 150), "Town Hall", "townhall"),
+    Building(pygame.Rect(150, 400, 200, 150), "Workshop", "workshop"),
+    Building(pygame.Rect(100, 1050, 220, 120), "Farm", "farm"),
     Building(pygame.Rect(1500, 400, 80, 100), "Woods", "forest"),
+    # Expanded map locations
+    Building(pygame.Rect(1800, 350, 240, 180), "Mall", "mall"),
+    Building(pygame.Rect(2100, 150, 300, 200), "Suburbs", "suburbs"),
+    Building(pygame.Rect(2400, 900, 260, 140), "Beach", "beach"),
 ]
 
 OPEN_HOURS = {
@@ -82,8 +90,17 @@ OPEN_HOURS = {
     "dungeon": (0, 24),
     "petshop": (9, 19),
     "bank": (9, 17),
+    "townhall": (9, 17),
+    "workshop": (8, 20),
+    "farm": (6, 20),
     "forest": (0, 24),
+    "mall": (10, 21),
+    "suburbs": (0, 24),
+    "beach": (6, 20),
 }
+
+SEASONS = ["Spring", "Summer", "Fall", "Winter"]
+WEATHERS = ["Clear", "Rain", "Snow"]
 
 # Simple layout for the home interior
 HOME_WIDTH, HOME_HEIGHT = SCREEN_WIDTH, SCREEN_HEIGHT
@@ -98,6 +115,7 @@ COUNTER_RECT = pygame.Rect(60, BAR_HEIGHT // 2 - 60, 180, 120)
 BJ_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 - 150, 200, 100)
 SLOT_RECT = pygame.Rect(BAR_WIDTH - 240, BAR_HEIGHT // 2 - 60, 180, 120)
 BRAWL_RECT = pygame.Rect(BAR_WIDTH // 2 - 80, 80, 160, 120)
+DART_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 + 60, 200, 100)
 
 # Layout for the forest area with three enemies
 FOREST_WIDTH, FOREST_HEIGHT = SCREEN_WIDTH, SCREEN_HEIGHT
@@ -135,6 +153,34 @@ SIDE_QUEST = SideQuest(
     "library",
     lambda p: setattr(p, "money", p.money + 50),
 )
+
+# Side quest given by the wandering NPC
+NPC_QUEST = SideQuest(
+    "Courier Errand",
+    "Deliver a package from Sam to the Gym",
+    "gym",
+    lambda p: setattr(p, "money", p.money + 30),
+)
+
+# Mall side quest
+MALL_QUEST = SideQuest(
+    "Beach Delivery",
+    "Pick up sunglasses from the Mall and bring them to the Beach",
+    "beach",
+    lambda p: setattr(p, "money", p.money + 40),
+)
+
+NPCS = [
+    NPC(pygame.Rect(500, 500, PLAYER_SIZE, PLAYER_SIZE), "Sam", NPC_QUEST),
+]
+
+# Main storyline quests progressed via story_stage
+STORY_QUESTS = [
+    Quest("Visit the Town Hall", lambda p: p.story_stage >= 1),
+    Quest("Choose an allegiance", lambda p: p.story_stage >= 2),
+    Quest("Prove your loyalty", lambda p: p.story_stage >= 3),
+    Quest("Report back to your ally", lambda p: p.story_stage >= 4),
+]
 
 
 # Random events that may occur while exploring
@@ -174,6 +220,18 @@ def _ev_found_token(p: Player) -> None:
     p.tokens += 1
 
 
+def _ev_found_metal(p: Player) -> None:
+    p.resources["metal"] = p.resources.get("metal", 0) + 1
+
+
+def _ev_found_cloth(p: Player) -> None:
+    p.resources["cloth"] = p.resources.get("cloth", 0) + 1
+
+
+def _ev_found_herb(p: Player) -> None:
+    p.resources["herbs"] = p.resources.get("herbs", 0) + 1
+
+
 EVENTS = [
     Event("You found $5 on the ground!", _ev_found_money),
     Event("Someone shared a study tip. +1 INT", _ev_gain_int),
@@ -183,7 +241,43 @@ EVENTS = [
     Event("A stranger gave you a meal. +10 energy", _ev_free_food),
     Event("You helped someone and got $15", _ev_help_reward),
     Event("Found a casino token!", _ev_found_token),
+    Event("Picked up some scrap metal", _ev_found_metal),
+    Event("Found a piece of cloth", _ev_found_cloth),
+    Event("Gathered herbs nearby", _ev_found_herb),
 ]
+
+SEASON_EVENTS = {
+    "Spring": [
+        Event("Flowers bloom brightly. +1 CHA", lambda p: setattr(p, "charisma", p.charisma + 1)),
+    ],
+    "Summer": [
+        Event("Heat wave tires you out. -5 energy", lambda p: setattr(p, "energy", max(p.energy - 5, 0))),
+    ],
+    "Fall": [
+        Event("Found $5 under fallen leaves", lambda p: setattr(p, "money", p.money + 5)),
+    ],
+    "Winter": [
+        Event("Cold wind toughens you. +1 DEF", lambda p: setattr(p, "defense", p.defense + 1)),
+    ],
+}
+
+WEATHER_EVENTS = {
+    "Rain": [
+        Event("Got soaked in the rain. -5 energy", lambda p: setattr(p, "energy", max(p.energy - 5, 0))),
+    ],
+    "Snow": [
+        Event("Built a snowman for fun. +1 CHA", lambda p: setattr(p, "charisma", p.charisma + 1)),
+    ],
+}
+
+LOCATION_EVENTS = {
+    "beach": [
+        Event("You found a seashell worth $5", lambda p: setattr(p, "money", p.money + 5)),
+    ],
+    "mall": [
+        Event("A flash sale cost you $5", lambda p: setattr(p, "money", max(p.money - 5, 0))),
+    ],
+}
 
 # Time-specific events that occur only during certain hours
 TIMED_EVENTS = [
@@ -252,6 +346,13 @@ SHOP_ITEMS = [
             InventoryItem("Wooden Sword", "weapon", attack=2)
         ),
     ),
+    (
+        "Seeds x3",
+        15,
+        lambda p: p.resources.__setitem__(
+            "seeds", p.resources.get("seeds", 0) + 3
+        ),
+    ),
 ]
 
 # Upgrades available for purchase inside the home
@@ -301,6 +402,12 @@ FOREST_ENEMIES = [
     {"attack": 6, "defense": 2, "speed": 3, "health": 28, "reward": 45},
     {"attack": 8, "defense": 3, "speed": 2, "health": 36, "reward": 60},
 ]
+
+# Combat tweaks
+DODGE_BASE = 0.1  # base dodge chance for the player
+POWER_STRIKE_CHANCE = 0.25  # chance to unleash a special power strike
+BLEED_TURNS = 3
+BLEED_DAMAGE = 1
 
 def buy_shop_item(player: Player, index: int) -> str:
     """Attempt to buy an item from SHOP_ITEMS by index."""
@@ -377,18 +484,47 @@ def adopt_companion(player: Player, index: int) -> str:
         player.intelligence += 1
     return f"Adopted {name}!"
 
+
+def plant_seed(player: Player) -> str:
+    """Plant a seed at the farm if available."""
+    if player.resources.get("seeds", 0) <= 0:
+        return "No seeds"
+    player.resources["seeds"] -= 1
+    player.crops.append(player.day)
+    return "Seed planted"
+
+
+def harvest_crops(player: Player) -> str:
+    """Harvest any crops that have grown for 3 days."""
+    ready = [d for d in player.crops if player.day - d >= 3]
+    if not ready:
+        return "Nothing ready"
+    for d in ready:
+        player.crops.remove(d)
+        player.money += 15
+    return f"Harvested {len(ready)} crops"
+
 EVENT_CHANCE = 0.0004  # less frequent random events
 
 SAVE_FILE = "savegame.json"
+LEADERBOARD_FILE = "leaderboard.json"
 
 
 
-def building_open(btype, minutes):
+def building_open(btype, minutes, player: Player):
     start, end = OPEN_HOURS.get(btype, (0, 24))
     hour = (minutes / 60) % 24
     if start <= end:
-        return start <= hour < end
-    return hour >= start or hour < end
+        open_now = start <= hour < end
+    else:
+        open_now = hour >= start or hour < end
+    if not open_now:
+        return False
+    if btype in ("park", "dealer") and player.weather in ("Rain", "Snow"):
+        return False
+    if btype == "park" and player.season == "Winter":
+        return False
+    return True
 
 
 
@@ -436,9 +572,25 @@ def energy_cost(player: Player, base: float) -> float:
     return cost
 
 
+def update_weather(player: Player) -> None:
+    """Update season and daily weather."""
+    season_index = ((player.day - 1) // 30) % len(SEASONS)
+    player.season = SEASONS[season_index]
+    if player.season == "Winter":
+        choices = ["Snow", "Snow", "Clear", "Rain"]
+    elif player.season == "Summer":
+        choices = ["Clear", "Clear", "Rain"]
+    elif player.season == "Spring":
+        choices = ["Rain", "Clear", "Clear"]
+    else:  # Fall
+        choices = ["Clear", "Rain", "Snow"]
+    player.weather = random.choice(choices)
+
+
 def advance_day(player: Player) -> int:
     """Increment the day counter and apply bank interest."""
     player.day += 1
+    update_weather(player)
     interest = int(player.bank_balance * 0.01)
     player.bank_balance += interest
     return interest
@@ -500,12 +652,55 @@ def check_hidden_perks(player: Player) -> str | None:
     return None
 
 
-def random_event(player: Player) -> str | None:
+def update_leaderboard(player: Player) -> None:
+    """Record story completion time and money in the leaderboard file."""
+    record = {"day": player.day, "money": int(player.money)}
+    board = []
+    if os.path.exists(LEADERBOARD_FILE):
+        with open(LEADERBOARD_FILE) as f:
+            try:
+                board = json.load(f)
+            except Exception:
+                board = []
+    board.append(record)
+    board = sorted(board, key=lambda r: (r["day"], -r["money"]))[:10]
+    with open(LEADERBOARD_FILE, "w") as f:
+        json.dump(board, f)
+
+
+def check_achievements(player: Player) -> str | None:
+    """Unlock achievements when goals are met."""
+    if "First Blood" not in player.achievements and player.enemies_defeated >= 1:
+        player.achievements.append("First Blood")
+        return "Achievement unlocked: First Blood!"
+    if (
+        "Brawler Master" not in player.achievements
+        and player.brawls_won >= BRAWLER_COUNT
+    ):
+        player.achievements.append("Brawler Master")
+        return "Achievement unlocked: Brawler Master!"
+    if "Wealthy" not in player.achievements and player.money >= 1000:
+        player.achievements.append("Wealthy")
+        return "Achievement unlocked: Wealthy!"
+    if (
+        "Story Hero" not in player.achievements
+        and all(q.completed for q in STORY_QUESTS)
+    ):
+        player.achievements.append("Story Hero")
+        update_leaderboard(player)
+        return "Achievement unlocked: Story Hero!"
+    return None
+
+
+def random_event(player: Player, location: str | None = None) -> str | None:
     """Possibly trigger a random event and return its description."""
     if random.random() < EVENT_CHANCE:
-        ev = random.choice(EVENTS)
         hour = int(player.time) // 60
         pool = EVENTS.copy()
+        pool.extend(SEASON_EVENTS.get(player.season, []))
+        pool.extend(WEATHER_EVENTS.get(player.weather, []))
+        if location and location in LOCATION_EVENTS:
+            pool.extend(LOCATION_EVENTS[location])
         for start, end, tev in TIMED_EVENTS:
             if start <= end:
                 if start <= hour < end:
@@ -517,6 +712,42 @@ def random_event(player: Player) -> str | None:
         ev.apply(player)
         return ev.description
     return None
+
+
+def update_npcs():
+    """Move NPCs randomly around the city map."""
+    for npc in NPCS:
+        if random.random() < 0.05:
+            dx, dy = random.choice([(1,0),(-1,0),(0,1),(0,-1)])
+            rect = npc.rect.move(dx * 4, dy * 4)
+            if 0 <= rect.x <= MAP_WIDTH - PLAYER_SIZE and 0 <= rect.y <= MAP_HEIGHT - PLAYER_SIZE:
+                collision = False
+                for b in BUILDINGS:
+                    if rect.colliderect(b.rect):
+                        collision = True
+                        break
+                if not collision:
+                    npc.rect = rect
+
+
+def advance_story(player: Player) -> None:
+    """Update story stage based on branch objectives."""
+    if player.story_branch == "mayor" and player.story_stage == 2:
+        if player.enemies_defeated >= 3:
+            player.story_stage = 3
+    if player.story_branch == "gang" and player.story_stage == 2:
+        if player.gang_package_done:
+            player.story_stage = 3
+
+
+def check_story(player: Player) -> bool:
+    """Mark story quests completed based on story_stage."""
+    changed = False
+    for i, q in enumerate(STORY_QUESTS):
+        if not q.completed and q.check(player):
+            q.completed = True
+            changed = True
+    return changed
 
 
 def play_blackjack(player: Player) -> str:
@@ -550,6 +781,49 @@ def play_slots(player: Player) -> str:
     return "No win"
 
 
+def play_darts(player: Player) -> str:
+    """Simple skill game that can win tokens."""
+    if player.tokens < 1:
+        return "No tokens left!"
+    player.tokens -= 1
+    score = random.randint(1, 20) + player.speed // 2
+    if score >= 20:
+        player.tokens += 2
+        return "Bullseye! +2 tokens"
+    if score >= 15:
+        player.tokens += 1
+        return "Nice shot! +1 token"
+    return "Missed the board"
+
+
+def go_fishing(player: Player) -> str:
+    """Fish at the park for cash or materials."""
+    if player.energy < 5:
+        return "Too tired to fish!"
+    player.energy -= energy_cost(player, 5)
+    if random.random() < 0.3:
+        return "Nothing was biting"
+    if random.random() < 0.2:
+        player.resources["herbs"] = player.resources.get("herbs", 0) + 1
+        return "Found some herbs by the water"
+    reward = random.randint(5, 20)
+    player.money += reward
+    return f"Caught a fish! +${reward}"
+
+
+def solve_puzzle(player: Player) -> str:
+    """Solve a puzzle at the library for a reward."""
+    if player.energy < 5:
+        return "Too tired to think!"
+    player.energy -= energy_cost(player, 5)
+    chance = player.intelligence + random.randint(0, 10)
+    if chance > 12:
+        reward = random.randint(10, 20)
+        player.money += reward
+        return f"Puzzle solved! +${reward}"
+    return "Couldn't solve it"
+
+
 def _combat_stats(player: Player):
     atk = player.strength
     df = player.defense
@@ -577,10 +851,6 @@ def fight_brawler(player: Player) -> str:
 
     stage = player.brawls_won + 1
     enemy = {
-        "attack": random.randint(3, 7),
-        "defense": random.randint(1, 4),
-        "speed": random.randint(1, 5),
-        "health": 20,
         "attack": random.randint(3 + stage, 6 + stage * 2),
         "defense": random.randint(1 + stage, 3 + stage),
         "speed": random.randint(1 + stage // 2, 5 + stage // 2),
@@ -590,19 +860,29 @@ def fight_brawler(player: Player) -> str:
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
+    special_used = False
+    bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
             dmg = max(1, p_atk - enemy["defense"])
+            if not special_used and random.random() < POWER_STRIKE_CHANCE:
+                dmg *= 2
+                bleed_turns = BLEED_TURNS
+                special_used = True
             e_hp -= dmg
         else:
-            dmg = max(1, enemy["attack"] - p_def)
-            p_hp -= dmg
+            if random.random() < (DODGE_BASE + player.speed * 0.02):
+                pass  # dodged
+            else:
+                dmg = max(1, enemy["attack"] - p_def)
+                p_hp -= dmg
         turn_player = not turn_player
+        if bleed_turns > 0:
+            e_hp -= BLEED_DAMAGE
+            bleed_turns -= 1
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         return "You lost the fight!"
-    player.money += 20
-    return "You won the fight! +$20"
     reward = 20 + stage * 10
     player.money += reward
     player.brawls_won += 1
@@ -610,14 +890,6 @@ def fight_brawler(player: Player) -> str:
     if player.brawls_won == BRAWLER_COUNT:
         msg += " All brawlers defeated!"
     return msg
-
-
-    opponent = random.randint(1, 6)
-    if player.strength >= opponent:
-        player.money += 20
-        return "You won the fight! +$20"
-    player.health = max(player.health - 10, 0)
-    return "You lost the fight! -10 health"
 def fight_enemy(player: Player) -> str:
     """Fight a random street enemy in the alley."""
     if player.energy < 10:
@@ -635,14 +907,26 @@ def fight_enemy(player: Player) -> str:
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
+    special_used = False
+    bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
             dmg = max(1, p_atk - enemy["defense"])
+            if not special_used and random.random() < POWER_STRIKE_CHANCE:
+                dmg *= 2
+                bleed_turns = BLEED_TURNS
+                special_used = True
             e_hp -= dmg
         else:
-            dmg = max(1, enemy["attack"] - p_def)
-            p_hp -= dmg
+            if random.random() < (DODGE_BASE + player.speed * 0.02):
+                pass
+            else:
+                dmg = max(1, enemy["attack"] - p_def)
+                p_hp -= dmg
         turn_player = not turn_player
+        if bleed_turns > 0:
+            e_hp -= BLEED_DAMAGE
+            bleed_turns -= 1
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         return "You lost the fight!"
@@ -653,6 +937,10 @@ def fight_enemy(player: Player) -> str:
     if random.random() < 0.3:
         player.tokens += 1
         loot = " and found a token"
+    if random.random() < 0.4:
+        res = random.choice(["metal", "cloth", "herbs"])
+        player.resources[res] = player.resources.get(res, 0) + 1
+        loot += f" +1 {res}"
     if player.companion == "Parrot" and random.random() < 0.3:
         player.tokens += 1
         loot += " (parrot found another)"
@@ -673,21 +961,38 @@ def fight_forest_enemy(player: Player, index: int) -> str:
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
+    special_used = False
+    bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
             dmg = max(1, p_atk - enemy["defense"])
+            if not special_used and random.random() < POWER_STRIKE_CHANCE:
+                dmg *= 2
+                bleed_turns = BLEED_TURNS
+                special_used = True
             e_hp -= dmg
         else:
-            dmg = max(1, enemy["attack"] - p_def)
-            p_hp -= dmg
+            if random.random() < (DODGE_BASE + player.speed * 0.02):
+                pass
+            else:
+                dmg = max(1, enemy["attack"] - p_def)
+                p_hp -= dmg
         turn_player = not turn_player
+        if bleed_turns > 0:
+            e_hp -= BLEED_DAMAGE
+            bleed_turns -= 1
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         return "You lost the fight!"
 
     player.money += enemy["reward"]
+    loot = ""
+    if random.random() < 0.5:
+        res = random.choice(["metal", "cloth", "herbs"])
+        player.resources[res] = player.resources.get(res, 0) + 1
+        loot = f" +1 {res}"
     player.enemies_defeated += 1
-    return f"Enemy defeated! +${enemy['reward']}"
+    return f"Enemy defeated! +${enemy['reward']}{loot}"
 
 
 
@@ -737,6 +1042,15 @@ def save_game(player):
         "x": player.rect.x,
         "y": player.rect.y,
         "quests": [q.completed for q in QUESTS],
+        "npc_progress": player.npc_progress,
+        "story_stage": player.story_stage,
+        "story_branch": player.story_branch,
+        "gang_package_done": player.gang_package_done,
+        "resources": player.resources,
+        "crops": player.crops,
+        "season": player.season,
+        "weather": player.weather,
+        "achievements": player.achievements,
     }
     with open(SAVE_FILE, "w") as f:
         json.dump(data, f)
@@ -789,6 +1103,17 @@ def load_game():
     player.current_quest = data.get("current_quest", 0)
     player.enemies_defeated = data.get("enemies_defeated", 0)
     player.companion = data.get("companion")
+    player.npc_progress = data.get("npc_progress", {})
+    player.story_stage = data.get("story_stage", 0)
+    player.story_branch = data.get("story_branch")
+    player.gang_package_done = data.get("gang_package_done", False)
+    player.resources = data.get(
+        "resources", {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0}
+    )
+    player.crops = data.get("crops", [])
+    player.season = data.get("season", "Spring")
+    player.weather = data.get("weather", "Clear")
+    player.achievements = data.get("achievements", [])
     for item in data.get("inventory", []):
         player.inventory.append(InventoryItem(**item))
     for slot, item in data.get("equipment", {}).items():
@@ -802,6 +1127,13 @@ def load_game():
 
 def start_menu(screen, font):
     """Display a simple start menu and return True if load selected."""
+    board = []
+    if os.path.exists(LEADERBOARD_FILE):
+        with open(LEADERBOARD_FILE) as f:
+            try:
+                board = json.load(f)
+            except Exception:
+                board = []
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -816,9 +1148,17 @@ def start_menu(screen, font):
         title = font.render("Stick RPG Clone", True, (255, 255, 255))
         start_txt = font.render("Press Enter to Start", True, (230, 230, 230))
         load_txt = font.render("Press L to Load Game", True, (230, 230, 230))
-        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 280))
-        screen.blit(start_txt, (SCREEN_WIDTH // 2 - start_txt.get_width() // 2, 340))
-        screen.blit(load_txt, (SCREEN_WIDTH // 2 - load_txt.get_width() // 2, 380))
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 260))
+        screen.blit(start_txt, (SCREEN_WIDTH // 2 - start_txt.get_width() // 2, 320))
+        screen.blit(load_txt, (SCREEN_WIDTH // 2 - load_txt.get_width() // 2, 360))
+        if board:
+            lb_title = font.render("Top Completions", True, (230, 230, 230))
+            screen.blit(lb_title, (SCREEN_WIDTH // 2 - lb_title.get_width() // 2, 400))
+            for i, rec in enumerate(board):
+                txt = font.render(
+                    f"{i+1}. Day {rec['day']} - ${rec['money']}", True, (200, 200, 200)
+                )
+                screen.blit(txt, (SCREEN_WIDTH // 2 - txt.get_width() // 2, 420 + i * 20))
         pygame.display.flip()
         pygame.time.wait(20)
 
@@ -861,9 +1201,11 @@ def main():
     shop_message = ""
     if loaded_player:
         player = loaded_player
+        update_weather(player)
         shop_message = "Game loaded!"
         shop_message_timer = 60
     else:
+        update_weather(player)
         shop_message_timer = 0
     in_building = None
     frame = 0
@@ -893,12 +1235,19 @@ def main():
         if player.time >= 1440:
             player.time -= 1440
             advance_day(player)
+        update_npcs()
+        advance_story(player)
+        check_story(player)
         if check_perk_unlocks(player):
             shop_message = "Gained a perk point! Press P to spend"
             shop_message_timer = 90
         secret = check_hidden_perks(player)
         if secret:
             shop_message = secret
+            shop_message_timer = 90
+        achieve = check_achievements(player)
+        if achieve:
+            shop_message = achieve
             shop_message_timer = 90
         item_rects = []
         if show_inventory:
@@ -934,6 +1283,15 @@ def main():
                 elif event.key == pygame.K_l:
                     show_log = not show_log
                     dragging_item = None
+                elif event.key == pygame.K_h and not show_inventory and not show_log and not in_building:
+                    pot = next((i for i in player.inventory if i.name == "Health Potion"), None)
+                    if pot:
+                        player.inventory.remove(pot)
+                        player.health = min(100, player.health + 30)
+                        shop_message = "Drank Health Potion (+30 HP)"
+                    else:
+                        shop_message = "No potion"
+                    shop_message_timer = 60
                 elif event.key == pygame.K_t and not in_building and not show_inventory and not show_log:
                     player.time += 180
                     if player.time >= 1440:
@@ -1017,6 +1375,25 @@ def main():
 
             if event.type == pygame.KEYDOWN and inside_bar:
                 if event.key == pygame.K_e:
+                    if (
+                        player.story_branch == "gang"
+                        and player.side_quest == "Gang Package"
+                        and player.rect.colliderect(COUNTER_RECT)
+                    ):
+                        player.side_quest = None
+                        player.gang_package_done = True
+                        shop_message = "You delivered the package"
+                        shop_message_timer = 60
+                        continue
+                    if (
+                        player.story_branch == "gang"
+                        and player.story_stage == 3
+                        and player.rect.colliderect(COUNTER_RECT)
+                    ):
+                        player.story_stage = 4
+                        shop_message = "Gang Leader: Nice work"
+                        shop_message_timer = 60
+                        continue
                     if player.rect.colliderect(COUNTER_RECT):
                         if player.money >= 10:
                             player.money -= 10
@@ -1028,6 +1405,8 @@ def main():
                         shop_message = play_blackjack(player)
                     elif player.rect.colliderect(SLOT_RECT):
                         shop_message = play_slots(player)
+                    elif player.rect.colliderect(DART_RECT):
+                        shop_message = play_darts(player)
                     elif player.rect.colliderect(BRAWL_RECT):
                         shop_message = fight_brawler(player)
                     elif player.rect.colliderect(BAR_DOOR_RECT):
@@ -1105,7 +1484,11 @@ def main():
                     else:
                         continue
                 elif in_building == "gym" and event.key == pygame.K_e:
-                    if player.money >= 10 and player.energy >= 10:
+                    if player.side_quest == NPC_QUEST.name:
+                        NPC_QUEST.reward(player)
+                        player.side_quest = None
+                        shop_message = "Delivered the package!"
+                    elif player.money >= 10 and player.energy >= 10:
                         player.money -= 10
                         player.energy -= 10
                         player.energy -= energy_cost(player, 10)
@@ -1143,6 +1526,9 @@ def main():
                     else:
                         shop_message = "Too tired to study!"
                     shop_message_timer = 60
+                elif in_building == "library" and event.key == pygame.K_p:
+                    shop_message = solve_puzzle(player)
+                    shop_message_timer = 60
                 elif in_building == "park" and event.key == pygame.K_e:
                     if player.energy >= 5:
                         player.energy -= 5
@@ -1157,6 +1543,9 @@ def main():
                     else:
                         shop_message = "Too tired to chat!"
                     shop_message_timer = 60
+                elif in_building == "park" and event.key == pygame.K_f:
+                    shop_message = go_fishing(player)
+                    shop_message_timer = 60
                 elif in_building == "bar":
                     if event.key == pygame.K_b:
                         if player.money >= 10:
@@ -1170,6 +1559,8 @@ def main():
                         shop_message = play_blackjack(player)
                     elif event.key == pygame.K_s:
                         shop_message = play_slots(player)
+                    elif event.key == pygame.K_d:
+                        shop_message = play_darts(player)
                     elif event.key == pygame.K_f:
                         shop_message = fight_brawler(player)
                     elif event.key == pygame.K_e:
@@ -1202,6 +1593,108 @@ def main():
                     else:
                         continue
                     shop_message_timer = 60
+                elif in_building == "workshop":
+                    if event.key == pygame.K_1:
+                        if player.resources.get("herbs", 0) >= 2:
+                            player.resources["herbs"] -= 2
+                            player.inventory.append(
+                                InventoryItem("Health Potion", "consumable")
+                            )
+                            shop_message = "Crafted Health Potion"
+                        else:
+                            shop_message = "Need 2 herbs"
+                    elif event.key == pygame.K_2:
+                        if player.resources.get("metal", 0) >= 3:
+                            player.resources["metal"] -= 3
+                            player.inventory.append(
+                                InventoryItem(
+                                    "Iron Sword",
+                                    "weapon",
+                                    attack=4,
+                                )
+                            )
+                            shop_message = "Forged Iron Sword"
+                        else:
+                            shop_message = "Need 3 metal"
+                    elif event.key == pygame.K_3:
+                        weapon = player.equipment.get("weapon")
+                        if weapon and player.resources.get("metal", 0) >= 2:
+                            player.resources["metal"] -= 2
+                            weapon.attack += 1
+                            weapon.level += 1
+                            shop_message = "Upgraded weapon"
+                        else:
+                            shop_message = "Need weapon & 2 metal"
+                    elif event.key == pygame.K_4:
+                        armor = player.equipment.get("chest")
+                        if armor and player.resources.get("cloth", 0) >= 2:
+                            player.resources["cloth"] -= 2
+                            armor.defense += 1
+                            armor.level += 1
+                            shop_message = "Upgraded armor"
+                        else:
+                            shop_message = "Need armor & 2 cloth"
+                    else:
+                        continue
+                    shop_message_timer = 60
+                elif in_building == "farm":
+                    if event.key == pygame.K_p:
+                        shop_message = plant_seed(player)
+                    elif event.key == pygame.K_h:
+                        shop_message = harvest_crops(player)
+                    else:
+                        continue
+                    shop_message_timer = 60
+                elif in_building == "mall" and event.key == pygame.K_e:
+                    if not player.side_quest:
+                        player.side_quest = MALL_QUEST.name
+                        shop_message = "Picked up sunglasses order"
+                    else:
+                        shop_message = "Finish your current job first"
+                    shop_message_timer = 60
+                elif in_building == "beach" and event.key == pygame.K_e:
+                    if player.side_quest == MALL_QUEST.name:
+                        MALL_QUEST.reward(player)
+                        player.side_quest = None
+                        shop_message = "Delivered sunglasses!"
+                    elif player.energy >= 5:
+                        player.energy -= energy_cost(player, 5)
+                        player.charisma += 1
+                        shop_message = "Relaxed on the beach"
+                    else:
+                        shop_message = "Too tired to relax!"
+                    shop_message_timer = 60
+                elif in_building == "suburbs" and event.key == pygame.K_e:
+                    if player.energy >= 5:
+                        player.energy -= energy_cost(player, 5)
+                        player.money += 5
+                        shop_message = "Helped a neighbor! +$5"
+                    else:
+                        shop_message = "Too tired to help"
+                    shop_message_timer = 60
+                elif in_building == "townhall":
+                    if player.story_stage == 0 and event.key == pygame.K_e:
+                        player.story_stage = 1
+                        shop_message = "Mayor: Help clean up the city? Y/N"
+                    elif player.story_stage == 1 and event.key == pygame.K_y:
+                        player.story_branch = "mayor"
+                        player.story_stage = 2
+                        shop_message = "Mayor: Defeat 3 thugs in the alley."
+                    elif player.story_stage == 1 and event.key == pygame.K_n:
+                        player.story_branch = "gang"
+                        player.story_stage = 2
+                        player.side_quest = "Gang Package"
+                        shop_message = "A shady figure gives you a package."
+                    elif (
+                        player.story_branch == "mayor"
+                        and player.story_stage == 3
+                        and event.key == pygame.K_e
+                    ):
+                        player.story_stage = 4
+                        shop_message = "Mayor: Thank you for your help!"
+                    else:
+                        continue
+                    shop_message_timer = 90
                 elif in_building == "dealer" and event.key == pygame.K_e:
                     if player.energy >= 20:
                         pay = 50 + 25 * (player.dealer_level - 1)
@@ -1335,6 +1828,11 @@ def main():
             if player.rect.colliderect(b.rect):
                 near_building = b
                 break
+        near_npc = None
+        for n in NPCS:
+            if player.rect.colliderect(n.rect):
+                near_npc = n
+                break
         if not inside_home and not inside_bar and not inside_forest:
             for b in BUILDINGS:
                 if player.rect.colliderect(b.rect):
@@ -1342,7 +1840,8 @@ def main():
                     break
 
         if not inside_home and not inside_bar and not inside_forest and not in_building and shop_message_timer == 0 and not show_log:
-            desc = random_event(player)
+            location = near_building.btype if near_building else None
+            desc = random_event(player, location)
             if desc:
                 shop_message = desc
                 shop_message_timer = 90
@@ -1350,9 +1849,32 @@ def main():
                 if SOUND_ENABLED:
                     quest_sound.play()
 
+        if (
+            not inside_home
+            and not inside_bar
+            and not inside_forest
+            and not in_building
+            and near_npc
+            and not show_inventory
+            and not show_log
+        ):
+            if keys[pygame.K_e]:
+                state = player.npc_progress.get(near_npc.name)
+                if state is None:
+                    shop_message = f"{near_npc.name}: {near_npc.quest.description}"
+                    player.side_quest = near_npc.quest.name
+                    player.npc_progress[near_npc.name] = 1
+                elif state == 1 and player.side_quest is None:
+                    near_npc.quest.reward(player)
+                    player.npc_progress[near_npc.name] = 2
+                    shop_message = f"{near_npc.name}: Thanks for the help!"
+                else:
+                    shop_message = f"{near_npc.name}: Good to see you."
+                shop_message_timer = 90
+
         if not inside_home and not inside_bar and not inside_forest and not in_building and near_building and not show_inventory and not show_log:
             if keys[pygame.K_e]:
-                if building_open(near_building.btype, player.time):
+                if building_open(near_building.btype, player.time, player):
                     in_building = near_building.btype
 
                     enter_sound.play()
@@ -1408,6 +1930,7 @@ def main():
                 COUNTER_RECT,
                 BJ_RECT,
                 SLOT_RECT,
+                DART_RECT,
                 BRAWL_RECT,
                 BAR_DOOR_RECT,
             )
@@ -1434,13 +1957,17 @@ def main():
             draw_rect = b.rect.move(-cam_x, -cam_y)
             draw_building(screen, Building(draw_rect, b.name, b.btype))
 
+        for n in NPCS:
+            nr = n.rect.move(-cam_x, -cam_y)
+            draw_npc(screen, nr)
+
         pr = player.rect.move(-cam_x, -cam_y)
         draw_player_sprite(screen, pr, frame if dx or dy else 0)
 
         draw_day_night(screen, player.time)
 
 
-        draw_ui(screen, font, player, QUESTS)
+        draw_ui(screen, font, player, QUESTS, STORY_QUESTS)
         if show_inventory:
             draw_inventory_screen(
                 screen,
@@ -1453,9 +1980,18 @@ def main():
         if show_perk_menu:
             draw_perk_menu(screen, font, player, PERKS)
         if show_log:
-            draw_quest_log(screen, font, QUESTS)
+            draw_quest_log(screen, font, QUESTS, STORY_QUESTS)
 
         info_y = 46
+        if near_npc and not in_building:
+            msg = "[E] Talk"
+            msg_surf = font.render(msg, True, (30, 30, 30))
+            bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA)
+            bg.fill((255, 255, 255, 210))
+            screen.blit(bg, (10, info_y - 4))
+            screen.blit(msg_surf, (18, info_y))
+            info_y += 28
+
         if near_building and not in_building:
             msg = ""
             if near_building.btype == "job":
@@ -1479,10 +2015,12 @@ def main():
                 msg = "[E] to train (+1 STR, +5 health, -10 energy, -$10)"
             elif near_building.btype == "library":
                 msg = "[E] to study (+1 INT, -5 energy, -$5)"
+                msg += "  [P] puzzle"
             elif near_building.btype == "park":
-                msg = "[E] to chat (+1 CHA, -5 energy)"
+                msg = "[E] to chat (+1 CHA, -5 energy)  [F] fish"
             elif near_building.btype == "bar":
                 msg = "[E] to gamble and fight"
+                msg += "  [D] darts"
             elif near_building.btype == "dungeon":
                 msg = "[E] to fight an enemy"
             elif near_building.btype == "forest":
@@ -1491,8 +2029,20 @@ def main():
                 msg = "[E] to adopt a pet"
             elif near_building.btype == "bank":
                 msg = "[E] to visit the bank"
+            elif near_building.btype == "townhall":
+                msg = "[E] to visit the Town Hall"
+            elif near_building.btype == "workshop":
+                msg = "[E] to craft gear"
+            elif near_building.btype == "farm":
+                msg = "[E] to manage crops"
+            elif near_building.btype == "mall":
+                msg = "[E] to browse the mall"
+            elif near_building.btype == "beach":
+                msg = "[E] to relax at the beach"
+            elif near_building.btype == "suburbs":
+                msg = "[E] to visit the suburbs"
             if msg:
-                if not building_open(near_building.btype, player.time):
+                if not building_open(near_building.btype, player.time, player):
                     msg += " (Closed)"
                 msg_surf = font.render(msg, True, (30, 30, 30))
                 bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA)
@@ -1524,19 +2074,29 @@ def main():
             elif in_building == "gym":
                 txt = "[E] Train  [Q] Leave"
             elif in_building == "library":
-                txt = "[E] Study  [Q] Leave"
+                txt = "[E] Study  [P] Puzzle  [Q] Leave"
             elif in_building == "park":
-                txt = "[E] Chat  [Q] Leave"
+                txt = "[E] Chat  [F] Fish  [Q] Leave"
             elif in_building == "bank":
                 txt = f"[E] Talk  [D] Deposit $10  [W] Withdraw $10  [Q] Leave  Bal:${int(player.bank_balance)}"
             elif in_building == "bar":
-                txt = "[B] Buy token  [J] Blackjack  [S] Slots  [F] Fight  [Q] Leave"
+                txt = "[B] Buy token  [J] Blackjack  [S] Slots  [D] Darts  [F] Fight  [Q] Leave"
             elif in_building == "dungeon":
                 txt = "[E] Fight  [Q] Leave"
             elif in_building == "forest":
                 txt = "[E] Fight  [Q] Leave"
             elif in_building == "petshop":
                 txt = "[1-3] Adopt  [Q] Leave"
+            elif in_building == "workshop":
+                txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm  [Q] Leave"
+            elif in_building == "farm":
+                txt = "[P] Plant seed  [H] Harvest  [Q] Leave"
+            elif in_building == "mall":
+                txt = "[E] Pick up order  [Q] Leave"
+            elif in_building == "beach":
+                txt = "[E] Relax/Deliver  [Q] Leave"
+            elif in_building == "suburbs":
+                txt = "[E] Help locals  [Q] Leave"
             tip_surf = font.render(f"Inside: {in_building.upper()}   {txt}", True, (80, 40, 40))
             screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
             if in_building == "shop":
@@ -1556,12 +2116,27 @@ def main():
                 for i, (name, cost, _d) in enumerate(COMPANIONS):
                     item_surf = font.render(f"{i+1}:{name} ${cost}", True, (80, 40, 40))
                     screen.blit(item_surf, (30 + i * 200, SCREEN_HEIGHT - 60))
+            elif in_building == "workshop":
+                opts = [
+                    "1:Health Potion (2 herbs)",
+                    "2:Iron Sword (3 metal)",
+                    "3:Upgrade Weapon (2 metal)",
+                    "4:Upgrade Armor (2 cloth)",
+                ]
+                for i, txt_opt in enumerate(opts):
+                    item_surf = font.render(txt_opt, True, (80, 40, 40))
+                    screen.blit(item_surf, (30 + i * 300, SCREEN_HEIGHT - 60))
+            elif in_building == "farm":
+                opts = ["P:Plant (-1 seed)", "H:Harvest (ready crops)"]
+                for i, txt_opt in enumerate(opts):
+                    item_surf = font.render(txt_opt, True, (80, 40, 40))
+                    screen.blit(item_surf, (30 + i * 260, SCREEN_HEIGHT - 60))
 
         elif inside_bar:
             panel = pygame.Surface((SCREEN_WIDTH, 100))
             panel.fill((245, 245, 200))
             screen.blit(panel, (0, SCREEN_HEIGHT - 100))
-            txt = "Use counter to buy tokens, tables to gamble, ring to fight, door to exit"
+            txt = "Use counter to buy tokens, tables to gamble or throw darts, ring to fight, door to exit"
             tip_surf = font.render(txt, True, (80, 40, 40))
             screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
         elif inside_forest:

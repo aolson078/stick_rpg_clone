@@ -80,6 +80,11 @@ def draw_player(surface, rect, frame=0):
     pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x + 9, y + 16 - int(swing)), 3)
 
 
+def draw_npc(surface, rect):
+    """Draw a simple rectangular NPC."""
+    pygame.draw.rect(surface, (60, 120, 220), rect)
+
+
 def building_color(btype):
     if btype == "home":
         return HOME_COLOR
@@ -99,6 +104,14 @@ def building_color(btype):
         return BAR_COLOR
     if btype == "bank":
         return BAR_COLOR
+    if btype == "farm":
+        return PARK_COLOR
+    if btype == "mall":
+        return SHOP_COLOR
+    if btype == "beach":
+        return PARK_COLOR
+    if btype == "suburbs":
+        return HOME_COLOR
     return BUILDING_COLOR
 
 
@@ -171,7 +184,7 @@ def draw_day_night(surface, current_time):
         surface.blit(overlay, (0, 0))
 
 
-def draw_ui(surface, font, player, quests):
+def draw_ui(surface, font, player, quests, story_quests=None):
 
     bar = pygame.Surface((SCREEN_WIDTH, 36), pygame.SRCALPHA)
     bar.fill(UI_BG)
@@ -187,6 +200,14 @@ def draw_ui(surface, font, player, quests):
         FONT_COLOR,
     )
     bar.blit(text, (16, 6))
+    res_txt = font.render(
+        f"M:{player.resources.get('metal',0)} C:{player.resources.get('cloth',0)} H:{player.resources.get('herbs',0)} S:{player.resources.get('seeds',0)}",
+        True,
+        FONT_COLOR,
+    )
+    bar.blit(res_txt, (16, 20))
+    season_txt = font.render(f"{player.season} - {player.weather}", True, FONT_COLOR)
+    bar.blit(season_txt, (SCREEN_WIDTH // 2 - season_txt.get_width() // 2, 20))
     if player.companion:
         ctxt = font.render(f"Pet: {player.companion}", True, FONT_COLOR)
         bar.blit(ctxt, (SCREEN_WIDTH - ctxt.get_width() - 20, 6))
@@ -195,7 +216,9 @@ def draw_ui(surface, font, player, quests):
     # Show current quest below the stat bar
     quest_text = next((q.description for q in quests if not q.completed), None)
     quest_text = None
-    if player.current_quest < len(quests):
+    if story_quests and player.story_stage < len(story_quests):
+        quest_text = story_quests[player.story_stage].description
+    elif player.current_quest < len(quests):
         quest_text = quests[player.current_quest].description
     if quest_text:
         qsurf = font.render(f"Quest: {quest_text}", True, FONT_COLOR)
@@ -224,27 +247,37 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         item = player.equipment.get(slot)
         if item:
             it = font.render(
-                f"{item.name} A{item.attack} D{item.defense} S{item.speed}", True, FONT_COLOR
+                f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed}",
+                True,
+                FONT_COLOR,
             )
             surface.blit(it, (rect.x + 4, rect.y + 20))
 
     for rect, item in item_rects:
         pygame.draw.rect(surface, (200, 220, 230), rect)
         txt = font.render(
-            f"{item.name} A{item.attack} D{item.defense} S{item.speed}", True, FONT_COLOR
+            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed}",
+            True,
+            FONT_COLOR,
         )
         surface.blit(txt, (rect.x + 4, rect.y + 20))
 
     if dragging:
         item, pos = dragging
         txt = font.render(
-            f"{item.name} A{item.attack} D{item.defense} S{item.speed}", True, FONT_COLOR
+            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed}",
+            True,
+            FONT_COLOR,
         )
         bg = pygame.Surface((60, 60), pygame.SRCALPHA)
         bg.fill((230, 230, 240, 200))
         bg_rect = bg.get_rect(center=pos)
         surface.blit(bg, bg_rect.topleft)
         surface.blit(txt, (bg_rect.x + 4, bg_rect.y + 20))
+
+    res = f"Metal:{player.resources.get('metal',0)} Cloth:{player.resources.get('cloth',0)} Herbs:{player.resources.get('herbs',0)}"
+    res_txt = font.render(res, True, FONT_COLOR)
+    surface.blit(res_txt, (100, SCREEN_HEIGHT - 120))
 
 
 def draw_perk_menu(surface, font, player, perks):
@@ -270,7 +303,7 @@ def draw_perk_menu(surface, font, player, perks):
     surface.blit(info, (100, 120 + len(perks) * 40 + 20))
 
 
-def draw_quest_log(surface, font, quests):
+def draw_quest_log(surface, font, quests, story_quests=None):
     overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
@@ -282,10 +315,22 @@ def draw_quest_log(surface, font, quests):
     title = font.render("Quest Log", True, FONT_COLOR)
     surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
-    for i, q in enumerate(quests):
+    y = 120
+    if story_quests:
+        hdr = font.render("Story Quests", True, FONT_COLOR)
+        surface.blit(hdr, (100, y))
+        y += 30
+        for q in story_quests:
+            status = "[x]" if q.completed else "[ ]"
+            txt = font.render(f"{status} {q.description}", True, FONT_COLOR)
+            surface.blit(txt, (120, y))
+            y += 30
+        y += 20
+    for q in quests:
         status = "[x]" if q.completed else "[ ]"
         txt = font.render(f"{status} {q.description}", True, FONT_COLOR)
-        surface.blit(txt, (100, 120 + i * 30))
+        surface.blit(txt, (100, y))
+        y += 30
 
     note = font.render("Press L or Q to close", True, FONT_COLOR)
     surface.blit(note, (100, SCREEN_HEIGHT - 140))
@@ -349,6 +394,7 @@ def draw_bar_interior(
     counter_rect,
     bj_rect,
     slot_rect,
+    dart_rect,
     brawl_rect,
     door_rect,
 ):
@@ -375,6 +421,11 @@ def draw_bar_interior(
     pygame.draw.rect(surface, (90, 90, 150), slot_rect)
     sl = font.render("Slots", True, (250, 250, 250))
     surface.blit(sl, (slot_rect.x + 20, slot_rect.y + slot_rect.height // 2 - 10))
+
+    # darts board
+    pygame.draw.rect(surface, (120, 70, 120), dart_rect)
+    dr = font.render("Darts", True, (250, 250, 250))
+    surface.blit(dr, (dart_rect.x + 20, dart_rect.y + dart_rect.height // 2 - 10))
 
     # fighting ring
     pygame.draw.rect(surface, (180, 70, 70), brawl_rect)
