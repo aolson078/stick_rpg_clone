@@ -67,6 +67,14 @@ class Player:
     next_charisma_perk: int = 5
 
     current_quest: int = 0
+    # Name of an optional side quest currently in progress
+    side_quest: Optional[str] = None
+
+    # Money stored in the bank
+    bank_balance: float = 0.0
+
+    # 1=apartment, 2=house, 3=mansion
+    home_level: int = 1
 
     inventory: List["InventoryItem"] = field(default_factory=list)
     equipment: Dict[str, Optional["InventoryItem"]] = field(
@@ -95,6 +103,15 @@ class Event:
     """Random world events with effects on the player"""
     description: str
     apply: Callable[["Player"], None]
+
+
+@dataclass
+class SideQuest:
+    """Optional quests triggered by talking to NPCs"""
+    name: str
+    description: str
+    target: str  # building type or NPC to complete
+    reward: Callable[["Player"], None]
 
 
 @dataclass
