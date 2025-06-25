@@ -4,7 +4,15 @@ import json
 import random
 import pygame
 
-from entities import Player, Building, Quest, Event, InventoryItem, SideQuest, NPC
+from entities import (
+    Player,
+    Building,
+    Quest,
+    Event,
+    InventoryItem,
+    SideQuest,
+    NPC,
+)
 from rendering import (
     draw_player,
     draw_player_sprite,
@@ -23,6 +31,55 @@ from rendering import (
     draw_sky,
     draw_npc,
     draw_tip_panel,
+)
+from inventory import (
+    SHOP_ITEMS,
+    HOME_UPGRADES,
+    COMPANIONS,
+    buy_shop_item,
+    buy_home_upgrade,
+    available_home_upgrades,
+    bank_deposit,
+    bank_withdraw,
+    adopt_companion,
+    plant_seed,
+    harvest_crops,
+)
+from combat import (
+    energy_cost,
+    fight_brawler,
+    fight_enemy,
+    fight_forest_enemy,
+    BRAWLER_COUNT,
+    DODGE_BASE,
+    POWER_STRIKE_CHANCE,
+    BLEED_TURNS,
+    BLEED_DAMAGE,
+    FOREST_ENEMIES,
+)
+from quests import (
+    QUESTS,
+    SIDE_QUEST,
+    NPC_QUEST,
+    MALL_QUEST,
+    NPCS,
+    STORY_QUESTS,
+    EVENTS,
+    SEASON_EVENTS,
+    WEATHER_EVENTS,
+    LOCATION_EVENTS,
+    TIMED_EVENTS,
+    LEADERBOARD_FILE,
+    update_leaderboard,
+    check_quests,
+    check_perk_unlocks,
+    check_hidden_perks,
+    check_achievements,
+    random_event,
+    update_npcs,
+    advance_story,
+    check_story,
+    EVENT_CHANCE,
 )
 import settings
 from settings import (
@@ -43,10 +100,12 @@ from settings import (
 
 )
 
+
 def recalc_layouts():
     """Update interior layout rects when the window size changes."""
     global HOME_WIDTH, HOME_HEIGHT, DOOR_RECT
-    global BAR_WIDTH, BAR_HEIGHT, BAR_DOOR_RECT, COUNTER_RECT, BJ_RECT, SLOT_RECT, BRAWL_RECT, DART_RECT
+    global BAR_WIDTH, BAR_HEIGHT, BAR_DOOR_RECT, COUNTER_RECT
+    global BJ_RECT, SLOT_RECT, BRAWL_RECT, DART_RECT
     global FOREST_WIDTH, FOREST_HEIGHT, FOREST_DOOR_RECT
 
     HOME_WIDTH, HOME_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
@@ -164,253 +223,61 @@ FOREST_ENEMY_RECTS = [
 ]
 
 
-# Storyline quests completed in order
-QUESTS = [
-    Quest("Earn $200", lambda p: p.money >= 200),
-    Quest("Reach STR 5", lambda p: p.strength >= 5),
-    Quest("Reach INT 5", lambda p: p.intelligence >= 5),
-    Quest("Earn $300", lambda p: p.money >= 300, next_index=1),
-    Quest("Reach STR 5", lambda p: p.strength >= 5, next_index=2),
-    Quest(
-        "Defeat 3 alley thugs",
-        lambda p: p.enemies_defeated >= 3,
-        next_index=3,
-    ),
-    Quest(
-        "Own every home upgrade",
-        lambda p: set(p.home_upgrades) == {u[0] for u in HOME_UPGRADES},
-        next_index=None,
-    ),
-]
-
-# Simple optional side quest triggered in the new bank building
-SIDE_QUEST = SideQuest(
-    "Bank Delivery",
-    "Deliver paperwork from the Bank to the Library",
-    "library",
-    lambda p: setattr(p, "money", p.money + 50),
-)
-
-# Side quest given by the wandering NPC
-NPC_QUEST = SideQuest(
-    "Courier Errand",
-    "Deliver a package from Sam to the Gym",
-    "gym",
-    lambda p: setattr(p, "money", p.money + 30),
-)
-
-# Mall side quest
-MALL_QUEST = SideQuest(
-    "Beach Delivery",
-    "Pick up sunglasses from the Mall and bring them to the Beach",
-    "beach",
-    lambda p: setattr(p, "money", p.money + 40),
-)
-
-NPCS = [
-    NPC(pygame.Rect(500, 500, PLAYER_SIZE, PLAYER_SIZE), "Sam", NPC_QUEST),
-]
-
-# Main storyline quests progressed via story_stage
-STORY_QUESTS = [
-    Quest("Visit the Town Hall", lambda p: p.story_stage >= 1),
-    Quest("Choose an allegiance", lambda p: p.story_stage >= 2),
-    Quest("Prove your loyalty", lambda p: p.story_stage >= 3),
-    Quest("Report back to your ally", lambda p: p.story_stage >= 4),
-]
-
-
 # Random events that may occur while exploring
 def _ev_found_money(p: Player) -> None:
+    """Give the player money found on the ground."""
     p.money += 5
     bonus = 5 * p.perk_levels.get("Lucky", 0)
     p.money += 5 + bonus
 
 
 def _ev_gain_int(p: Player) -> None:
+    """Increase the player's intelligence."""
     p.intelligence += 1
     p.intelligence += 1 + p.perk_levels.get("Lucky", 0)
 
 
 def _ev_gain_cha(p: Player) -> None:
+    """Increase the player's charisma."""
     p.charisma += 1
     p.charisma += 1 + p.perk_levels.get("Lucky", 0)
 
 
 def _ev_trip(p: Player) -> None:
+    """Cause the player to lose a small amount of health."""
     p.health = max(p.health - 5, 0)
 
 
 def _ev_theft(p: Player) -> None:
+    """Steal money from the player."""
     p.money = max(p.money - 10, 0)
 
 
 def _ev_free_food(p: Player) -> None:
+    """Restore some of the player's energy."""
     p.energy = min(100, p.energy + 10 + 2 * p.perk_levels.get("Lucky", 0))
 
 
 def _ev_help_reward(p: Player) -> None:
+    """Reward the player for helping someone."""
     p.money += 15 + 5 * p.perk_levels.get("Lucky", 0)
 
 
 def _ev_found_token(p: Player) -> None:
+    """Grant the player a casino token."""
     p.tokens += 1
 
 
 def _ev_found_metal(p: Player) -> None:
+    """Give the player a piece of scrap metal."""
     p.resources["metal"] = p.resources.get("metal", 0) + 1
 
 
 def _ev_found_cloth(p: Player) -> None:
+    """Give the player a piece of cloth."""
     p.resources["cloth"] = p.resources.get("cloth", 0) + 1
 
-
-def _ev_found_herb(p: Player) -> None:
-    p.resources["herbs"] = p.resources.get("herbs", 0) + 1
-
-
-EVENTS = [
-    Event("You found $5 on the ground!", _ev_found_money),
-    Event("Someone shared a study tip. +1 INT", _ev_gain_int),
-    Event("You chatted with locals. +1 CHA", _ev_gain_cha),
-    Event("You tripped and hurt yourself. -5 health", _ev_trip),
-    Event("A thief stole $10 from you!", _ev_theft),
-    Event("A stranger gave you a meal. +10 energy", _ev_free_food),
-    Event("You helped someone and got $15", _ev_help_reward),
-    Event("Found a casino token!", _ev_found_token),
-    Event("Picked up some scrap metal", _ev_found_metal),
-    Event("Found a piece of cloth", _ev_found_cloth),
-    Event("Gathered herbs nearby", _ev_found_herb),
-]
-
-SEASON_EVENTS = {
-    "Spring": [
-        Event("Flowers bloom brightly. +1 CHA", lambda p: setattr(p, "charisma", p.charisma + 1)),
-    ],
-    "Summer": [
-        Event("Heat wave tires you out. -5 energy", lambda p: setattr(p, "energy", max(p.energy - 5, 0))),
-    ],
-    "Fall": [
-        Event("Found $5 under fallen leaves", lambda p: setattr(p, "money", p.money + 5)),
-    ],
-    "Winter": [
-        Event("Cold wind toughens you. +1 DEF", lambda p: setattr(p, "defense", p.defense + 1)),
-    ],
-}
-
-WEATHER_EVENTS = {
-    "Rain": [
-        Event("Got soaked in the rain. -5 energy", lambda p: setattr(p, "energy", max(p.energy - 5, 0))),
-    ],
-    "Snow": [
-        Event("Built a snowman for fun. +1 CHA", lambda p: setattr(p, "charisma", p.charisma + 1)),
-    ],
-}
-
-LOCATION_EVENTS = {
-    "beach": [
-        Event("You found a seashell worth $5", lambda p: setattr(p, "money", p.money + 5)),
-    ],
-    "mall": [
-        Event("A flash sale cost you $5", lambda p: setattr(p, "money", max(p.money - 5, 0))),
-    ],
-}
-
-# Time-specific events that occur only during certain hours
-TIMED_EVENTS = [
-    (
-        6,
-        9,
-        Event("You went jogging with a stranger. +1 STR", lambda p: setattr(p, "strength", p.strength + 1)),
-    ),
-    (
-        18,
-        22,
-        Event("Street performer inspired you. +1 CHA", lambda p: setattr(p, "charisma", p.charisma + 1)),
-    ),
-    (
-        20,
-        24,
-        Event(
-            "Late-night snack stand boosted your energy", lambda p: setattr(p, "energy", min(100, p.energy + 10))
-        ),
-    ),
-]
-
 # Items sold at the shop: name, cost, and effect function
-SHOP_ITEMS = [
-    ("Cola", 3, lambda p: setattr(p, "energy", min(100, p.energy + 5))),
-    ("Protein Bar", 7, lambda p: setattr(p, "health", min(100, p.health + 5))),
-    ("Book", 10, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
-    ("Gym Pass", 15, lambda p: setattr(p, "strength", p.strength + 1)),
-    ("Charm Pendant", 20, lambda p: setattr(p, "charisma", p.charisma + 1)),
-    ("Skateboard", 40, lambda p: setattr(p, "has_skateboard", True)),
-    ("Cola", 6, lambda p: setattr(p, "energy", min(100, p.energy + 5))),
-    ("Protein Bar", 14, lambda p: setattr(p, "health", min(100, p.health + 5))),
-    ("Book", 20, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
-    ("Gym Pass", 30, lambda p: setattr(p, "strength", p.strength + 1)),
-    ("Charm Pendant", 40, lambda p: setattr(p, "charisma", p.charisma + 1)),
-    ("Skateboard", 80, lambda p: setattr(p, "has_skateboard", True)),
-    (
-        "Leather Helmet",
-        25,
-        50,
-        lambda p: p.inventory.append(
-            InventoryItem("Leather Helmet", "head", defense=1)
-        ),
-    ),
-    (
-        "Leather Armor",
-        40,
-        80,
-        lambda p: p.inventory.append(
-            InventoryItem("Leather Armor", "chest", defense=2)
-        ),
-    ),
-    (
-        "Leather Boots",
-        20,
-        40,
-        lambda p: p.inventory.append(
-            InventoryItem("Leather Boots", "legs", defense=1, speed=1)
-        ),
-    ),
-    (
-        "Wooden Sword",
-        35,
-        70,
-        lambda p: p.inventory.append(
-            InventoryItem("Wooden Sword", "weapon", attack=2)
-        ),
-    ),
-    (
-        "Seeds x3",
-        15,
-        lambda p: p.resources.__setitem__(
-            "seeds", p.resources.get("seeds", 0) + 3
-        ),
-    ),
-]
-
-# Upgrades available for purchase inside the home
-HOME_UPGRADES = [
-    ("Comfy Bed", 150, "Recover +20 energy when sleeping", 1),
-    ("Decorations", 120, "Gain +1 CHA each morning", 1),
-    ("Study Desk", 180, "Gain +1 INT each morning", 1),
-    ("Small House", 1000, "Upgrade to a small house", 1),
-    ("Home Gym", 250, "Gain +1 STR each morning", 2),
-    ("Garden", 200, "Chance to find $10 when sleeping", 2),
-    ("Mansion", 5000, "Upgrade to a mansion", 2),
-    ("Arcade Room", 400, "Chance to gain a token daily", 3),
-    ("Private Library", 450, "Gain +2 INT each morning", 3),
-]
-
-# Animal companions available at the Pet Shop
-COMPANIONS = [
-    ("Dog", 120, "DEF +1, may find $5 when you sleep"),
-    ("Cat", 100, "CHA +1, 10% less walking energy"),
-    ("Parrot", 150, "INT +1, may find tokens after fights"),
-]
 
 # Perks that can be unlocked with perk points
 # Each perk can be upgraded up to PERK_MAX_LEVEL levels
@@ -431,120 +298,9 @@ SECRET_PERKS = [
     ("Perk Master", "Max out every other perk"),
 ]
 
-BRAWLER_COUNT = 5
 
-# Three unique enemies found in the forest area
-FOREST_ENEMIES = [
-    {"attack": 4, "defense": 1, "speed": 2, "health": 20, "reward": 30},
-    {"attack": 6, "defense": 2, "speed": 3, "health": 28, "reward": 45},
-    {"attack": 8, "defense": 3, "speed": 2, "health": 36, "reward": 60},
-]
-
-# Combat tweaks
-DODGE_BASE = 0.1  # base dodge chance for the player
-POWER_STRIKE_CHANCE = 0.25  # chance to unleash a special power strike
-BLEED_TURNS = 3
-BLEED_DAMAGE = 1
-
-def buy_shop_item(player: Player, index: int) -> str:
-    """Attempt to buy an item from SHOP_ITEMS by index."""
-    if index < 0 or index >= len(SHOP_ITEMS):
-        return "Invalid item"
-    name, cost, effect = SHOP_ITEMS[index]
-    if name == "Skateboard" and player.has_skateboard:
-        return "Already have skateboard"
-    if player.money < cost:
-        return "Not enough money!"
-    player.money -= cost
-    effect(player)
-    return f"Bought {name}"
-
-EVENT_CHANCE = 0.0008  # roughly once every ~20s at 60 FPS
-
-def buy_home_upgrade(player: Player, index: int) -> str:
-    """Attempt to purchase a home upgrade by index."""
-    if index < 0 or index >= len(HOME_UPGRADES):
-        return "Invalid upgrade"
-    name, cost, _, req = HOME_UPGRADES[index]
-    if req > player.home_level:
-        return "Locked"
-    if name in player.home_upgrades:
-        return "Already owned"
-    if player.money < cost:
-        return "Not enough money!"
-    player.money -= cost
-    player.home_upgrades.append(name)
-    if name == "Small House":
-        player.home_level = 2
-    elif name == "Mansion":
-        player.home_level = 3
-    return f"Bought {name}"
-
-
-def available_home_upgrades(player: Player):
-    """Return a list of upgrades unlocked for the player's house level."""
-    return [u for u in HOME_UPGRADES if u[3] <= player.home_level]
-
-
-def bank_deposit(player: Player, amount: int = 10) -> str:
-    """Deposit money into the bank."""
-    if player.money < amount:
-        return "Need $10"
-    player.money -= amount
-    player.bank_balance += amount
-    return f"Deposited ${amount}"
-
-
-def bank_withdraw(player: Player, amount: int = 10) -> str:
-    """Withdraw money from the bank."""
-    if player.bank_balance < amount:
-        return "No funds"
-    player.bank_balance -= amount
-    player.money += amount
-    return f"Withdrew ${amount}"
-
-
-def adopt_companion(player: Player, index: int) -> str:
-    """Adopt a pet companion by index."""
-    if index < 0 or index >= len(COMPANIONS):
-        return "Invalid choice"
-    name, cost, _desc = COMPANIONS[index]
-    if player.money < cost:
-        return "Not enough money!"
-    player.money -= cost
-    player.companion = name
-    if name == "Dog":
-        player.defense += 1
-    elif name == "Cat":
-        player.charisma += 1
-    elif name == "Parrot":
-        player.intelligence += 1
-    return f"Adopted {name}!"
-
-
-def plant_seed(player: Player) -> str:
-    """Plant a seed at the farm if available."""
-    if player.resources.get("seeds", 0) <= 0:
-        return "No seeds"
-    player.resources["seeds"] -= 1
-    player.crops.append(player.day)
-    return "Seed planted"
-
-
-def harvest_crops(player: Player) -> str:
-    """Harvest any crops that have grown for 3 days."""
-    ready = [d for d in player.crops if player.day - d >= 3]
-    if not ready:
-        return "Nothing ready"
-    for d in ready:
-        player.crops.remove(d)
-        player.money += 15
-    return f"Harvested {len(ready)} crops"
-
-EVENT_CHANCE = 0.0004  # less frequent random events
 
 SAVE_FILE = "savegame.json"
-LEADERBOARD_FILE = "leaderboard.json"
 
 
 
@@ -565,48 +321,6 @@ def building_open(btype, minutes, player: Player):
 
 
 
-def check_quests(player):
-    """Advance the main quest line if the current objective is met."""
-    new = False
-    if player.current_quest < len(QUESTS):
-        q = QUESTS[player.current_quest]
-        if not q.completed and q.check(player):
-            q.completed = True
-            new = True
-            if q.reward:
-                q.reward(player)
-            if q.next_index is not None:
-                player.current_quest = q.next_index
-            else:
-                player.current_quest = len(QUESTS)
-    return new
-
-
-def check_perk_unlocks(player: Player) -> bool:
-    """Grant perk points when stat thresholds are reached."""
-    gained = False
-    if player.strength >= player.next_strength_perk:
-        player.perk_points += 1
-        player.next_strength_perk += 5
-        gained = True
-    if player.intelligence >= player.next_intelligence_perk:
-        player.perk_points += 1
-        player.next_intelligence_perk += 5
-        gained = True
-    if player.charisma >= player.next_charisma_perk:
-        player.perk_points += 1
-        player.next_charisma_perk += 5
-        gained = True
-    return gained
-
-
-def energy_cost(player: Player, base: float) -> float:
-    """Return energy cost adjusted by Iron Will and hidden perks."""
-    level = player.perk_levels.get("Iron Will", 0)
-    cost = base * (1 - 0.05 * level)
-    if player.perk_levels.get("Perk Master"):
-        cost *= 0.9
-    return cost
 
 
 def update_weather(player: Player) -> None:
@@ -666,125 +380,6 @@ def sleep(player: Player) -> str | None:
     return " ".join(messages) if messages else None
 
 
-def check_hidden_perks(player: Player) -> str | None:
-    """Unlock secret perks when requirements are met."""
-    if (
-        player.brawls_won >= BRAWLER_COUNT
-        and "Bar Champion" not in player.perk_levels
-    ):
-        player.perk_levels["Bar Champion"] = 1
-        return "Secret perk unlocked: Bar Champion!"
-    if (
-        set(player.home_upgrades) == {u[0] for u in HOME_UPGRADES}
-        and "Home Owner" not in player.perk_levels
-    ):
-        player.perk_levels["Home Owner"] = 1
-        return "Secret perk unlocked: Home Owner!"
-    if (
-        all(player.perk_levels.get(name, 0) >= PERK_MAX_LEVEL for name, _ in PERKS)
-        and "Perk Master" not in player.perk_levels
-    ):
-        player.perk_levels["Perk Master"] = 1
-        return "Secret perk unlocked: Perk Master!"
-    return None
-
-
-def update_leaderboard(player: Player) -> None:
-    """Record story completion time and money in the leaderboard file."""
-    record = {"day": player.day, "money": int(player.money)}
-    board = []
-    if os.path.exists(LEADERBOARD_FILE):
-        with open(LEADERBOARD_FILE) as f:
-            try:
-                board = json.load(f)
-            except Exception:
-                board = []
-    board.append(record)
-    board = sorted(board, key=lambda r: (r["day"], -r["money"]))[:10]
-    with open(LEADERBOARD_FILE, "w") as f:
-        json.dump(board, f)
-
-
-def check_achievements(player: Player) -> str | None:
-    """Unlock achievements when goals are met."""
-    if "First Blood" not in player.achievements and player.enemies_defeated >= 1:
-        player.achievements.append("First Blood")
-        return "Achievement unlocked: First Blood!"
-    if (
-        "Brawler Master" not in player.achievements
-        and player.brawls_won >= BRAWLER_COUNT
-    ):
-        player.achievements.append("Brawler Master")
-        return "Achievement unlocked: Brawler Master!"
-    if "Wealthy" not in player.achievements and player.money >= 1000:
-        player.achievements.append("Wealthy")
-        return "Achievement unlocked: Wealthy!"
-    if (
-        "Story Hero" not in player.achievements
-        and all(q.completed for q in STORY_QUESTS)
-    ):
-        player.achievements.append("Story Hero")
-        update_leaderboard(player)
-        return "Achievement unlocked: Story Hero!"
-    return None
-
-
-def random_event(player: Player, location: str | None = None) -> str | None:
-    """Possibly trigger a random event and return its description."""
-    if random.random() < EVENT_CHANCE:
-        hour = int(player.time) // 60
-        pool = EVENTS.copy()
-        pool.extend(SEASON_EVENTS.get(player.season, []))
-        pool.extend(WEATHER_EVENTS.get(player.weather, []))
-        if location and location in LOCATION_EVENTS:
-            pool.extend(LOCATION_EVENTS[location])
-        for start, end, tev in TIMED_EVENTS:
-            if start <= end:
-                if start <= hour < end:
-                    pool.append(tev)
-            else:
-                if hour >= start or hour < end:
-                    pool.append(tev)
-        ev = random.choice(pool)
-        ev.apply(player)
-        return ev.description
-    return None
-
-
-def update_npcs():
-    """Move NPCs randomly around the city map."""
-    for npc in NPCS:
-        if random.random() < 0.05:
-            dx, dy = random.choice([(1,0),(-1,0),(0,1),(0,-1)])
-            rect = npc.rect.move(dx * 4, dy * 4)
-            if 0 <= rect.x <= MAP_WIDTH - PLAYER_SIZE and 0 <= rect.y <= MAP_HEIGHT - PLAYER_SIZE:
-                collision = False
-                for b in BUILDINGS:
-                    if rect.colliderect(b.rect):
-                        collision = True
-                        break
-                if not collision:
-                    npc.rect = rect
-
-
-def advance_story(player: Player) -> None:
-    """Update story stage based on branch objectives."""
-    if player.story_branch == "mayor" and player.story_stage == 2:
-        if player.enemies_defeated >= 3:
-            player.story_stage = 3
-    if player.story_branch == "gang" and player.story_stage == 2:
-        if player.gang_package_done:
-            player.story_stage = 3
-
-
-def check_story(player: Player) -> bool:
-    """Mark story quests completed based on story_stage."""
-    changed = False
-    for i, q in enumerate(STORY_QUESTS):
-        if not q.completed and q.check(player):
-            q.completed = True
-            changed = True
-    return changed
 
 
 def play_blackjack(player: Player) -> str:
@@ -861,175 +456,6 @@ def solve_puzzle(player: Player) -> str:
     return "Couldn't solve it"
 
 
-def _combat_stats(player: Player):
-    atk = player.strength
-    df = player.defense
-    spd = player.speed
-    if player.perk_levels.get("Bar Champion"):
-        atk += 2
-    if player.companion == "Dog":
-        df += 1
-    for item in player.equipment.values():
-        if item:
-            atk += item.attack
-            df += item.defense
-            spd += item.speed
-    return atk, df, spd
-
-
-
-def fight_brawler(player: Player) -> str:
-    if player.brawls_won >= BRAWLER_COUNT:
-        return "No challengers remain"
-    if player.energy < 10:
-        return "Too tired to fight!"
-    player.energy -= 10
-    player.energy -= energy_cost(player, 10)
-
-    stage = player.brawls_won + 1
-    enemy = {
-        "attack": random.randint(3 + stage, 6 + stage * 2),
-        "defense": random.randint(1 + stage, 3 + stage),
-        "speed": random.randint(1 + stage // 2, 5 + stage // 2),
-        "health": 20 + stage * 10,
-    }
-    p_atk, p_def, p_spd = _combat_stats(player)
-    p_hp = player.health
-    e_hp = enemy["health"]
-    turn_player = p_spd >= enemy["speed"]
-    special_used = False
-    bleed_turns = 0
-    while p_hp > 0 and e_hp > 0:
-        if turn_player:
-            dmg = max(1, p_atk - enemy["defense"])
-            if not special_used and random.random() < POWER_STRIKE_CHANCE:
-                dmg *= 2
-                bleed_turns = BLEED_TURNS
-                special_used = True
-            e_hp -= dmg
-        else:
-            if random.random() < (DODGE_BASE + player.speed * 0.02):
-                pass  # dodged
-            else:
-                dmg = max(1, enemy["attack"] - p_def)
-                p_hp -= dmg
-        turn_player = not turn_player
-        if bleed_turns > 0:
-            e_hp -= BLEED_DAMAGE
-            bleed_turns -= 1
-    player.health = max(p_hp, 0)
-    if p_hp <= 0:
-        return "You lost the fight!"
-    reward = 20 + stage * 10
-    player.money += reward
-    player.brawls_won += 1
-    msg = f"You won the fight {stage}! +${reward}"
-    if player.brawls_won == BRAWLER_COUNT:
-        msg += " All brawlers defeated!"
-    return msg
-def fight_enemy(player: Player) -> str:
-    """Fight a random street enemy in the alley."""
-    if player.energy < 10:
-        return "Too tired to fight!"
-    player.energy -= energy_cost(player, 10)
-
-    scale = 1 + player.enemies_defeated // 5
-    enemy = {
-        "attack": random.randint(2 * scale, 4 * scale),
-        "defense": random.randint(1 * scale, 3 * scale),
-        "speed": random.randint(1, 4),
-        "health": 15 + 5 * scale,
-    }
-    p_atk, p_def, p_spd = _combat_stats(player)
-    p_hp = player.health
-    e_hp = enemy["health"]
-    turn_player = p_spd >= enemy["speed"]
-    special_used = False
-    bleed_turns = 0
-    while p_hp > 0 and e_hp > 0:
-        if turn_player:
-            dmg = max(1, p_atk - enemy["defense"])
-            if not special_used and random.random() < POWER_STRIKE_CHANCE:
-                dmg *= 2
-                bleed_turns = BLEED_TURNS
-                special_used = True
-            e_hp -= dmg
-        else:
-            if random.random() < (DODGE_BASE + player.speed * 0.02):
-                pass
-            else:
-                dmg = max(1, enemy["attack"] - p_def)
-                p_hp -= dmg
-        turn_player = not turn_player
-        if bleed_turns > 0:
-            e_hp -= BLEED_DAMAGE
-            bleed_turns -= 1
-    player.health = max(p_hp, 0)
-    if p_hp <= 0:
-        return "You lost the fight!"
-
-    cash = random.randint(5, 25)
-    player.money += cash
-    loot = ""
-    if random.random() < 0.3:
-        player.tokens += 1
-        loot = " and found a token"
-    if random.random() < 0.4:
-        res = random.choice(["metal", "cloth", "herbs"])
-        player.resources[res] = player.resources.get(res, 0) + 1
-        loot += f" +1 {res}"
-    if player.companion == "Parrot" and random.random() < 0.3:
-        player.tokens += 1
-        loot += " (parrot found another)"
-    player.enemies_defeated += 1
-    return f"Enemy defeated! +${cash}{loot}"
-
-
-def fight_forest_enemy(player: Player, index: int) -> str:
-    """Fight one of the fixed forest enemies by index."""
-    if index < 0 or index >= len(FOREST_ENEMIES):
-        return "Invalid enemy"
-    if player.energy < 10:
-        return "Too tired to fight!"
-    player.energy -= energy_cost(player, 10)
-
-    enemy = FOREST_ENEMIES[index]
-    p_atk, p_def, p_spd = _combat_stats(player)
-    p_hp = player.health
-    e_hp = enemy["health"]
-    turn_player = p_spd >= enemy["speed"]
-    special_used = False
-    bleed_turns = 0
-    while p_hp > 0 and e_hp > 0:
-        if turn_player:
-            dmg = max(1, p_atk - enemy["defense"])
-            if not special_used and random.random() < POWER_STRIKE_CHANCE:
-                dmg *= 2
-                bleed_turns = BLEED_TURNS
-                special_used = True
-            e_hp -= dmg
-        else:
-            if random.random() < (DODGE_BASE + player.speed * 0.02):
-                pass
-            else:
-                dmg = max(1, enemy["attack"] - p_def)
-                p_hp -= dmg
-        turn_player = not turn_player
-        if bleed_turns > 0:
-            e_hp -= BLEED_DAMAGE
-            bleed_turns -= 1
-    player.health = max(p_hp, 0)
-    if p_hp <= 0:
-        return "You lost the fight!"
-
-    player.money += enemy["reward"]
-    loot = ""
-    if random.random() < 0.5:
-        res = random.choice(["metal", "cloth", "herbs"])
-        player.resources[res] = player.resources.get(res, 0) + 1
-        loot = f" +1 {res}"
-    player.enemies_defeated += 1
-    return f"Enemy defeated! +${enemy['reward']}{loot}"
 
 
 

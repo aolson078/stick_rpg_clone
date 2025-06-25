@@ -1,3 +1,5 @@
+import os
+
 SCREEN_WIDTH, SCREEN_HEIGHT = 1600, 1200
 MAP_WIDTH, MAP_HEIGHT = 3200, 1200
 
@@ -24,15 +26,20 @@ WINDOW_COLOR = (220, 240, 255)
 DOOR_COLOR = (90, 70, 40)
 SHADOW_COLOR = (40, 40, 40, 60)
 
+# Asset directories
+ASSETS_DIR = "assets"
+IMAGE_DIR = os.path.join(ASSETS_DIR, "images")
+SOUND_DIR = os.path.join(ASSETS_DIR, "sounds")
+
 FONT_COLOR = (30, 30, 30)
 UI_BG = (255, 255, 255, 230)
 MINUTES_PER_FRAME = 0.1
 
 # Simple audio settings and asset locations
-MUSIC_FILE = "assets/music.wav"
-STEP_SOUND_FILE = "assets/step.wav"
-ENTER_SOUND_FILE = "assets/enter.wav"
-QUEST_SOUND_FILE = "assets/quest.wav"
+MUSIC_FILE = os.path.join(SOUND_DIR, "music.wav")
+STEP_SOUND_FILE = os.path.join(SOUND_DIR, "step.wav")
+ENTER_SOUND_FILE = os.path.join(SOUND_DIR, "enter.wav")
+QUEST_SOUND_FILE = os.path.join(SOUND_DIR, "quest.wav")
 MUSIC_VOLUME = 0.3
 SFX_VOLUME = 0.5
 

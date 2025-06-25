@@ -38,14 +38,14 @@ FOREST_ENEMY_IMAGES = []
 
 
 def load_player_sprites():
-    """Load player sprite frames from the assets folder."""
+    """Load player sprite frames from the assets/images folder."""
     global PLAYER_SPRITES
     if PLAYER_SPRITES:
         return PLAYER_SPRITES
     # Load all sequentially numbered sprite frames until a file is missing
     i = 0
     while True:
-        path = os.path.join("assets", f"player_{i}.png")
+        path = os.path.join(settings.IMAGE_DIR, f"player_{i}.png")
         if not os.path.exists(path):
             break
         PLAYER_SPRITES.append(pygame.image.load(path).convert_alpha())
@@ -378,7 +378,7 @@ def load_forest_enemy_images():
     if FOREST_ENEMY_IMAGES:
         return FOREST_ENEMY_IMAGES
     for i in range(3):
-        path = os.path.join("assets", f"enemy_{i}.png")
+        path = os.path.join(settings.IMAGE_DIR, f"enemy_{i}.png")
         if os.path.exists(path):
             FOREST_ENEMY_IMAGES.append(pygame.image.load(path).convert_alpha())
         else:
