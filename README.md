@@ -144,12 +144,13 @@ starts.
 1. **Obtain the code**
    Clone your own copy of this repository or simply use the source files from
    this conversation. If you cloned it, `cd` into the new folder.
-2. **Install Python 3 and Pygame**
-   Make sure you have Python 3.10 or newer installed. Then install Pygame:
+2. **Install Python 3**
+   Make sure you have Python 3.10 or newer installed.
+3. **Install dependencies**
    ```bash
-   pip install pygame
+   pip install -r requirements.txt
    ```
-3. **Run the game**
+4. **Run the game**
    ```bash
    python game.py
    ```
@@ -184,4 +185,12 @@ starts.
 - Python 3.10+
 - Pygame 2.0+
 
+All Python dependencies are listed in `requirements.txt`. Install them with
+`pip install -r requirements.txt`. Developers may also want to use a linter like
+`flake8` or the `black` formatter, though these are optional.
+
 If the sound does not play, check that your system has an audio device and that Pygame's mixer can initialize.
+
+## Assets
+
+Images now live in `assets/images` and sound effects in `assets/sounds`. Update the paths in `settings.py` if you move these folders.

@@ -41,22 +41,10 @@ class Player:
         }
     )
 
-    defense: int = 0
-    speed: int = 1
-
-    office_level: int = 1
-    office_shifts: int = 0
-    dealer_level: int = 1
-    dealer_shifts: int = 0
-    clinic_level: int = 1
-    clinic_shifts: int = 0
-    tokens: int = 0
-
     brawls_won: int = 0
 
     enemies_defeated: int = 0
 
-    has_skateboard: bool = False
     companion: Optional[str] = None
 
     home_upgrades: List[str] = field(default_factory=list)
@@ -98,17 +86,6 @@ class Player:
 
     # List of unlocked achievements
     achievements: List[str] = field(default_factory=list)
-
-    inventory: List["InventoryItem"] = field(default_factory=list)
-    equipment: Dict[str, Optional["InventoryItem"]] = field(
-        default_factory=lambda: {
-            "head": None,
-            "chest": None,
-            "arms": None,
-            "legs": None,
-            "weapon": None,
-        }
-    )
 
 
 
