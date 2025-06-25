@@ -25,6 +25,7 @@ from settings import (
     MAP_HEIGHT,
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
+    BG_COLOR,
 )
 
 PERK_MAX_LEVEL = 3
