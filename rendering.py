@@ -1,7 +1,7 @@
 import math
 import os
-import math
 import pygame
+import settings
 from settings import (
     PLAYER_HEAD_COLOR,
     PLAYER_COLOR,
@@ -23,8 +23,7 @@ from settings import (
     FONT_COLOR,
     MAP_WIDTH,
     MAP_HEIGHT,
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
+    BG_COLOR,
 )
 
 PERK_MAX_LEVEL = 3
@@ -163,12 +162,12 @@ def draw_sky(surface):
     """Draw a vertical gradient sky background."""
     top_color = (120, 180, 255)
     bottom_color = BG_COLOR
-    for y in range(SCREEN_HEIGHT):
-        ratio = y / SCREEN_HEIGHT
+    for y in range(settings.SCREEN_HEIGHT):
+        ratio = y / settings.SCREEN_HEIGHT
         r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
         g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
         b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
-        pygame.draw.line(surface, (r, g, b), (0, y), (SCREEN_WIDTH, y))
+        pygame.draw.line(surface, (r, g, b), (0, y), (settings.SCREEN_WIDTH, y))
 def draw_day_night(surface, current_time):
     """Darken the city during nighttime hours."""
     hour = int(current_time) // 60
@@ -179,14 +178,15 @@ def draw_day_night(surface, current_time):
         else:
             alpha = min(int((6 - hour) / 6 * 120), 120)
     if alpha:
-        overlay = pygame.Surface((SCREEN_WIDTH, MAP_HEIGHT), pygame.SRCALPHA)
+        overlay = pygame.Surface((settings.SCREEN_WIDTH, MAP_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, alpha))
         surface.blit(overlay, (0, 0))
 
 
 def draw_ui(surface, font, player, quests, story_quests=None):
 
-    bar = pygame.Surface((SCREEN_WIDTH, 36), pygame.SRCALPHA)
+    bar_height = 60
+    bar = pygame.Surface((settings.SCREEN_WIDTH, bar_height), pygame.SRCALPHA)
     bar.fill(UI_BG)
     hour = int(player.time) // 60
     minute = int(player.time) % 60
@@ -207,10 +207,10 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     )
     bar.blit(res_txt, (16, 20))
     season_txt = font.render(f"{player.season} - {player.weather}", True, FONT_COLOR)
-    bar.blit(season_txt, (SCREEN_WIDTH // 2 - season_txt.get_width() // 2, 20))
+    bar.blit(season_txt, (settings.SCREEN_WIDTH // 2 - season_txt.get_width() // 2, 32))
     if player.companion:
         ctxt = font.render(f"Pet: {player.companion}", True, FONT_COLOR)
-        bar.blit(ctxt, (SCREEN_WIDTH - ctxt.get_width() - 20, 6))
+        bar.blit(ctxt, (settings.SCREEN_WIDTH - ctxt.get_width() - 20, 6))
     surface.blit(bar, (0, 0))
 
     # Show current quest below the stat bar
@@ -224,21 +224,21 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         qsurf = font.render(f"Quest: {quest_text}", True, FONT_COLOR)
         qbg = pygame.Surface((qsurf.get_width() + 12, qsurf.get_height() + 4), pygame.SRCALPHA)
         qbg.fill((255, 255, 255, 220))
-        surface.blit(qbg, (16, 40))
-        surface.blit(qsurf, (22, 42))
+        surface.blit(qbg, (16, bar_height + 4))
+        surface.blit(qsurf, (22, bar_height + 6))
 
 
 def draw_inventory_screen(surface, font, player, slot_rects, item_rects, dragging):
-    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
-    panel = pygame.Surface((SCREEN_WIDTH - 120, SCREEN_HEIGHT - 120))
+    panel = pygame.Surface((settings.SCREEN_WIDTH - 120, settings.SCREEN_HEIGHT - 120))
     panel.fill((240, 240, 220))
     surface.blit(panel, (60, 60))
 
     title = font.render("Inventory", True, FONT_COLOR)
-    surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+    surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
     for slot, rect in slot_rects.items():
         pygame.draw.rect(surface, (210, 210, 210), rect)
@@ -277,20 +277,20 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
 
     res = f"Metal:{player.resources.get('metal',0)} Cloth:{player.resources.get('cloth',0)} Herbs:{player.resources.get('herbs',0)}"
     res_txt = font.render(res, True, FONT_COLOR)
-    surface.blit(res_txt, (100, SCREEN_HEIGHT - 120))
+    surface.blit(res_txt, (100, settings.SCREEN_HEIGHT - 120))
 
 
 def draw_perk_menu(surface, font, player, perks):
-    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
-    panel = pygame.Surface((SCREEN_WIDTH - 120, SCREEN_HEIGHT - 120))
+    panel = pygame.Surface((settings.SCREEN_WIDTH - 120, settings.SCREEN_HEIGHT - 120))
     panel.fill((240, 240, 220))
     surface.blit(panel, (60, 60))
 
     title = font.render("Choose a Perk", True, FONT_COLOR)
-    surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+    surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
     for i, (name, desc) in enumerate(perks):
         level = player.perk_levels.get(name, 0)
@@ -304,16 +304,16 @@ def draw_perk_menu(surface, font, player, perks):
 
 
 def draw_quest_log(surface, font, quests, story_quests=None):
-    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
-    panel = pygame.Surface((SCREEN_WIDTH - 120, SCREEN_HEIGHT - 120))
+    panel = pygame.Surface((settings.SCREEN_WIDTH - 120, settings.SCREEN_HEIGHT - 120))
     panel.fill((240, 240, 220))
     surface.blit(panel, (60, 60))
 
     title = font.render("Quest Log", True, FONT_COLOR)
-    surface.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+    surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
     y = 120
     if story_quests:
@@ -333,17 +333,27 @@ def draw_quest_log(surface, font, quests, story_quests=None):
         y += 30
 
     note = font.render("Press L or Q to close", True, FONT_COLOR)
-    surface.blit(note, (100, SCREEN_HEIGHT - 140))
+    surface.blit(note, (100, settings.SCREEN_HEIGHT - 140))
+
+
+def draw_tip_panel(surface, font, text):
+    """Display an instruction panel at the bottom of the screen."""
+    panel_height = 100
+    panel = pygame.Surface((settings.SCREEN_WIDTH, panel_height))
+    panel.fill((245, 245, 200))
+    surface.blit(panel, (0, settings.SCREEN_HEIGHT - panel_height))
+    tip_surf = font.render(text, True, (80, 40, 40))
+    surface.blit(tip_surf, (20, settings.SCREEN_HEIGHT - 80))
 
 
 def draw_home_interior(surface, font, player, frame, bed_rect, door_rect):
     """Draw a simple interior of the player's home."""
     surface.fill((235, 225, 200))
     # walls
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, SCREEN_WIDTH, 40))
-    pygame.draw.rect(surface, (160, 140, 110), (0, SCREEN_HEIGHT - 40, SCREEN_WIDTH, 40))
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, SCREEN_HEIGHT))
-    pygame.draw.rect(surface, (160, 140, 110), (SCREEN_WIDTH - 40, 0, 40, SCREEN_HEIGHT))
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, 40))
+    pygame.draw.rect(surface, (160, 140, 110), (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40))
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, settings.SCREEN_HEIGHT))
+    pygame.draw.rect(surface, (160, 140, 110), (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT))
 
     # bed
     pygame.draw.rect(surface, (200, 70, 70), bed_rect)
@@ -401,10 +411,10 @@ def draw_bar_interior(
     """Draw the interior of the bar with simple interaction spots."""
     surface.fill((225, 205, 170))
 
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, SCREEN_WIDTH, 40))
-    pygame.draw.rect(surface, (160, 140, 110), (0, SCREEN_HEIGHT - 40, SCREEN_WIDTH, 40))
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, SCREEN_HEIGHT))
-    pygame.draw.rect(surface, (160, 140, 110), (SCREEN_WIDTH - 40, 0, 40, SCREEN_HEIGHT))
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, 40))
+    pygame.draw.rect(surface, (160, 140, 110), (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40))
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, settings.SCREEN_HEIGHT))
+    pygame.draw.rect(surface, (160, 140, 110), (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT))
 
     # counter for buying tokens
     pygame.draw.rect(surface, (120, 80, 60), counter_rect)
