@@ -22,10 +22,10 @@ from rendering import (
     draw_forest_area,
     draw_sky,
     draw_npc,
+    draw_tip_panel,
 )
+import settings
 from settings import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
     MAP_WIDTH,
     MAP_HEIGHT,
     PLAYER_SIZE,
@@ -43,8 +43,45 @@ from settings import (
 
 )
 
+def recalc_layouts():
+    """Update interior layout rects when the window size changes."""
+    global HOME_WIDTH, HOME_HEIGHT, DOOR_RECT
+    global BAR_WIDTH, BAR_HEIGHT, BAR_DOOR_RECT, COUNTER_RECT, BJ_RECT, SLOT_RECT, BRAWL_RECT, DART_RECT
+    global FOREST_WIDTH, FOREST_HEIGHT, FOREST_DOOR_RECT
+
+    HOME_WIDTH, HOME_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
+    DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
+
+    BAR_WIDTH, BAR_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
+    BAR_DOOR_RECT = pygame.Rect(BAR_WIDTH // 2 - 60, BAR_HEIGHT - 180, 120, 160)
+    COUNTER_RECT = pygame.Rect(60, BAR_HEIGHT // 2 - 60, 180, 120)
+    BJ_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 - 150, 200, 100)
+    SLOT_RECT = pygame.Rect(BAR_WIDTH - 240, BAR_HEIGHT // 2 - 60, 180, 120)
+    BRAWL_RECT = pygame.Rect(BAR_WIDTH // 2 - 80, 80, 160, 120)
+    DART_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 + 60, 200, 100)
+
+    FOREST_WIDTH, FOREST_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
+    FOREST_DOOR_RECT = pygame.Rect(FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160)
+
+recalc_layouts()
+
+
+def compute_slot_rects():
+    """Return rectangles for equipment slots based on current screen size."""
+    left = settings.SCREEN_WIDTH // 10
+    top = settings.SCREEN_HEIGHT // 6
+    w, h = 100, 60
+    spacing = 70
+    return {
+        "head": pygame.Rect(left, top, w, h),
+        "chest": pygame.Rect(left, top + spacing, w, h),
+        "arms": pygame.Rect(left, top + spacing * 2, w, h),
+        "legs": pygame.Rect(left, top + spacing * 3, w, h),
+        "weapon": pygame.Rect(left, top + spacing * 4, w, h),
+    }
+
+
 pygame.init()
-pygame.mixer.init()
 try:
     pygame.mixer.init()
     SOUND_ENABLED = True
@@ -103,13 +140,13 @@ SEASONS = ["Spring", "Summer", "Fall", "Winter"]
 WEATHERS = ["Clear", "Rain", "Snow"]
 
 # Simple layout for the home interior
-HOME_WIDTH, HOME_HEIGHT = SCREEN_WIDTH, SCREEN_HEIGHT
+HOME_WIDTH, HOME_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
 BED_RECT = pygame.Rect(120, 160, 220, 120)
 DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
 
 # Simple quests that encourage visiting different locations
 # Layout for the bar interior
-BAR_WIDTH, BAR_HEIGHT = SCREEN_WIDTH, SCREEN_HEIGHT
+BAR_WIDTH, BAR_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
 BAR_DOOR_RECT = pygame.Rect(BAR_WIDTH // 2 - 60, BAR_HEIGHT - 180, 120, 160)
 COUNTER_RECT = pygame.Rect(60, BAR_HEIGHT // 2 - 60, 180, 120)
 BJ_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 - 150, 200, 100)
@@ -118,7 +155,7 @@ BRAWL_RECT = pygame.Rect(BAR_WIDTH // 2 - 80, 80, 160, 120)
 DART_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 + 60, 200, 100)
 
 # Layout for the forest area with three enemies
-FOREST_WIDTH, FOREST_HEIGHT = SCREEN_WIDTH, SCREEN_HEIGHT
+FOREST_WIDTH, FOREST_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
 FOREST_DOOR_RECT = pygame.Rect(FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160)
 FOREST_ENEMY_RECTS = [
     pygame.Rect(300, 300, 60, 60),
@@ -1139,6 +1176,11 @@ def start_menu(screen, font):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.VIDEORESIZE:
+                settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT = event.w, event.h
+                screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                recalc_layouts()
+                slot_rects = compute_slot_rects()
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     return False
@@ -1148,23 +1190,23 @@ def start_menu(screen, font):
         title = font.render("Stick RPG Clone", True, (255, 255, 255))
         start_txt = font.render("Press Enter to Start", True, (230, 230, 230))
         load_txt = font.render("Press L to Load Game", True, (230, 230, 230))
-        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 260))
-        screen.blit(start_txt, (SCREEN_WIDTH // 2 - start_txt.get_width() // 2, 320))
-        screen.blit(load_txt, (SCREEN_WIDTH // 2 - load_txt.get_width() // 2, 360))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 260))
+        screen.blit(start_txt, (settings.SCREEN_WIDTH // 2 - start_txt.get_width() // 2, 320))
+        screen.blit(load_txt, (settings.SCREEN_WIDTH // 2 - load_txt.get_width() // 2, 360))
         if board:
             lb_title = font.render("Top Completions", True, (230, 230, 230))
-            screen.blit(lb_title, (SCREEN_WIDTH // 2 - lb_title.get_width() // 2, 400))
+            screen.blit(lb_title, (settings.SCREEN_WIDTH // 2 - lb_title.get_width() // 2, 400))
             for i, rec in enumerate(board):
                 txt = font.render(
                     f"{i+1}. Day {rec['day']} - ${rec['money']}", True, (200, 200, 200)
                 )
-                screen.blit(txt, (SCREEN_WIDTH // 2 - txt.get_width() // 2, 420 + i * 20))
+                screen.blit(txt, (settings.SCREEN_WIDTH // 2 - txt.get_width() // 2, 420 + i * 20))
         pygame.display.flip()
         pygame.time.wait(20)
 
 
 def main():
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.RESIZABLE)
     pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 28)
@@ -1174,14 +1216,6 @@ def main():
     else:
         loaded = None
 
-    step_sound = pygame.mixer.Sound(STEP_SOUND_FILE)
-    enter_sound = pygame.mixer.Sound(ENTER_SOUND_FILE)
-    quest_sound = pygame.mixer.Sound(QUEST_SOUND_FILE)
-    for snd in (step_sound, enter_sound, quest_sound):
-        snd.set_volume(SFX_VOLUME)
-    pygame.mixer.music.load(MUSIC_FILE)
-    pygame.mixer.music.set_volume(MUSIC_VOLUME)
-    pygame.mixer.music.play(-1)
     if SOUND_ENABLED:
         step_sound = pygame.mixer.Sound(STEP_SOUND_FILE)
         enter_sound = pygame.mixer.Sound(ENTER_SOUND_FILE)
@@ -1221,13 +1255,7 @@ def main():
     dragging_item = None
     drag_origin = None
     drag_pos = (0, 0)
-    slot_rects = {
-        "head": pygame.Rect(150, 150, 100, 60),
-        "chest": pygame.Rect(150, 220, 100, 60),
-        "arms": pygame.Rect(150, 290, 100, 60),
-        "legs": pygame.Rect(150, 360, 100, 60),
-        "weapon": pygame.Rect(150, 430, 100, 60),
-    }
+    slot_rects = compute_slot_rects()
 
     while True:
         frame += 1
@@ -1431,10 +1459,8 @@ def main():
             if event.type == pygame.KEYDOWN and in_building:
                 if in_building == "job" and event.key == pygame.K_e:
                     if player.energy >= 20:
-                        pay = 30 + 20 * (player.office_level - 1)
                         pay = 20 + 15 * (player.office_level - 1)
                         player.money += pay
-                        player.energy -= 20
                         player.energy -= energy_cost(player, 20)
                         player.office_shifts += 1
                         if (
@@ -1697,10 +1723,8 @@ def main():
                     shop_message_timer = 90
                 elif in_building == "dealer" and event.key == pygame.K_e:
                     if player.energy >= 20:
-                        pay = 50 + 25 * (player.dealer_level - 1)
                         pay = 40 + 20 * (player.dealer_level - 1)
                         player.money += pay
-                        player.energy -= 20
                         player.energy -= energy_cost(player, 20)
                         player.dealer_shifts += 1
                         if (
@@ -1718,10 +1742,8 @@ def main():
                     shop_message_timer = 60
                 elif in_building == "clinic" and event.key == pygame.K_e:
                     if player.energy >= 20:
-                        pay = 40 + 20 * (player.clinic_level - 1)
                         pay = 30 + 15 * (player.clinic_level - 1)
                         player.money += pay
-                        player.energy -= 20
                         player.energy -= energy_cost(player, 20)
                         player.clinic_shifts += 1
                         if (
@@ -1915,8 +1937,8 @@ def main():
         if player.energy == 0:
             player.health = max(player.health - 0.08, 0)
 
-        cam_x = min(max(0, player.rect.centerx - SCREEN_WIDTH // 2), MAP_WIDTH - SCREEN_WIDTH)
-        cam_y = min(max(0, player.rect.centery - SCREEN_HEIGHT // 2), MAP_HEIGHT - SCREEN_HEIGHT)
+        cam_x = min(max(0, player.rect.centerx - settings.SCREEN_WIDTH // 2), MAP_WIDTH - settings.SCREEN_WIDTH)
+        cam_y = min(max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2), MAP_HEIGHT - settings.SCREEN_HEIGHT)
         if inside_home:
             cam_x = cam_y = 0
             draw_home_interior(screen, font, player, frame if dx or dy else 0, BED_RECT, DOOR_RECT)
@@ -1945,8 +1967,8 @@ def main():
                 FOREST_DOOR_RECT,
             )
         else:
-            cam_x = min(max(0, player.rect.centerx - SCREEN_WIDTH // 2), MAP_WIDTH - SCREEN_WIDTH)
-            cam_y = min(max(0, player.rect.centery - SCREEN_HEIGHT // 2), MAP_HEIGHT - SCREEN_HEIGHT)
+            cam_x = min(max(0, player.rect.centerx - settings.SCREEN_WIDTH // 2), MAP_WIDTH - settings.SCREEN_WIDTH)
+            cam_y = min(max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2), MAP_HEIGHT - settings.SCREEN_HEIGHT)
 
         draw_sky(screen)
 
@@ -1995,19 +2017,15 @@ def main():
         if near_building and not in_building:
             msg = ""
             if near_building.btype == "job":
-                pay = 30 + 20 * (player.office_level - 1)
                 pay = 20 + 15 * (player.office_level - 1)
                 msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "dealer":
-                pay = 50 + 25 * (player.dealer_level - 1)
                 pay = 40 + 20 * (player.dealer_level - 1)
                 msg = f"[E] to Deal drugs (+${pay}, -20 energy)"
             elif near_building.btype == "clinic":
-                pay = 40 + 20 * (player.clinic_level - 1)
                 pay = 30 + 15 * (player.clinic_level - 1)
                 msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "home":
-                msg = "[E] to Sleep (restore energy, next day)"
                 msg = "[E] to enter home"
             elif near_building.btype == "shop":
                 msg = "[E] to shop for items"
@@ -2051,20 +2069,14 @@ def main():
                 screen.blit(msg_surf, (18, info_y))
 
         if in_building:
-            panel = pygame.Surface((SCREEN_WIDTH, 100))
-            panel.fill((245, 245, 200))
-            screen.blit(panel, (0, SCREEN_HEIGHT - 100))
             txt = ""
             if in_building == "job":
-                pay = 30 + 20 * (player.office_level - 1)
                 pay = 20 + 15 * (player.office_level - 1)
                 txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "dealer":
-                pay = 50 + 25 * (player.dealer_level - 1)
                 pay = 40 + 20 * (player.dealer_level - 1)
                 txt = f"[E] Deal (+${pay})  [Q] Leave"
             elif in_building == "clinic":
-                pay = 40 + 20 * (player.clinic_level - 1)
                 pay = 30 + 15 * (player.clinic_level - 1)
                 txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "home":
@@ -2097,25 +2109,24 @@ def main():
                 txt = "[E] Relax/Deliver  [Q] Leave"
             elif in_building == "suburbs":
                 txt = "[E] Help locals  [Q] Leave"
-            tip_surf = font.render(f"Inside: {in_building.upper()}   {txt}", True, (80, 40, 40))
-            screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
+            draw_tip_panel(screen, font, f"Inside: {in_building.upper()}   {txt}")
             if in_building == "shop":
                 for i, (name, cost, _func) in enumerate(SHOP_ITEMS):
                     item_surf = font.render(f"{(i+1)%10}:{name} ${cost}", True, (80, 40, 40))
                     row = i // 5
                     col = i % 5
-                    screen.blit(item_surf, (30 + col * 150, SCREEN_HEIGHT - 60 - row * 24))
-                    screen.blit(item_surf, (30 + col * 200, SCREEN_HEIGHT - 60 - row * 24))
+                    screen.blit(item_surf, (30 + col * 150, settings.SCREEN_HEIGHT - 60 - row * 24))
+                    screen.blit(item_surf, (30 + col * 200, settings.SCREEN_HEIGHT - 60 - row * 24))
             elif in_building == "home":
                 avail = [u for u in HOME_UPGRADES if u[3] <= player.home_level]
                 for i, (name, cost, _d, _req) in enumerate(avail):
                     status = "Owned" if name in player.home_upgrades else f"${cost}"
                     item_surf = font.render(f"{i+1}:{name} {status}", True, (80, 40, 40))
-                    screen.blit(item_surf, (30 + i * 260, SCREEN_HEIGHT - 60))
+                    screen.blit(item_surf, (30 + i * 260, settings.SCREEN_HEIGHT - 60))
             elif in_building == "petshop":
                 for i, (name, cost, _d) in enumerate(COMPANIONS):
                     item_surf = font.render(f"{i+1}:{name} ${cost}", True, (80, 40, 40))
-                    screen.blit(item_surf, (30 + i * 200, SCREEN_HEIGHT - 60))
+                    screen.blit(item_surf, (30 + i * 200, settings.SCREEN_HEIGHT - 60))
             elif in_building == "workshop":
                 opts = [
                     "1:Health Potion (2 herbs)",
@@ -2125,35 +2136,22 @@ def main():
                 ]
                 for i, txt_opt in enumerate(opts):
                     item_surf = font.render(txt_opt, True, (80, 40, 40))
-                    screen.blit(item_surf, (30 + i * 300, SCREEN_HEIGHT - 60))
+                    screen.blit(item_surf, (30 + i * 300, settings.SCREEN_HEIGHT - 60))
             elif in_building == "farm":
                 opts = ["P:Plant (-1 seed)", "H:Harvest (ready crops)"]
                 for i, txt_opt in enumerate(opts):
                     item_surf = font.render(txt_opt, True, (80, 40, 40))
-                    screen.blit(item_surf, (30 + i * 260, SCREEN_HEIGHT - 60))
+                    screen.blit(item_surf, (30 + i * 260, settings.SCREEN_HEIGHT - 60))
 
         elif inside_bar:
-            panel = pygame.Surface((SCREEN_WIDTH, 100))
-            panel.fill((245, 245, 200))
-            screen.blit(panel, (0, SCREEN_HEIGHT - 100))
             txt = "Use counter to buy tokens, tables to gamble or throw darts, ring to fight, door to exit"
-            tip_surf = font.render(txt, True, (80, 40, 40))
-            screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
+            draw_tip_panel(screen, font, txt)
         elif inside_forest:
-            panel = pygame.Surface((SCREEN_WIDTH, 100))
-            panel.fill((245, 245, 200))
-            screen.blit(panel, (0, SCREEN_HEIGHT - 100))
             txt = "Fight enemies or exit via the door"
-            tip_surf = font.render(txt, True, (80, 40, 40))
-            screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
+            draw_tip_panel(screen, font, txt)
         elif inside_home:
-            panel = pygame.Surface((SCREEN_WIDTH, 100))
-            panel.fill((245, 245, 200))
-            screen.blit(panel, (0, SCREEN_HEIGHT - 100))
-            txt = "Use bed to sleep, door to exit" \
-                " 1-3 Buy upgrade"
-            tip_surf = font.render(txt, True, (80, 40, 40))
-            screen.blit(tip_surf, (20, SCREEN_HEIGHT - 80))
+            txt = "Use bed to sleep, door to exit 1-3 Buy upgrade"
+            draw_tip_panel(screen, font, txt)
 
         if shop_message_timer > 0:
             shop_message_timer -= 1
@@ -2165,15 +2163,13 @@ def main():
 
         if player.health <= 0:
             over = font.render("GAME OVER (You collapsed from exhaustion)", True, (255, 0, 0))
-            screen.blit(over, (SCREEN_WIDTH // 2 - 240, SCREEN_HEIGHT // 2))
+            screen.blit(over, (settings.SCREEN_WIDTH // 2 - 240, settings.SCREEN_HEIGHT // 2))
             pygame.display.flip()
             pygame.time.wait(2500)
             return
 
-        if check_quests(player):
+        if check_quests(player) and SOUND_ENABLED:
             quest_sound.play()
-            if SOUND_ENABLED:
-                quest_sound.play()
 
         pygame.display.flip()
         clock.tick(60)
