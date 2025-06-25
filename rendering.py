@@ -23,6 +23,10 @@ from settings import (
     FONT_COLOR,
     MAP_WIDTH,
     MAP_HEIGHT,
+
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+
     BG_COLOR,
 )
 
