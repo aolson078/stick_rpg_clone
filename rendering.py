@@ -24,8 +24,10 @@ from settings import (
     MAP_WIDTH,
     MAP_HEIGHT,
 
+
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
+
 
     BG_COLOR,
 )
