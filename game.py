@@ -1200,6 +1200,10 @@ def main():
                 dx -= speed
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 dx += speed
+            if dx < 0:
+                player.facing_left = True
+            elif dx > 0:
+                player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
             if 40 <= next_rect.x <= HOME_WIDTH - PLAYER_SIZE - 40 and 40 <= next_rect.y <= HOME_HEIGHT - PLAYER_SIZE - 40:
@@ -1217,6 +1221,10 @@ def main():
                 dx -= speed
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 dx += speed
+            if dx < 0:
+                player.facing_left = True
+            elif dx > 0:
+                player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
             if 40 <= next_rect.x <= BAR_WIDTH - PLAYER_SIZE - 40 and 40 <= next_rect.y <= BAR_HEIGHT - PLAYER_SIZE - 40:
@@ -1234,6 +1242,10 @@ def main():
                 dx -= speed
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 dx += speed
+            if dx < 0:
+                player.facing_left = True
+            elif dx > 0:
+                player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
             if 40 <= next_rect.x <= FOREST_WIDTH - PLAYER_SIZE - 40 and 40 <= next_rect.y <= FOREST_HEIGHT - PLAYER_SIZE - 40:
@@ -1251,6 +1263,10 @@ def main():
                 dx -= speed
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 dx += speed
+            if dx < 0:
+                player.facing_left = True
+            elif dx > 0:
+                player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
             if 0 <= next_rect.x <= MAP_WIDTH - PLAYER_SIZE and 0 <= next_rect.y <= MAP_HEIGHT - PLAYER_SIZE:
@@ -1309,15 +1325,18 @@ def main():
             if keys[pygame.K_e]:
                 state = player.npc_progress.get(near_npc.name)
                 if state is None:
-                    shop_message = f"{near_npc.name}: {near_npc.quest.description}"
+                    text = near_npc.quest.description
                     player.side_quest = near_npc.quest.name
                     player.npc_progress[near_npc.name] = 1
                 elif state == 1 and player.side_quest is None:
                     near_npc.quest.reward(player)
                     player.npc_progress[near_npc.name] = 2
-                    shop_message = f"{near_npc.name}: Thanks for the help!"
+                    text = "Thanks for the help!"
                 else:
-                    shop_message = f"{near_npc.name}: Good to see you."
+                    text = "Good to see you."
+                near_npc.bubble_message = text
+                near_npc.bubble_timer = 90
+                shop_message = f"{near_npc.name}: {text}"
                 shop_message_timer = 90
 
         if not inside_home and not inside_bar and not inside_forest and not in_building and near_building and not show_inventory and not show_log:
@@ -1403,14 +1422,13 @@ def main():
 
         for b in BUILDINGS:
             draw_rect = b.rect.move(-cam_x, -cam_y)
-            draw_building(screen, Building(draw_rect, b.name, b.btype))
+            draw_building(screen, Building(draw_rect, b.name, b.btype), highlight=(b == near_building))
 
         for n in NPCS:
-            nr = n.rect.move(-cam_x, -cam_y)
-            draw_npc(screen, nr)
+            draw_npc(screen, n, font, (-cam_x, -cam_y))
 
         pr = player.rect.move(-cam_x, -cam_y)
-        draw_player_sprite(screen, pr, frame if dx or dy else 0)
+        draw_player_sprite(screen, pr, frame if dx or dy else 0, player.facing_left)
 
         draw_day_night(screen, player.time)
 
@@ -1586,6 +1604,10 @@ def main():
             bg.fill((255, 255, 255, 240))
             screen.blit(bg, (10, 90))
             screen.blit(msg_surf, (18, 94))
+
+        for n in NPCS:
+            if n.bubble_timer > 0:
+                n.bubble_timer -= 1
 
         if player.health <= 0:
             over = font.render("GAME OVER (You collapsed from exhaustion)", True, (255, 0, 0))
