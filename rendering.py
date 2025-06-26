@@ -53,11 +53,13 @@ def load_player_sprites():
     return PLAYER_SPRITES
 
 
-def draw_player_sprite(surface, rect, frame=0):
+def draw_player_sprite(surface, rect, frame=0, facing_left=False):
     sprites = load_player_sprites()
     if not sprites:
         return draw_player(surface, rect, frame)
     image = sprites[frame % len(sprites)]
+    if facing_left:
+        image = pygame.transform.flip(image, True, False)
     x = rect.x + rect.width // 2 - image.get_width() // 2
     y = rect.y + rect.height - image.get_height()
     shadow = pygame.Surface((40, 14), pygame.SRCALPHA)
@@ -67,7 +69,7 @@ def draw_player_sprite(surface, rect, frame=0):
     surface.blit(image, (x, y))
 
 
-def draw_player(surface, rect, frame=0):
+def draw_player(surface, rect, frame=0, facing_left=False):
     """Fallback stick figure drawing if sprites fail to load."""
     x = rect.x + rect.width // 2
     y = rect.y + rect.height
@@ -79,15 +81,26 @@ def draw_player(surface, rect, frame=0):
     pygame.draw.circle(surface, PLAYER_HEAD_COLOR, (x, y - 24), 10)
     pygame.draw.circle(surface, PLAYER_COLOR, (x, y - 24), 10, 2)
     pygame.draw.line(surface, PLAYER_COLOR, (x, y - 14), (x, y), 3)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x - 13, y - 2 + int(swing)), 3)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x + 13, y - 2 - int(swing)), 3)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x - 9, y + 16 + int(swing)), 3)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x + 9, y + 16 - int(swing)), 3)
+    arm_offset = -13 if not facing_left else 13
+    leg_offset = -9 if not facing_left else 9
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x + arm_offset, y - 2 + int(swing)), 3)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x - arm_offset, y - 2 - int(swing)), 3)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x + leg_offset, y + 16 + int(swing)), 3)
+    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x - leg_offset, y + 16 - int(swing)), 3)
 
 
-def draw_npc(surface, rect):
-    """Draw a simple rectangular NPC."""
+def draw_npc(surface, npc, font, offset=(0, 0)):
+    """Draw an NPC with optional speech bubble."""
+    rect = npc.rect.move(offset)
     pygame.draw.rect(surface, (60, 120, 220), rect)
+    if npc.bubble_timer > 0 and npc.bubble_message:
+        msg_surf = font.render(npc.bubble_message, True, (30, 30, 30))
+        bg = pygame.Surface((msg_surf.get_width() + 10, msg_surf.get_height() + 6), pygame.SRCALPHA)
+        bg.fill((255, 255, 255, 230))
+        bx = rect.centerx - bg.get_width() // 2
+        by = rect.top - bg.get_height() - 8
+        surface.blit(bg, (bx, by))
+        surface.blit(msg_surf, (bx + 5, by + 3))
 
 
 def building_color(btype):
@@ -120,9 +133,14 @@ def building_color(btype):
     return BUILDING_COLOR
 
 
-def draw_building(surface, building):
+def draw_building(surface, building, highlight=False):
     b = building.rect
-    pygame.draw.rect(surface, building_color(building.btype), b, border_radius=9)
+    color = building_color(building.btype)
+    if highlight:
+        color = tuple(min(255, c + 40) for c in color)
+    pygame.draw.rect(surface, color, b, border_radius=9)
+    if highlight:
+        pygame.draw.rect(surface, (255, 255, 0), b, 2, border_radius=9)
     roof = pygame.Rect(b.x, b.y - 14, b.width, 18)
     pygame.draw.rect(
         surface,
@@ -217,6 +235,15 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     if player.companion:
         ctxt = font.render(f"Pet: {player.companion}", True, FONT_COLOR)
         bar.blit(ctxt, (settings.SCREEN_WIDTH - ctxt.get_width() - 20, 6))
+    # progress bars for energy and health
+    pygame.draw.rect(bar, (80, 80, 80), (16, 44, 100, 10))
+    pygame.draw.rect(bar, (0, 200, 0), (16, 44, int(player.energy), 10))
+    pygame.draw.rect(bar, (80, 80, 80), (140, 44, 100, 10))
+    pygame.draw.rect(bar, (200, 0, 0), (140, 44, int(player.health), 10))
+    e_txt = font.render("E", True, FONT_COLOR)
+    h_txt = font.render("H", True, FONT_COLOR)
+    bar.blit(e_txt, (6, 42))
+    bar.blit(h_txt, (130, 42))
     surface.blit(bar, (0, 0))
 
     # Show current quest below the stat bar
@@ -369,7 +396,7 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect):
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
     pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
 
-    draw_player_sprite(surface, player.rect, frame)
+    draw_player_sprite(surface, player.rect, frame, player.facing_left)
 
 
 def load_forest_enemy_images():
@@ -399,7 +426,7 @@ def draw_forest_area(surface, font, player, frame, enemy_rects, door_rect):
     for rect, img in zip(enemy_rects, images):
         surface.blit(img, rect)
 
-    draw_player_sprite(surface, player.rect, frame)
+    draw_player_sprite(surface, player.rect, frame, player.facing_left)
 
 
 def draw_bar_interior(
@@ -451,4 +478,4 @@ def draw_bar_interior(
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
     pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
 
-    draw_player_sprite(surface, player.rect, frame)
+    draw_player_sprite(surface, player.rect, frame, player.facing_left)

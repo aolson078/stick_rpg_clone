@@ -30,6 +30,7 @@ class Player:
     clinic_shifts: int = 0
     tokens: int = 0
     has_skateboard: bool = False
+    facing_left: bool = False
     inventory: List["InventoryItem"] = field(default_factory=list)
     equipment: Dict[str, Optional["InventoryItem"]] = field(
         default_factory=lambda: {
@@ -120,6 +121,8 @@ class NPC:
     rect: pygame.Rect
     name: str
     quest: Optional[SideQuest] = None
+    bubble_message: str = ""
+    bubble_timer: int = 0
 
 
 @dataclass
