@@ -31,6 +31,7 @@ from rendering import (
     draw_sky,
     draw_npc,
     draw_tip_panel,
+    draw_decorations
 )
 from inventory import (
     SHOP_ITEMS,
@@ -1419,6 +1420,7 @@ def main():
 
         draw_road_and_sidewalks(screen, cam_x, cam_y)
         draw_city_walls(screen, cam_x, cam_y)
+        draw_decorations(screen, cam_x, cam_y)
 
         for b in BUILDINGS:
             draw_rect = b.rect.move(-cam_x, -cam_y)
