@@ -30,6 +30,9 @@ from settings import (
 
 
     BG_COLOR,
+    TREE_COLOR,
+    TRUNK_COLOR,
+    FLOWER_COLORS,
 )
 
 PERK_MAX_LEVEL = 3
@@ -180,6 +183,27 @@ def draw_city_walls(surface, cam_x, cam_y):
     pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, MAP_HEIGHT - 12 - cam_y, MAP_WIDTH, 12))
     pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, -cam_y, 12, MAP_HEIGHT))
     pygame.draw.rect(surface, CITY_WALL_COLOR, (MAP_WIDTH - 12 - cam_x, -cam_y, 12, MAP_HEIGHT))
+
+
+def _draw_tree(surface, x, y):
+    "Draw a simple tree."
+    pygame.draw.rect(surface, TRUNK_COLOR, (x + 10, y + 24, 12, 20))
+    pygame.draw.circle(surface, TREE_COLOR, (x + 16, y + 16), 20)
+
+def _draw_flower_patch(surface, x, y):
+    "Draw a small patch of flowers."
+    for i, color in enumerate(FLOWER_COLORS):
+        ox = (i % 2) * 6
+        oy = (i // 2) * 6
+        pygame.draw.circle(surface, color, (x + ox, y + oy), 3)
+
+def draw_decorations(surface, cam_x, cam_y):
+    "Render decorative trees and flowers on the map."
+    for x in range(100, MAP_WIDTH, 300):
+        _draw_tree(surface, x - cam_x, 100 - cam_y)
+    patches = [(500, 620), (900, 620), (2000, 620), (2500, 900)]
+    for fx, fy in patches:
+        _draw_flower_patch(surface, fx - cam_x, fy - cam_y)
 
 
 def draw_sky(surface):
