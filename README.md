@@ -7,6 +7,7 @@ these locations. The world runs on a 24-hour clock with automatic day changes.
 Buildings keep regular hours and the city darkens at night.
 
 A colorful gradient sky and detailed buildings give the city a cleaner look.
+Buildings now cast subtle drop shadows for a little extra depth.
 When the game launches you are greeted with a small start menu allowing you to
 load a save or begin anew.
 
