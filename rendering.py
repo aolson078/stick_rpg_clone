@@ -33,6 +33,7 @@ from settings import (
     TREE_COLOR,
     TRUNK_COLOR,
     FLOWER_COLORS,
+    SHADOW_COLOR,
 )
 
 PERK_MAX_LEVEL = 3
@@ -141,6 +142,10 @@ def draw_building(surface, building, highlight=False):
     color = building_color(building.btype)
     if highlight:
         color = tuple(min(255, c + 40) for c in color)
+    # Draw a subtle drop shadow for depth
+    shadow = pygame.Surface((b.width, b.height), pygame.SRCALPHA)
+    pygame.draw.rect(shadow, SHADOW_COLOR, shadow.get_rect(), border_radius=9)
+    surface.blit(shadow, (b.x + 4, b.y + 4))
     pygame.draw.rect(surface, color, b, border_radius=9)
     if highlight:
         pygame.draw.rect(surface, (255, 255, 0), b, 2, border_radius=9)
