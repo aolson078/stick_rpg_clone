@@ -1416,7 +1416,7 @@ def main():
             cam_x = min(max(0, player.rect.centerx - settings.SCREEN_WIDTH // 2), MAP_WIDTH - settings.SCREEN_WIDTH)
             cam_y = min(max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2), MAP_HEIGHT - settings.SCREEN_HEIGHT)
 
-        draw_sky(screen)
+        draw_sky(screen, player.time)
 
         draw_road_and_sidewalks(screen, cam_x, cam_y)
         draw_city_walls(screen, cam_x, cam_y)

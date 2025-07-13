@@ -211,8 +211,8 @@ def draw_decorations(surface, cam_x, cam_y):
         _draw_flower_patch(surface, fx - cam_x, fy - cam_y)
 
 
-def draw_sky(surface):
-    """Draw a vertical gradient sky background."""
+def draw_sky(surface, current_time):
+    """Draw a vertical gradient sky background with a sun or moon."""
     top_color = (120, 180, 255)
     bottom_color = BG_COLOR
     for y in range(settings.SCREEN_HEIGHT):
@@ -221,6 +221,16 @@ def draw_sky(surface):
         g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
         b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
         pygame.draw.line(surface, (r, g, b), (0, y), (settings.SCREEN_WIDTH, y))
+
+    # add a simple sun or moon that moves across the sky
+    day_fraction = (current_time % (24 * 60)) / (24 * 60)
+    x = int(day_fraction * settings.SCREEN_WIDTH)
+    y = int(80 - 60 * math.cos(day_fraction * 2 * math.pi))
+    hour = int(current_time) // 60
+    if 6 <= hour < 18:
+        pygame.draw.circle(surface, (255, 240, 150), (x, y), 40)
+    else:
+        pygame.draw.circle(surface, (230, 230, 255), (x, y), 30)
 def draw_day_night(surface, current_time):
     """Darken the city during nighttime hours."""
     hour = int(current_time) // 60
