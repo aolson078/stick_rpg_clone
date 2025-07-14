@@ -21,6 +21,7 @@ from rendering import (
     draw_road_and_sidewalks,
     draw_city_walls,
     draw_day_night,
+    draw_weather,
     draw_ui,
     draw_inventory_screen,
     draw_perk_menu,
@@ -1432,7 +1433,9 @@ def main():
         pr = player.rect.move(-cam_x, -cam_y)
         draw_player_sprite(screen, pr, frame if dx or dy else 0, player.facing_left)
 
+
         draw_day_night(screen, player.time)
+        draw_weather(screen, player.weather)
 
 
         draw_ui(screen, font, player, QUESTS, STORY_QUESTS)
