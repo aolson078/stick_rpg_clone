@@ -1,5 +1,6 @@
 import math
 import os
+import random
 import pygame
 import settings
 from settings import (
@@ -39,6 +40,9 @@ from settings import (
 PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
 FOREST_ENEMY_IMAGES = []
+STARS = []
+RAINDROPS = []
+SNOWFLAKES = []
 
 
 def load_player_sprites():
@@ -222,6 +226,14 @@ def draw_sky(surface, current_time):
         b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
         pygame.draw.line(surface, (r, g, b), (0, y), (settings.SCREEN_WIDTH, y))
 
+    # stars remain fixed across frames
+    global STARS
+    if not STARS:
+        for _ in range(80):
+            sx = random.randint(0, settings.SCREEN_WIDTH - 1)
+            sy = random.randint(0, settings.SCREEN_HEIGHT // 2)
+            STARS.append((sx, sy))
+
     # add a simple sun or moon that moves across the sky
     day_fraction = (current_time % (24 * 60)) / (24 * 60)
     x = int(day_fraction * settings.SCREEN_WIDTH)
@@ -231,6 +243,8 @@ def draw_sky(surface, current_time):
         pygame.draw.circle(surface, (255, 240, 150), (x, y), 40)
     else:
         pygame.draw.circle(surface, (230, 230, 255), (x, y), 30)
+        for sx, sy in STARS:
+            pygame.draw.circle(surface, (255, 255, 255), (sx, sy), 2)
 def draw_day_night(surface, current_time):
     """Darken the city during nighttime hours."""
     hour = int(current_time) // 60
@@ -244,6 +258,42 @@ def draw_day_night(surface, current_time):
         overlay = pygame.Surface((settings.SCREEN_WIDTH, MAP_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, alpha))
         surface.blit(overlay, (0, 0))
+
+
+def draw_weather(surface, weather):
+    """Render simple rain or snow particle effects."""
+    global RAINDROPS, SNOWFLAKES
+    if weather == "Rain":
+        if not RAINDROPS:
+            RAINDROPS = [
+                [random.randint(0, settings.SCREEN_WIDTH), random.randint(-settings.SCREEN_HEIGHT, 0)]
+                for _ in range(180)
+            ]
+        for drop in RAINDROPS:
+            drop[0] += -3
+            drop[1] += 15
+            if drop[1] > settings.SCREEN_HEIGHT:
+                drop[0] = random.randint(0, settings.SCREEN_WIDTH)
+                drop[1] = random.randint(-40, 0)
+            pygame.draw.line(surface, (180, 180, 255), (drop[0], drop[1]), (drop[0] + 3, drop[1] + 8), 1)
+        SNOWFLAKES = []
+    elif weather == "Snow":
+        if not SNOWFLAKES:
+            SNOWFLAKES = [
+                [random.randint(0, settings.SCREEN_WIDTH), random.randint(-settings.SCREEN_HEIGHT, 0), random.randint(1, 3)]
+                for _ in range(120)
+            ]
+        for flake in SNOWFLAKES:
+            flake[0] += math.sin(flake[1] * 0.05) * flake[2]
+            flake[1] += flake[2]
+            if flake[1] > settings.SCREEN_HEIGHT:
+                flake[0] = random.randint(0, settings.SCREEN_WIDTH)
+                flake[1] = random.randint(-40, 0)
+            pygame.draw.circle(surface, (255, 255, 255), (int(flake[0]), int(flake[1])), 2)
+        RAINDROPS = []
+    else:
+        RAINDROPS = []
+        SNOWFLAKES = []
 
 
 def draw_ui(surface, font, player, quests, story_quests=None):
