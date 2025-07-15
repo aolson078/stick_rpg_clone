@@ -41,6 +41,7 @@ PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
 FOREST_ENEMY_IMAGES = []
 STARS = []
+CLOUDS = []
 RAINDROPS = []
 SNOWFLAKES = []
 
@@ -227,12 +228,34 @@ def draw_sky(surface, current_time):
         pygame.draw.line(surface, (r, g, b), (0, y), (settings.SCREEN_WIDTH, y))
 
     # stars remain fixed across frames
-    global STARS
+    global STARS, CLOUDS
     if not STARS:
         for _ in range(80):
             sx = random.randint(0, settings.SCREEN_WIDTH - 1)
             sy = random.randint(0, settings.SCREEN_HEIGHT // 2)
             STARS.append((sx, sy))
+
+    # generate a few cloud sprites on first call
+    if not CLOUDS:
+        for _ in range(6):
+            w = random.randint(120, 220)
+            h = random.randint(40, 80)
+            cloud = pygame.Surface((w, h), pygame.SRCALPHA)
+            pygame.draw.ellipse(cloud, (255, 255, 255, 230), (0, h // 3, w, h // 2))
+            pygame.draw.ellipse(cloud, (255, 255, 255, 230), (w // 4, 0, w // 2, h))
+            x = random.randint(0, settings.SCREEN_WIDTH)
+            y = random.randint(40, 200)
+            speed = random.uniform(0.2, 0.7)
+            CLOUDS.append([cloud, x, y, speed])
+
+    # move and draw clouds
+    for cloud in CLOUDS:
+        cloud[1] -= cloud[3]
+        if cloud[1] < -cloud[0].get_width():
+            cloud[1] = settings.SCREEN_WIDTH + random.randint(20, 100)
+            cloud[2] = random.randint(40, 200)
+            cloud[3] = random.uniform(0.2, 0.7)
+        surface.blit(cloud[0], (cloud[1], cloud[2]))
 
     # add a simple sun or moon that moves across the sky
     day_fraction = (current_time % (24 * 60)) / (24 * 60)
