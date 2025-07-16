@@ -481,6 +481,35 @@ def draw_quest_log(surface, font, quests, story_quests=None):
     surface.blit(note, (100, settings.SCREEN_HEIGHT - 140))
 
 
+def draw_help_screen(surface, font):
+    """Show a simple overlay listing the main controls."""
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    surface.blit(overlay, (0, 0))
+
+    panel = pygame.Surface((settings.SCREEN_WIDTH - 160, settings.SCREEN_HEIGHT - 160))
+    panel.fill((240, 240, 220))
+    surface.blit(panel, (80, 80))
+
+    title = font.render("Help & Controls", True, FONT_COLOR)
+    surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 100))
+
+    lines = [
+        "Move: Arrow keys/WASD",
+        "Interact: E    Leave building: Q",
+        "Inventory: I    Perks: P    Quest Log: L",
+        "Save: F5    Load: F9    Toggle Help: F1",
+    ]
+    y = 160
+    for line in lines:
+        txt = font.render(line, True, FONT_COLOR)
+        surface.blit(txt, (120, y))
+        y += 40
+
+    note = font.render("Press F1 or Q to close", True, FONT_COLOR)
+    surface.blit(note, (120, y))
+
+
 def draw_tip_panel(surface, font, text):
     """Display an instruction panel at the bottom of the screen."""
     panel_height = 100

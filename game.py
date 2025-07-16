@@ -32,7 +32,8 @@ from rendering import (
     draw_sky,
     draw_npc,
     draw_tip_panel,
-    draw_decorations
+    draw_decorations,
+    draw_help_screen
 )
 from inventory import (
     SHOP_ITEMS,
@@ -346,6 +347,7 @@ def advance_day(player: Player) -> int:
     update_weather(player)
     interest = int(player.bank_balance * 0.01)
     player.bank_balance += interest
+    save_game(player)
     return interest
 
 
@@ -674,6 +676,7 @@ def main():
     show_inventory = False
     show_perk_menu = False
     show_log = False
+    show_help = False
     inside_home = False
     inside_bar = False
     inside_forest = False
@@ -714,7 +717,12 @@ def main():
                     (pygame.Rect(320 + col * 120, 150 + row * 70, 100, 60), item)
                 )
         for event in pygame.event.get():
+            if show_help:
+                if event.type == pygame.KEYDOWN and event.key in (pygame.K_F1, pygame.K_q):
+                    show_help = False
+                continue
             if event.type == pygame.QUIT:
+                save_game(player)
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
@@ -739,6 +747,8 @@ def main():
                 elif event.key == pygame.K_l:
                     show_log = not show_log
                     dragging_item = None
+                elif event.key == pygame.K_F1:
+                    show_help = True
                 elif event.key == pygame.K_h and not show_inventory and not show_log and not in_building:
                     pot = next((i for i in player.inventory if i.name == "Health Potion"), None)
                     if pot:
@@ -1452,6 +1462,8 @@ def main():
             draw_perk_menu(screen, font, player, PERKS)
         if show_log:
             draw_quest_log(screen, font, QUESTS, STORY_QUESTS)
+        if show_help:
+            draw_help_screen(screen, font)
 
         info_y = 46
         if near_npc and not in_building:

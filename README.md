@@ -139,7 +139,7 @@ morning joggers or late-night food stands.
 
 You can save your progress with **F5** and load it back with **F9**. If a
 `savegame.json` file exists, it will automatically be loaded when the game
-starts.
+starts. Press **F1** at any time for a quick reminder of the controls.
 
 ## Getting Started
 
@@ -181,6 +181,7 @@ starts.
 - **Q**: Leave a building
 - **F5**: Save game
 - **F9**: Load game
+- **F1**: Toggle help screen
 
 ## Requirements
 
