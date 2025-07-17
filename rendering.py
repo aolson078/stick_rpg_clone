@@ -499,6 +499,7 @@ def draw_help_screen(surface, font):
         "Interact: E    Leave building: Q",
         "Inventory: I    Perks: P    Quest Log: L",
         "Save: F5    Load: F9    Toggle Help: F1",
+        "Fullscreen: F11    Mute Audio: M",
     ]
     y = 160
     for line in lines:

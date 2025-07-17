@@ -182,6 +182,8 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 - **F5**: Save game
 - **F9**: Load game
 - **F1**: Toggle help screen
+- **F11**: Toggle fullscreen
+- **M**: Mute/unmute audio
 
 ## Requirements
 

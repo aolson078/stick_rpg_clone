@@ -687,6 +687,8 @@ def main():
     drag_origin = None
     drag_pos = (0, 0)
     slot_rects = compute_slot_rects()
+    fullscreen = False
+    muted = False
 
     while True:
         frame += 1
@@ -749,6 +751,21 @@ def main():
                     dragging_item = None
                 elif event.key == pygame.K_F1:
                     show_help = True
+                elif event.key == pygame.K_F11:
+                    fullscreen = not fullscreen
+                    flags = pygame.FULLSCREEN if fullscreen else pygame.RESIZABLE
+                    screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), flags)
+                    recalc_layouts()
+                    slot_rects = compute_slot_rects()
+                elif event.key == pygame.K_m and SOUND_ENABLED:
+                    muted = not muted
+                    vol = 0 if muted else SFX_VOLUME
+                    if step_sound:
+                        for snd in (step_sound, enter_sound, quest_sound):
+                            snd.set_volume(vol)
+                        pygame.mixer.music.set_volume(0 if muted else MUSIC_VOLUME)
+                    shop_message = "Sound muted" if muted else "Sound on"
+                    shop_message_timer = 60
                 elif event.key == pygame.K_h and not show_inventory and not show_log and not in_building:
                     pot = next((i for i in player.inventory if i.name == "Health Potion"), None)
                     if pot:
