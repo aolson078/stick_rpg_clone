@@ -112,6 +112,21 @@ def draw_npc(surface, npc, font, offset=(0, 0)):
         surface.blit(msg_surf, (bx + 5, by + 3))
 
 
+def draw_quest_marker(surface, player_rect, target_rect, cam_x, cam_y):
+    """Draw an arrow above the player pointing toward the target."""
+    px = player_rect.centerx - cam_x
+    py = player_rect.centery - cam_y
+    tx = target_rect.centerx - cam_x
+    ty = target_rect.centery - cam_y
+    angle = math.atan2(ty - py, tx - px)
+    x = px
+    y = py - 40
+    tip = (x + 20 * math.cos(angle), y + 20 * math.sin(angle))
+    left = (x + 8 * math.cos(angle + math.pi * 0.75), y + 8 * math.sin(angle + math.pi * 0.75))
+    right = (x + 8 * math.cos(angle - math.pi * 0.75), y + 8 * math.sin(angle - math.pi * 0.75))
+    pygame.draw.polygon(surface, (255, 50, 50), [tip, left, right])
+
+
 def building_color(btype):
     if btype == "home":
         return HOME_COLOR
@@ -356,6 +371,13 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     h_txt = font.render("H", True, FONT_COLOR)
     bar.blit(e_txt, (6, 42))
     bar.blit(h_txt, (130, 42))
+    cd_txt = font.render(
+        f"Z:{player.ability_cooldowns['heavy']//60 if player.ability_cooldowns['heavy'] else 'R'} "
+        f"X:{player.ability_cooldowns['guard']//60 if player.ability_cooldowns['guard'] else 'R'}",
+        True,
+        FONT_COLOR,
+    )
+    bar.blit(cd_txt, (settings.SCREEN_WIDTH - cd_txt.get_width() - 20, 32))
     surface.blit(bar, (0, 0))
 
     # Show current quest below the stat bar
@@ -500,6 +522,7 @@ def draw_help_screen(surface, font):
         "Inventory: I    Perks: P    Quest Log: L",
         "Save: F5    Load: F9    Toggle Help: F1",
         "Fullscreen: F11    Mute Audio: M",
+        "Abilities: Z Heavy  X Guard",
     ]
     y = 160
     for line in lines:

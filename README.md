@@ -39,6 +39,9 @@ Win a brawl and you pocket some cash. Combat has been enhanced with a chance
 to dodge incoming hits based on your speed. You also have a small chance each
 turn to unleash a **power strike** that deals double damage and causes the
 opponent to bleed for a few turns.
+Two active abilities further spice up battles. Hit **Z** to ready a Heavy
+Strike that deals extra damage in your next fight, or **X** to assume a
+Guard Stance that halves incoming damage. Each ability has a short cooldown.
 
 The shop now stocks a few useful items: a cola to restore a little energy, a
 protein bar for health, a book that teaches you intelligence, a gym pass that
@@ -91,6 +94,8 @@ money or tokens.
 A new **Workshop** lets you craft and upgrade gear. Fights and events can
 yield metal, cloth, and herbs. Spend these resources to brew Health Potions,
 forge stronger weapons, or enhance your armor.
+You can also craft home decorations, brew Energy Potions, and forge a
+powerful Flaming Sword using extra resources.
 
 A small **Farm** south of town lets you grow crops. Buy seeds in the shop, plant
 them at the farm, and harvest them three days later for extra cash.
@@ -131,6 +136,8 @@ A short quest line walks you through the basics: earning money, training, and
 taking on thugs in the new Alley location. Press **L** at any time to open the
 quest log and review your progress. The current quest also appears under the
 stats bar.
+An arrow above your character now points toward the next objective so you
+always know where to go.
 
 Random encounters can also happen while walking around. These short events may
 reward or penalize you with money, stats, or health, adding some surprise to
@@ -168,7 +175,9 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 - **0-9**: Buy items in the shop
 - **1-3**: Adopt a pet in the Pet Shop
 - **I**: Open inventory and equip gear
-- **H**: Drink a Health Potion
+- **H**: Drink a potion
+- **Z**: Heavy Strike ability
+- **X**: Guard Stance ability
 - **D** at the bar: Play darts
 - **F** at the park: Go fishing
 - **P** at the library: Solve puzzle
