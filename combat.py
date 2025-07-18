@@ -29,11 +29,12 @@ def energy_cost(player: Player, base: float) -> float:
     return cost
 
 
-def _combat_stats(player: Player) -> Tuple[int, int, int]:
-    """Return player's attack, defense and speed with equipment and perks."""
+def _combat_stats(player: Player) -> Tuple[int, int, int, int]:
+    """Return player's attack, defense, speed and combo with equipment."""
     atk = player.strength
     df = player.defense
     spd = player.speed
+    combo = 1
     if player.perk_levels.get("Bar Champion"):
         atk += 2
     if player.companion == "Dog":
@@ -43,7 +44,9 @@ def _combat_stats(player: Player) -> Tuple[int, int, int]:
             atk += item.attack
             df += item.defense
             spd += item.speed
-    return atk, df, spd
+            if item.slot == "weapon":
+                combo = getattr(item, "combo", 1)
+    return atk, df, spd, combo
 
 
 def fight_brawler(player: Player) -> str:
@@ -62,7 +65,7 @@ def fight_brawler(player: Player) -> str:
         "speed": random.randint(1 + stage // 2, 5 + stage // 2),
         "health": 20 + stage * 10,
     }
-    p_atk, p_def, p_spd = _combat_stats(player)
+    p_atk, p_def, p_spd, p_combo = _combat_stats(player)
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
@@ -70,12 +73,15 @@ def fight_brawler(player: Player) -> str:
     bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
-            dmg = max(1, p_atk - enemy["defense"])
-            if not special_used and random.random() < POWER_STRIKE_CHANCE:
-                dmg *= 2
-                bleed_turns = BLEED_TURNS
-                special_used = True
-            e_hp -= dmg
+            for _ in range(p_combo):
+                dmg = max(1, p_atk - enemy["defense"])
+                if (
+                    not special_used and random.random() < POWER_STRIKE_CHANCE
+                ):
+                    dmg *= 2
+                    bleed_turns = BLEED_TURNS
+                    special_used = True
+                e_hp -= dmg
         else:
             if random.random() < (DODGE_BASE + player.speed * 0.02):
                 pass
@@ -111,7 +117,7 @@ def fight_enemy(player: Player) -> str:
         "speed": random.randint(1, 4),
         "health": 15 + 5 * scale,
     }
-    p_atk, p_def, p_spd = _combat_stats(player)
+    p_atk, p_def, p_spd, p_combo = _combat_stats(player)
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
@@ -119,12 +125,15 @@ def fight_enemy(player: Player) -> str:
     bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
-            dmg = max(1, p_atk - enemy["defense"])
-            if not special_used and random.random() < POWER_STRIKE_CHANCE:
-                dmg *= 2
-                bleed_turns = BLEED_TURNS
-                special_used = True
-            e_hp -= dmg
+            for _ in range(p_combo):
+                dmg = max(1, p_atk - enemy["defense"])
+                if (
+                    not special_used and random.random() < POWER_STRIKE_CHANCE
+                ):
+                    dmg *= 2
+                    bleed_turns = BLEED_TURNS
+                    special_used = True
+                e_hp -= dmg
         else:
             if random.random() < (DODGE_BASE + player.speed * 0.02):
                 pass
@@ -165,7 +174,7 @@ def fight_forest_enemy(player: Player, index: int) -> str:
     player.energy -= energy_cost(player, 10)
 
     enemy = FOREST_ENEMIES[index]
-    p_atk, p_def, p_spd = _combat_stats(player)
+    p_atk, p_def, p_spd, p_combo = _combat_stats(player)
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
@@ -173,12 +182,15 @@ def fight_forest_enemy(player: Player, index: int) -> str:
     bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
-            dmg = max(1, p_atk - enemy["defense"])
-            if not special_used and random.random() < POWER_STRIKE_CHANCE:
-                dmg *= 2
-                bleed_turns = BLEED_TURNS
-                special_used = True
-            e_hp -= dmg
+            for _ in range(p_combo):
+                dmg = max(1, p_atk - enemy["defense"])
+                if (
+                    not special_used and random.random() < POWER_STRIKE_CHANCE
+                ):
+                    dmg *= 2
+                    bleed_turns = BLEED_TURNS
+                    special_used = True
+                e_hp -= dmg
         else:
             if random.random() < (DODGE_BASE + player.speed * 0.02):
                 pass

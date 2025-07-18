@@ -4,8 +4,12 @@ from entities import Player, InventoryItem
 
 # Items sold at the shop: name, cost, and effect
 SHOP_ITEMS: List[Tuple[str, int, any]] = [
-    ("Cola", 3, lambda p: setattr(p, "energy", min(100, p.energy + 5))),
-    ("Protein Bar", 7, lambda p: setattr(p, "health", min(100, p.health + 5))),
+    ("Cola", 3, lambda p: p.inventory.append(InventoryItem("Cola", "consumable"))),
+    (
+        "Protein Bar",
+        7,
+        lambda p: p.inventory.append(InventoryItem("Protein Bar", "consumable")),
+    ),
     ("Book", 10, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
     ("Gym Pass", 15, lambda p: setattr(p, "strength", p.strength + 1)),
     ("Charm Pendant", 20, lambda p: setattr(p, "charisma", p.charisma + 1)),
@@ -17,7 +21,11 @@ SHOP_ITEMS: List[Tuple[str, int, any]] = [
     ("Leather Boots", 20, lambda p: p.inventory.append(
         InventoryItem("Leather Boots", "legs", defense=1, speed=1))),
     ("Wooden Sword", 35, lambda p: p.inventory.append(
-        InventoryItem("Wooden Sword", "weapon", attack=2))),
+        InventoryItem("Wooden Sword", "weapon", attack=2, combo=1))),
+    ("Spear", 55, lambda p: p.inventory.append(
+        InventoryItem("Spear", "weapon", attack=3, combo=2))),
+    ("Bow", 70, lambda p: p.inventory.append(
+        InventoryItem("Bow", "weapon", attack=2, speed=1, combo=2))),
     ("Seeds x3", 15, lambda p: p.resources.__setitem__(
         "seeds", p.resources.get("seeds", 0) + 3)),
 ]

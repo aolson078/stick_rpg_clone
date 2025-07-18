@@ -33,6 +33,7 @@ from rendering import (
     draw_npc,
     draw_tip_panel,
     draw_decorations,
+    draw_hotkey_bar,
     draw_help_screen,
     draw_quest_marker
 )
@@ -114,6 +115,7 @@ def recalc_layouts():
     global BAR_WIDTH, BAR_HEIGHT, BAR_DOOR_RECT, COUNTER_RECT
     global BJ_RECT, SLOT_RECT, BRAWL_RECT, DART_RECT
     global FOREST_WIDTH, FOREST_HEIGHT, FOREST_DOOR_RECT
+    global FURNITURE_RECTS
 
     HOME_WIDTH, HOME_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
     DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
@@ -128,6 +130,10 @@ def recalc_layouts():
 
     FOREST_WIDTH, FOREST_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
     FOREST_DOOR_RECT = pygame.Rect(FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160)
+
+    FURNITURE_RECTS = [
+        pygame.Rect(400 + i * 160, HOME_HEIGHT // 2, 120, 80) for i in range(3)
+    ]
 
 recalc_layouts()
 
@@ -145,6 +151,17 @@ def compute_slot_rects():
         "legs": pygame.Rect(left, top + spacing * 3, w, h),
         "weapon": pygame.Rect(left, top + spacing * 4, w, h),
     }
+
+
+def compute_hotkey_rects():
+    base = settings.SCREEN_WIDTH // 2 - 170
+    y = settings.SCREEN_HEIGHT - 80
+    w, h = 60, 40
+    return [pygame.Rect(base + i * 70, y, w, h) for i in range(5)]
+
+
+def furniture_rects():
+    return FURNITURE_RECTS
 
 
 def quest_target_building(player: Player) -> Building | None:
@@ -228,6 +245,9 @@ WEATHERS = ["Clear", "Rain", "Snow"]
 HOME_WIDTH, HOME_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
 BED_RECT = pygame.Rect(120, 160, 220, 120)
 DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
+FURNITURE_RECTS = [
+    pygame.Rect(400 + i * 160, HOME_HEIGHT // 2, 120, 80) for i in range(3)
+]
 
 # Simple quests that encourage visiting different locations
 # Layout for the bar interior
@@ -528,6 +548,11 @@ def save_game(player):
         "equipment": {
             slot: (it.__dict__ if it else None) for slot, it in player.equipment.items()
         },
+        "hotkeys": [it.__dict__ if it else None for it in player.hotkeys],
+        "furniture": {
+            slot: (it.__dict__ if it else None)
+            for slot, it in player.furniture.items()
+        },
 
         "x": player.rect.x,
         "y": player.rect.y,
@@ -609,6 +634,11 @@ def load_game():
     for slot, item in data.get("equipment", {}).items():
         if item:
             player.equipment[slot] = InventoryItem(**item)
+    player.hotkeys = [InventoryItem(**it) if it else None for it in data.get("hotkeys", [None]*5)]
+    player.furniture = {
+        slot: (InventoryItem(**it) if it else None)
+        for slot, it in data.get("furniture", {"slot1": None, "slot2": None, "slot3": None}).items()
+    }
 
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
@@ -710,6 +740,7 @@ def main():
     drag_origin = None
     drag_pos = (0, 0)
     slot_rects = compute_slot_rects()
+    hotkey_rects = compute_hotkey_rects()
     fullscreen = False
     muted = False
 
@@ -783,6 +814,7 @@ def main():
                     screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), flags)
                     recalc_layouts()
                     slot_rects = compute_slot_rects()
+                    hotkey_rects = compute_hotkey_rects()
                 elif event.key == pygame.K_m and SOUND_ENABLED:
                     muted = not muted
                     vol = 0 if muted else SFX_VOLUME
@@ -822,6 +854,26 @@ def main():
                     else:
                         shop_message = "Guard Stance cooling"
                     shop_message_timer = 60
+                elif (
+                    pygame.K_1 <= event.key <= pygame.K_5
+                    and not show_inventory
+                    and not show_log
+                    and not in_building
+                ):
+                    idx = event.key - pygame.K_1
+                    if idx < len(player.hotkeys) and player.hotkeys[idx]:
+                        item = player.hotkeys[idx]
+                        if item.name in ("Cola", "Energy Potion"):
+                            gain = 30 if item.name == "Energy Potion" else 5
+                            player.energy = min(100, player.energy + gain)
+                        elif item.name in ("Protein Bar", "Health Potion"):
+                            gain = 30 if item.name == "Health Potion" else 5
+                            player.health = min(100, player.health + gain)
+                        player.hotkeys[idx] = None
+                        shop_message = f"Used {item.name}"
+                    else:
+                        shop_message = "No item"
+                    shop_message_timer = 60
                 elif event.key == pygame.K_t and not in_building and not show_inventory and not show_log:
                     player.time += 180
                     if player.time >= 1440:
@@ -849,6 +901,25 @@ def main():
                                 drag_pos = pos
                                 player.equipment[slot] = None
                                 break
+                        if not handled:
+                            for i, rect in enumerate(hotkey_rects):
+                                if rect.collidepoint(pos) and player.hotkeys[i]:
+                                    dragging_item = player.hotkeys[i]
+                                    drag_origin = ('hotkey', i)
+                                    drag_pos = pos
+                                    player.hotkeys[i] = None
+                                    handled = True
+                                    break
+                        if not handled:
+                            for idx, rect in enumerate(FURNITURE_RECTS):
+                                slot = f'slot{idx+1}'
+                                if rect.collidepoint(pos) and player.furniture.get(slot):
+                                    dragging_item = player.furniture[slot]
+                                    drag_origin = ('furn', slot)
+                                    drag_pos = pos
+                                    player.furniture[slot] = None
+                                    handled = True
+                                    break
                 elif event.type == pygame.MOUSEMOTION and dragging_item:
                     drag_pos = event.pos
                 elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and dragging_item:
@@ -859,6 +930,18 @@ def main():
                             player.equipment[slot] = dragging_item
                             placed = True
                             break
+                    if not placed:
+                        for i, rect in enumerate(hotkey_rects):
+                            if rect.collidepoint(pos) and dragging_item.slot == 'consumable' and player.hotkeys[i] is None:
+                                player.hotkeys[i] = dragging_item
+                                placed = True
+                                break
+                    if not placed:
+                        for idx, rect in enumerate(FURNITURE_RECTS):
+                            if rect.collidepoint(pos) and dragging_item.slot == 'furniture' and player.furniture.get(f'slot{idx+1}') is None:
+                                player.furniture[f'slot{idx+1}'] = dragging_item
+                                placed = True
+                                break
                     if not placed:
                         player.inventory.append(dragging_item)
                     dragging_item = None
@@ -1489,7 +1572,15 @@ def main():
         cam_y = min(max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2), MAP_HEIGHT - settings.SCREEN_HEIGHT)
         if inside_home:
             cam_x = cam_y = 0
-            draw_home_interior(screen, font, player, frame if dx or dy else 0, BED_RECT, DOOR_RECT)
+            draw_home_interior(
+                screen,
+                font,
+                player,
+                frame if dx or dy else 0,
+                BED_RECT,
+                DOOR_RECT,
+                FURNITURE_RECTS,
+            )
         elif inside_bar:
             cam_x = cam_y = 0
             draw_bar_interior(
@@ -1544,6 +1635,7 @@ def main():
 
 
         draw_ui(screen, font, player, QUESTS, STORY_QUESTS)
+        draw_hotkey_bar(screen, font, player, hotkey_rects)
         if show_inventory:
             draw_inventory_screen(
                 screen,
@@ -1552,6 +1644,8 @@ def main():
                 slot_rects,
                 item_rects,
                 (dragging_item, drag_pos) if dragging_item else None,
+                hotkey_rects,
+                FURNITURE_RECTS if inside_home else None,
             )
         if show_perk_menu:
             draw_perk_menu(screen, font, player, PERKS)
