@@ -33,7 +33,8 @@ from rendering import (
     draw_npc,
     draw_tip_panel,
     draw_decorations,
-    draw_help_screen
+    draw_help_screen,
+    draw_quest_marker
 )
 from inventory import (
     SHOP_ITEMS,
@@ -83,6 +84,9 @@ from quests import (
     advance_story,
     check_story,
     EVENT_CHANCE,
+    QUEST_TARGETS,
+    STORY_TARGETS,
+    SIDE_QUESTS,
 )
 import settings
 from settings import (
@@ -141,6 +145,25 @@ def compute_slot_rects():
         "legs": pygame.Rect(left, top + spacing * 3, w, h),
         "weapon": pygame.Rect(left, top + spacing * 4, w, h),
     }
+
+
+def quest_target_building(player: Player) -> Building | None:
+    """Return the building associated with the current objective."""
+    if player.side_quest:
+        sq = SIDE_QUESTS.get(player.side_quest)
+        if sq:
+            return next((b for b in BUILDINGS if b.btype == sq.target), None)
+    if player.story_stage < len(STORY_QUESTS):
+        t = STORY_TARGETS.get(player.story_stage)
+        if t:
+            if t == "dungeon" and player.story_branch == "gang":
+                t = "dealer"
+            return next((b for b in BUILDINGS if b.btype == t), None)
+    if player.current_quest < len(QUESTS):
+        t = QUEST_TARGETS.get(player.current_quest)
+        if t:
+            return next((b for b in BUILDINGS if b.btype == t), None)
+    return None
 
 
 pygame.init()
@@ -697,6 +720,9 @@ def main():
             player.time -= 1440
             advance_day(player)
         update_npcs()
+        for ab, cd in player.ability_cooldowns.items():
+            if cd > 0:
+                player.ability_cooldowns[ab] -= 1
         advance_story(player)
         check_story(player)
         if check_perk_unlocks(player):
@@ -768,12 +794,33 @@ def main():
                     shop_message_timer = 60
                 elif event.key == pygame.K_h and not show_inventory and not show_log and not in_building:
                     pot = next((i for i in player.inventory if i.name == "Health Potion"), None)
+                    ener = next((i for i in player.inventory if i.name == "Energy Potion"), None)
                     if pot:
                         player.inventory.remove(pot)
                         player.health = min(100, player.health + 30)
                         shop_message = "Drank Health Potion (+30 HP)"
+                    elif ener:
+                        player.inventory.remove(ener)
+                        player.energy = min(100, player.energy + 30)
+                        shop_message = "Drank Energy Potion (+30 EN)"
                     else:
                         shop_message = "No potion"
+                    shop_message_timer = 60
+                elif event.key == pygame.K_z and not show_inventory and not show_log and not in_building:
+                    if player.ability_cooldowns["heavy"] == 0:
+                        player.active_ability = "heavy"
+                        player.ability_cooldowns["heavy"] = 300
+                        shop_message = "Heavy Strike ready!"
+                    else:
+                        shop_message = "Heavy Strike cooling"
+                    shop_message_timer = 60
+                elif event.key == pygame.K_x and not show_inventory and not show_log and not in_building:
+                    if player.ability_cooldowns["guard"] == 0:
+                        player.active_ability = "guard"
+                        player.ability_cooldowns["guard"] = 300
+                        shop_message = "Guard Stance ready!"
+                    else:
+                        shop_message = "Guard Stance cooling"
                     shop_message_timer = 60
                 elif event.key == pygame.K_t and not in_building and not show_inventory and not show_log:
                     player.time += 180
@@ -1115,6 +1162,33 @@ def main():
                             shop_message = "Upgraded armor"
                         else:
                             shop_message = "Need armor & 2 cloth"
+                    elif event.key == pygame.K_5:
+                        if player.resources.get("metal", 0) >= 1 and player.resources.get("cloth", 0) >= 2:
+                            player.resources["metal"] -= 1
+                            player.resources["cloth"] -= 2
+                            if "Decorations" not in player.home_upgrades:
+                                player.home_upgrades.append("Decorations")
+                                shop_message = "Built home decorations"
+                            else:
+                                player.inventory.append(InventoryItem("Decor Chair", "furniture"))
+                                shop_message = "Crafted Decor Chair"
+                        else:
+                            shop_message = "Need 1 metal & 2 cloth"
+                    elif event.key == pygame.K_6:
+                        if player.resources.get("herbs", 0) >= 3:
+                            player.resources["herbs"] -= 3
+                            player.inventory.append(InventoryItem("Energy Potion", "consumable"))
+                            shop_message = "Brewed Energy Potion"
+                        else:
+                            shop_message = "Need 3 herbs"
+                    elif event.key == pygame.K_7:
+                        if player.resources.get("metal", 0) >= 5 and player.resources.get("herbs", 0) >= 2:
+                            player.resources["metal"] -= 5
+                            player.resources["herbs"] -= 2
+                            player.inventory.append(InventoryItem("Flaming Sword", "weapon", attack=6))
+                            shop_message = "Forged Flaming Sword"
+                        else:
+                            shop_message = "Need 5 metal & 2 herbs"
                     else:
                         continue
                     shop_message_timer = 60
@@ -1460,6 +1534,10 @@ def main():
         pr = player.rect.move(-cam_x, -cam_y)
         draw_player_sprite(screen, pr, frame if dx or dy else 0, player.facing_left)
 
+        target_building = quest_target_building(player)
+        if target_building:
+            draw_quest_marker(screen, pr, target_building.rect, cam_x, cam_y)
+
 
         draw_day_night(screen, player.time)
         draw_weather(screen, player.weather)
@@ -1611,6 +1689,9 @@ def main():
                     "2:Iron Sword (3 metal)",
                     "3:Upgrade Weapon (2 metal)",
                     "4:Upgrade Armor (2 cloth)",
+                    "5:Decorations (1 metal,2 cloth)",
+                    "6:Energy Potion (3 herbs)",
+                    "7:Flaming Sword (5 metal,2 herbs)",
                 ]
                 for i, txt_opt in enumerate(opts):
                     item_surf = font.render(txt_opt, True, (80, 40, 40))

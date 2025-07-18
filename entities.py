@@ -88,6 +88,13 @@ class Player:
     # List of unlocked achievements
     achievements: List[str] = field(default_factory=list)
 
+    # Active combat ability primed for next fight
+    active_ability: Optional[str] = None
+    # Cooldown timers for abilities (in frames)
+    ability_cooldowns: Dict[str, int] = field(
+        default_factory=lambda: {"heavy": 0, "guard": 0}
+    )
+
 
 
 @dataclass

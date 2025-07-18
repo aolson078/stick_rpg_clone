@@ -30,6 +30,17 @@ QUESTS: List[Quest] = [
     ),
 ]
 
+# Building targets for quest markers
+QUEST_TARGETS = {
+    0: "job",
+    1: "gym",
+    2: "library",
+    3: "job",
+    4: "gym",
+    5: "dungeon",
+    6: "home",
+}
+
 # Optional side quests
 SIDE_QUEST = SideQuest(
     "Bank Delivery",
@@ -52,6 +63,9 @@ MALL_QUEST = SideQuest(
     lambda p: setattr(p, "money", p.money + 40),
 )
 
+# Lookup active side quests by name
+SIDE_QUESTS = {q.name: q for q in [SIDE_QUEST, NPC_QUEST, MALL_QUEST]}
+
 NPCS = [NPC(pygame.Rect(500, 500, 40, 40), "Sam", NPC_QUEST)]
 
 # Main storyline quests progressed via story_stage
@@ -61,6 +75,14 @@ STORY_QUESTS = [
     Quest("Prove your loyalty", lambda p: p.story_stage >= 3),
     Quest("Report back to your ally", lambda p: p.story_stage >= 4),
 ]
+
+# Suggested locations for story objectives
+STORY_TARGETS = {
+    0: "townhall",
+    1: "townhall",
+    2: "dungeon",
+    3: "townhall",
+}
 
 
 # Event helpers
