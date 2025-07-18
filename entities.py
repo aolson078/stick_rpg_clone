@@ -95,6 +95,16 @@ class Player:
         default_factory=lambda: {"heavy": 0, "guard": 0}
     )
 
+    # Quick item hotkey slots
+    hotkeys: List[Optional["InventoryItem"]] = field(
+        default_factory=lambda: [None] * 5
+    )
+
+    # Furniture placed inside the home
+    furniture: Dict[str, Optional["InventoryItem"]] = field(
+        default_factory=lambda: {"slot1": None, "slot2": None, "slot3": None}
+    )
+
 
 
 @dataclass
@@ -139,5 +149,6 @@ class InventoryItem:
     attack: int = 0
     defense: int = 0
     speed: int = 0
+    combo: int = 1
     level: int = 0
 

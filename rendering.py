@@ -395,7 +395,7 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         surface.blit(qsurf, (22, bar_height + 6))
 
 
-def draw_inventory_screen(surface, font, player, slot_rects, item_rects, dragging):
+def draw_inventory_screen(surface, font, player, slot_rects, item_rects, dragging, hotkey_rects=None, furn_rects=None):
     overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
@@ -414,7 +414,7 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         item = player.equipment.get(slot)
         if item:
             it = font.render(
-                f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed}",
+                f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed} C{item.combo}",
                 True,
                 FONT_COLOR,
             )
@@ -423,7 +423,7 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
     for rect, item in item_rects:
         pygame.draw.rect(surface, (200, 220, 230), rect)
         txt = font.render(
-            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed}",
+            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed} C{item.combo}",
             True,
             FONT_COLOR,
         )
@@ -432,7 +432,7 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
     if dragging:
         item, pos = dragging
         txt = font.render(
-            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed}",
+            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed} C{item.combo}",
             True,
             FONT_COLOR,
         )
@@ -445,6 +445,27 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
     res = f"Metal:{player.resources.get('metal',0)} Cloth:{player.resources.get('cloth',0)} Herbs:{player.resources.get('herbs',0)}"
     res_txt = font.render(res, True, FONT_COLOR)
     surface.blit(res_txt, (100, settings.SCREEN_HEIGHT - 120))
+
+    if hotkey_rects:
+        for i, rect in enumerate(hotkey_rects):
+            pygame.draw.rect(surface, (210, 210, 210), rect)
+            label = font.render(str(i + 1), True, FONT_COLOR)
+            surface.blit(label, (rect.x + 2, rect.y - 20))
+            item = player.hotkeys[i]
+            if item:
+                txt = font.render(item.name, True, FONT_COLOR)
+                surface.blit(txt, (rect.x + 4, rect.y + 14))
+
+    if furn_rects:
+        for idx, rect in enumerate(furn_rects):
+            pygame.draw.rect(surface, (200, 190, 150), rect)
+            label = font.render(f"F{idx+1}", True, FONT_COLOR)
+            surface.blit(label, (rect.x + 2, rect.y - 20))
+            slot = f"slot{idx+1}"
+            item = player.furniture.get(slot)
+            if item:
+                txt = font.render(item.name, True, FONT_COLOR)
+                surface.blit(txt, (rect.x + 4, rect.y + 20))
 
 
 def draw_perk_menu(surface, font, player, perks):
@@ -544,7 +565,18 @@ def draw_tip_panel(surface, font, text):
     surface.blit(tip_surf, (20, settings.SCREEN_HEIGHT - 80))
 
 
-def draw_home_interior(surface, font, player, frame, bed_rect, door_rect):
+def draw_hotkey_bar(surface, font, player, rects):
+    for i, rect in enumerate(rects):
+        pygame.draw.rect(surface, (210, 210, 210), rect)
+        label = font.render(str(i + 1), True, FONT_COLOR)
+        surface.blit(label, (rect.x + 2, rect.y - 18))
+        item = player.hotkeys[i]
+        if item:
+            txt = font.render(item.name, True, FONT_COLOR)
+            surface.blit(txt, (rect.x + 4, rect.y + 10))
+
+
+def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_rects):
     """Draw a simple interior of the player's home."""
     surface.fill((235, 225, 200))
     # walls
@@ -560,6 +592,14 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect):
     # door
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
     pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
+
+    for idx, rect in enumerate(furn_rects):
+        pygame.draw.rect(surface, (200, 190, 150), rect)
+        slot = f"slot{idx+1}"
+        item = player.furniture.get(slot)
+        if item:
+            txt = font.render(item.name, True, FONT_COLOR)
+            surface.blit(txt, (rect.x + 4, rect.y + 20))
 
     draw_player_sprite(surface, player.rect, frame, player.facing_left)
 
