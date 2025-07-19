@@ -1,6 +1,7 @@
 """Item and inventory handling extracted from game.py."""
 from typing import List, Tuple
 from entities import Player, InventoryItem
+from combat import energy_cost
 
 # Items sold at the shop: name, cost, and effect
 SHOP_ITEMS: List[Tuple[str, int, any]] = [
@@ -48,6 +49,9 @@ COMPANIONS = [
     ("Dog", 120, "DEF +1, may find $5 when you sleep"),
     ("Cat", 100, "CHA +1, 10% less walking energy"),
     ("Parrot", 150, "INT +1, may find tokens after fights"),
+    ("Llama", 130, "SPD +1, crops sell for more"),
+    ("Peacock", 160, "CHA +1, extra CHA from chatting"),
+    ("Rhino", 200, "STR +1, boosts attack"),
 ]
 
 
@@ -117,12 +121,19 @@ def adopt_companion(player: Player, index: int) -> str:
         return "Not enough money!"
     player.money -= cost
     player.companion = name
+    player.companion_level = 1
     if name == "Dog":
         player.defense += 1
     elif name == "Cat":
         player.charisma += 1
     elif name == "Parrot":
         player.intelligence += 1
+    elif name == "Llama":
+        player.speed += 1
+    elif name == "Peacock":
+        player.charisma += 1
+    elif name == "Rhino":
+        player.strength += 1
     return f"Adopted {name}!"
 
 
@@ -142,5 +153,37 @@ def harvest_crops(player: Player) -> str:
         return "Nothing ready"
     for d in ready:
         player.crops.remove(d)
-        player.money += 15
+        gain = 15
+        if player.companion == "Llama":
+            gain += 5 * player.companion_level
+        player.money += gain
     return f"Harvested {len(ready)} crops"
+
+
+def train_companion(player: Player) -> str:
+    """Spend money and energy to level up a pet companion."""
+    if not player.companion:
+        return "No pet to train"
+    if player.companion_level >= 3:
+        return "Pet is fully trained"
+    cost = 50
+    if player.money < cost:
+        return "Need $50"
+    if player.energy < 10:
+        return "Too tired"
+    player.money -= cost
+    player.energy -= energy_cost(player, 10)
+    player.companion_level += 1
+    if player.companion == "Dog":
+        player.defense += 1
+    elif player.companion == "Cat":
+        player.charisma += 1
+    elif player.companion == "Parrot":
+        player.intelligence += 1
+    elif player.companion == "Llama":
+        player.speed += 1
+    elif player.companion == "Peacock":
+        player.charisma += 1
+    elif player.companion == "Rhino":
+        player.strength += 1
+    return f"{player.companion} reached level {player.companion_level}!"

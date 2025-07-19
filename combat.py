@@ -39,6 +39,8 @@ def _combat_stats(player: Player) -> Tuple[int, int, int, int]:
         atk += 2
     if player.companion == "Dog":
         df += 1
+    elif player.companion == "Rhino":
+        atk += 1
     for item in player.equipment.values():
         if item:
             atk += item.attack
@@ -158,9 +160,11 @@ def fight_enemy(player: Player) -> str:
         res = random.choice(["metal", "cloth", "herbs"])
         player.resources[res] = player.resources.get(res, 0) + 1
         loot += f" +1 {res}"
-    if player.companion == "Parrot" and random.random() < 0.3:
-        player.tokens += 1
-        loot += " (parrot found another)"
+    if player.companion == "Parrot":
+        chance = 0.3 + 0.2 * (player.companion_level - 1)
+        if random.random() < chance:
+            player.tokens += 1
+            loot += " (parrot found another)"
     player.enemies_defeated += 1
     return f"Enemy defeated! +${cash}{loot}"
 

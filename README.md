@@ -89,8 +89,10 @@ here, each tougher than the last. Approach an enemy and press **E** to engage
 in battle for a cash reward.
 
 The city also has a **Pet Shop** where you can adopt an animal companion.
-Pets grant small bonuses like extra defense or charisma and may help you find
-money or tokens.
+Available pets include a dog, cat, parrot, llama, peacock, and rhino. Pets
+grant small bonuses like extra defense or charisma and may help you find money
+or tokens. Companions can be trained at the Pet Shop to improve these bonuses
+and unlock stronger abilities.
 
 A new **Workshop** lets you craft and upgrade gear. Fights and events can
 yield metal, cloth, and herbs. Spend these resources to brew Health Potions,
@@ -175,7 +177,8 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 - **E** near bar objects: Buy tokens, gamble, or fight
 
 - **0-9**: Buy items in the shop
-- **1-3**: Adopt a pet in the Pet Shop
+- **1-6**: Adopt a pet in the Pet Shop
+- **T** at the Pet Shop: Train your pet
 - **I**: Open inventory and equip gear
 - **H**: Drink a potion
 - **Z**: Heavy Strike ability

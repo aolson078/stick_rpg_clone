@@ -47,6 +47,7 @@ from inventory import (
     bank_deposit,
     bank_withdraw,
     adopt_companion,
+    train_companion,
     plant_seed,
     harvest_crops,
 )
@@ -431,9 +432,12 @@ def sleep(player: Player) -> str | None:
     if player.perk_levels.get("Home Owner"):
         player.health = min(player.health + 10, 100)
     messages = []
-    if player.companion == "Dog" and random.random() < 0.2:
-        player.money += 5
-        messages.append("Your dog brought you $5!")
+    if player.companion == "Dog":
+        chance = 0.2 + 0.2 * (player.companion_level - 1)
+        amount = 5 * player.companion_level
+        if random.random() < chance:
+            player.money += amount
+            messages.append(f"Your dog brought you ${amount}!")
     if "Garden" in player.home_upgrades and random.random() < 0.3:
         player.money += 10
         messages.append("Found $10 in the garden")
@@ -550,6 +554,7 @@ def save_game(player):
         "enemies_defeated": player.enemies_defeated,
 
         "companion": player.companion,
+        "companion_level": player.companion_level,
 
         "has_skateboard": player.has_skateboard,
         "home_upgrades": player.home_upgrades,
@@ -637,6 +642,7 @@ def load_game():
     player.current_quest = data.get("current_quest", 0)
     player.enemies_defeated = data.get("enemies_defeated", 0)
     player.companion = data.get("companion")
+    player.companion_level = data.get("companion_level", 0)
     player.npc_progress = data.get("npc_progress", {})
     player.story_stage = data.get("story_stage", 0)
     player.story_branch = data.get("story_branch")
@@ -1180,6 +1186,8 @@ def main():
                         player.energy -= energy_cost(player, 5)
                         bonus = player.perk_levels.get("Social Butterfly", 0)
                         gain = 1 + bonus
+                        if player.companion == "Peacock":
+                            gain += player.companion_level
                         player.charisma += gain
                         msg_gain = f" +{gain} CHA"
                         shop_message = "You socialized!" + msg_gain
@@ -1218,9 +1226,12 @@ def main():
                     # fallback if player enters the woods via in_building
                     shop_message = fight_forest_enemy(player, random.randrange(3))
                     shop_message_timer = 60
-                elif in_building == "petshop" and pygame.K_1 <= event.key <= pygame.K_3:
+                elif in_building == "petshop" and pygame.K_1 <= event.key <= pygame.K_6:
                     idx = event.key - pygame.K_1
                     shop_message = adopt_companion(player, idx)
+                    shop_message_timer = 60
+                elif in_building == "petshop" and event.key == pygame.K_t:
+                    shop_message = train_companion(player)
                     shop_message_timer = 60
                 elif in_building == "bank":
                     if event.key == pygame.K_e:
@@ -1501,7 +1512,7 @@ def main():
                         player.energy = max(player.energy - 0.04, 0)
                         cost_mult = 1 - 0.05 * player.perk_levels.get("Iron Will", 0)
                         if player.companion == "Cat":
-                            cost_mult *= 0.9
+                            cost_mult *= 1 - 0.1 * player.companion_level
                         player.energy = max(player.energy - 0.02 * cost_mult, 0)
                     player.rect = next_rect
 
@@ -1780,7 +1791,10 @@ def main():
             elif in_building == "forest":
                 txt = "[E] Fight  [Q] Leave"
             elif in_building == "petshop":
-                txt = "[1-3] Adopt  [Q] Leave"
+                txt = "[1-6] Adopt"
+                if player.companion:
+                    txt += "  T:Train"
+                txt += "  [Q] Leave"
             elif in_building == "workshop":
                 txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm  [Q] Leave"
             elif in_building == "farm":
