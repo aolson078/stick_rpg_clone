@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Callable, List, Dict, Optional
+from typing import Callable, List, Dict, Optional, Tuple
 import pygame
 
 @dataclass
@@ -102,7 +102,12 @@ class Player:
 
     # Furniture placed inside the home
     furniture: Dict[str, Optional["InventoryItem"]] = field(
-        default_factory=lambda: {"slot1": None, "slot2": None, "slot3": None}
+        default_factory=lambda: {f"slot{i}": None for i in range(1, 7)}
+    )
+
+    # Saved positions for furniture pieces
+    furniture_pos: Dict[str, Tuple[int, int]] = field(
+        default_factory=lambda: {f"slot{i}": (0, 0) for i in range(1, 7)}
     )
 
 
