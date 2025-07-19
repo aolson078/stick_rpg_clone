@@ -47,6 +47,7 @@ class Player:
     enemies_defeated: int = 0
 
     companion: Optional[str] = None
+    companion_level: int = 0
 
     home_upgrades: List[str] = field(default_factory=list)
     perk_points: int = 0
