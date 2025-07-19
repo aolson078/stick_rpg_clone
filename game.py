@@ -131,8 +131,11 @@ def recalc_layouts():
     FOREST_WIDTH, FOREST_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
     FOREST_DOOR_RECT = pygame.Rect(FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160)
 
+    # Six possible furniture locations arranged in two rows
     FURNITURE_RECTS = [
-        pygame.Rect(400 + i * 160, HOME_HEIGHT // 2, 120, 80) for i in range(3)
+        pygame.Rect(400 + col * 160, HOME_HEIGHT // 2 + row * 100, 120, 80)
+        for row in range(2)
+        for col in range(3)
     ]
 
 recalc_layouts()
@@ -160,8 +163,21 @@ def compute_hotkey_rects():
     return [pygame.Rect(base + i * 70, y, w, h) for i in range(5)]
 
 
-def furniture_rects():
-    return FURNITURE_RECTS
+def compute_furniture_rects(player: Player):
+    """Return furniture rectangles based on stored positions."""
+    rects = []
+    for i, base in enumerate(FURNITURE_RECTS, 1):
+        pos = player.furniture_pos.get(f"slot{i}", (base.x, base.y))
+        rects.append(pygame.Rect(pos[0], pos[1], base.width, base.height))
+    return rects
+
+
+def init_furniture_positions(player: Player):
+    """Set default furniture positions if none saved."""
+    for i, base in enumerate(FURNITURE_RECTS, 1):
+        slot = f"slot{i}"
+        if player.furniture_pos.get(slot) == (0, 0):
+            player.furniture_pos[slot] = (base.x, base.y)
 
 
 def quest_target_building(player: Player) -> Building | None:
@@ -246,7 +262,9 @@ HOME_WIDTH, HOME_HEIGHT = settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT
 BED_RECT = pygame.Rect(120, 160, 220, 120)
 DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
 FURNITURE_RECTS = [
-    pygame.Rect(400 + i * 160, HOME_HEIGHT // 2, 120, 80) for i in range(3)
+    pygame.Rect(400 + col * 160, HOME_HEIGHT // 2 + row * 100, 120, 80)
+    for row in range(2)
+    for col in range(3)
 ]
 
 # Simple quests that encourage visiting different locations
@@ -553,6 +571,7 @@ def save_game(player):
             slot: (it.__dict__ if it else None)
             for slot, it in player.furniture.items()
         },
+        "furniture_pos": player.furniture_pos,
 
         "x": player.rect.x,
         "y": player.rect.y,
@@ -637,7 +656,11 @@ def load_game():
     player.hotkeys = [InventoryItem(**it) if it else None for it in data.get("hotkeys", [None]*5)]
     player.furniture = {
         slot: (InventoryItem(**it) if it else None)
-        for slot, it in data.get("furniture", {"slot1": None, "slot2": None, "slot3": None}).items()
+        for slot, it in data.get("furniture", {f"slot{i}": None for i in range(1,7)}).items()
+    }
+    player.furniture_pos = {
+        slot: tuple(pos)
+        for slot, pos in data.get("furniture_pos", {f"slot{i}": (0,0) for i in range(1,7)}).items()
     }
 
     for completed, q in zip(data.get("quests", []), QUESTS):
@@ -719,10 +742,12 @@ def main():
     if loaded_player:
         player = loaded_player
         update_weather(player)
+        init_furniture_positions(player)
         shop_message = "Game loaded!"
         shop_message_timer = 60
     else:
         update_weather(player)
+        init_furniture_positions(player)
         shop_message_timer = 0
     in_building = None
     frame = 0
@@ -882,6 +907,7 @@ def main():
                     shop_message = "Skipped ahead 3 hours"
                     shop_message_timer = 60
             if show_inventory:
+                furn_rects = compute_furniture_rects(player)
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
                     handled = False
@@ -911,7 +937,8 @@ def main():
                                     handled = True
                                     break
                         if not handled:
-                            for idx, rect in enumerate(FURNITURE_RECTS):
+                            furn_rects = compute_furniture_rects(player)
+                            for idx, rect in enumerate(furn_rects):
                                 slot = f'slot{idx+1}'
                                 if rect.collidepoint(pos) and player.furniture.get(slot):
                                     dragging_item = player.furniture[slot]
@@ -937,9 +964,14 @@ def main():
                                 placed = True
                                 break
                     if not placed:
-                        for idx, rect in enumerate(FURNITURE_RECTS):
-                            if rect.collidepoint(pos) and dragging_item.slot == 'furniture' and player.furniture.get(f'slot{idx+1}') is None:
+                        for idx, rect in enumerate(furn_rects):
+                            if (
+                                rect.collidepoint(pos)
+                                and dragging_item.slot == 'furniture'
+                                and player.furniture.get(f'slot{idx+1}') is None
+                            ):
                                 player.furniture[f'slot{idx+1}'] = dragging_item
+                                player.furniture_pos[f'slot{idx+1}'] = (rect.x, rect.y)
                                 placed = True
                                 break
                     if not placed:
@@ -1579,7 +1611,7 @@ def main():
                 frame if dx or dy else 0,
                 BED_RECT,
                 DOOR_RECT,
-                FURNITURE_RECTS,
+                compute_furniture_rects(player),
             )
         elif inside_bar:
             cam_x = cam_y = 0
@@ -1645,7 +1677,7 @@ def main():
                 item_rects,
                 (dragging_item, drag_pos) if dragging_item else None,
                 hotkey_rects,
-                FURNITURE_RECTS if inside_home else None,
+                compute_furniture_rects(player) if inside_home else None,
             )
         if show_perk_menu:
             draw_perk_menu(screen, font, player, PERKS)
