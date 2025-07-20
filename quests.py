@@ -11,6 +11,20 @@ from entities import Player, Quest, Event, SideQuest, NPC
 from inventory import HOME_UPGRADES
 from combat import BRAWLER_COUNT
 
+# Names of collectible trading cards
+CARD_NAMES = [
+    "Slime",
+    "Goblin",
+    "Knight",
+    "Dragon",
+    "Merchant",
+    "Wizard",
+    "Farmer",
+    "Pirate",
+    "Robot",
+    "Alien",
+]
+
 # Storyline quests completed in order
 QUESTS: List[Quest] = [
     Quest("Earn $200", lambda p: p.money >= 200),
@@ -146,6 +160,13 @@ def _ev_found_herb(p: Player) -> None:
     p.resources["herbs"] = p.resources.get("herbs", 0) + 1
 
 
+def _ev_found_card(p: Player) -> None:
+    """Grant a random trading card that hasn't been collected yet."""
+    remaining = [c for c in CARD_NAMES if c not in p.cards]
+    if remaining:
+        p.cards.append(random.choice(remaining))
+
+
 EVENTS = [
     Event("You found $5 on the ground!", _ev_found_money),
     Event("Someone shared a study tip. +1 INT", _ev_gain_int),
@@ -158,6 +179,7 @@ EVENTS = [
     Event("Picked up some scrap metal", _ev_found_metal),
     Event("Found a piece of cloth", _ev_found_cloth),
     Event("Gathered herbs nearby", _ev_found_herb),
+    Event("You found a trading card!", _ev_found_card),
 ]
 
 SEASON_EVENTS = {

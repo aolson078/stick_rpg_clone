@@ -148,6 +148,9 @@ reward or penalize you with money, stats, or health, adding some surprise to
 each day. Certain encounters only appear at specific times such as early
 morning joggers or late-night food stands.
 
+A new set of ten trading cards can also be discovered at random. Keep exploring
+to complete your collection!
+
 You can save your progress with **F5** and load it back with **F9**. If a
 `savegame.json` file exists, it will automatically be loaded when the game
 starts. Press **F1** at any time for a quick reminder of the controls.

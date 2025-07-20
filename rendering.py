@@ -357,6 +357,12 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         FONT_COLOR,
     )
     bar.blit(res_txt, (16, 20))
+    card_stat = font.render(
+        f"Cards: {len(player.cards)}/10",
+        True,
+        FONT_COLOR,
+    )
+    bar.blit(card_stat, (settings.SCREEN_WIDTH - card_stat.get_width() - 20, 20))
     season_txt = font.render(f"{player.season} - {player.weather}", True, FONT_COLOR)
     bar.blit(season_txt, (settings.SCREEN_WIDTH // 2 - season_txt.get_width() // 2, 32))
     if player.companion:
@@ -445,6 +451,11 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
     res = f"Metal:{player.resources.get('metal',0)} Cloth:{player.resources.get('cloth',0)} Herbs:{player.resources.get('herbs',0)}"
     res_txt = font.render(res, True, FONT_COLOR)
     surface.blit(res_txt, (100, settings.SCREEN_HEIGHT - 120))
+    card_line = ", ".join(player.cards) if player.cards else "None"
+    card_txt = font.render(
+        f"Cards ({len(player.cards)}/10): {card_line}", True, FONT_COLOR
+    )
+    surface.blit(card_txt, (100, settings.SCREEN_HEIGHT - 100))
 
     if hotkey_rects:
         for i, rect in enumerate(hotkey_rects):
