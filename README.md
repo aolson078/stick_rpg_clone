@@ -148,6 +148,10 @@ reward or penalize you with money, stats, or health, adding some surprise to
 each day. Certain encounters only appear at specific times such as early
 morning joggers or late-night food stands.
 
+After completing every main quest a mysterious **Tower** opens on the far east
+side of the map. Inside waits the ultimate boss. Defeat this foe to earn a
+huge cash prize and claim the powerful **Legendary Sword**.
+
 A new set of ten trading cards can also be discovered at random. Keep exploring
 to complete your collection!
 
