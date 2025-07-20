@@ -89,6 +89,9 @@ class Player:
     # List of unlocked achievements
     achievements: List[str] = field(default_factory=list)
 
+    # Collection of discovered trading cards
+    cards: List[str] = field(default_factory=list)
+
     # Active combat ability primed for next fight
     active_ability: Optional[str] = None
     # Cooldown timers for abilities (in frames)
