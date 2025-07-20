@@ -56,6 +56,7 @@ from combat import (
     fight_brawler,
     fight_enemy,
     fight_forest_enemy,
+    fight_final_boss,
     BRAWLER_COUNT,
     DODGE_BASE,
     POWER_STRIKE_CHANCE,
@@ -231,6 +232,7 @@ BUILDINGS = [
     Building(pygame.Rect(1800, 350, 240, 180), "Mall", "mall"),
     Building(pygame.Rect(2100, 150, 300, 200), "Suburbs", "suburbs"),
     Building(pygame.Rect(2400, 900, 260, 140), "Beach", "beach"),
+    Building(pygame.Rect(2900, 500, 220, 160), "Tower", "boss"),
 ]
 
 OPEN_HOURS = {
@@ -253,6 +255,7 @@ OPEN_HOURS = {
     "mall": (10, 21),
     "suburbs": (0, 24),
     "beach": (6, 20),
+    "boss": (0, 24),
 }
 
 SEASONS = ["Spring", "Summer", "Fall", "Winter"]
@@ -361,6 +364,7 @@ SECRET_PERKS = [
     ("Bar Champion", "Win all 5 brawls"),
     ("Home Owner", "Own every home upgrade"),
     ("Perk Master", "Max out every other perk"),
+    ("Champion", "Defeat the final boss"),
 ]
 
 
@@ -381,6 +385,8 @@ def building_open(btype, minutes, player: Player):
     if btype in ("park", "dealer") and player.weather in ("Rain", "Snow"):
         return False
     if btype == "park" and player.season == "Winter":
+        return False
+    if btype == "boss" and player.current_quest < len(QUESTS):
         return False
     return True
 
@@ -552,6 +558,7 @@ def save_game(player):
 
         "brawls_won": player.brawls_won,
         "enemies_defeated": player.enemies_defeated,
+        "boss_defeated": player.boss_defeated,
 
         "companion": player.companion,
         "companion_level": player.companion_level,
@@ -630,6 +637,7 @@ def load_game():
     player.tokens = data.get("tokens", player.tokens)
     player.brawls_won = data.get("brawls_won", 0)
     player.enemies_defeated = data.get("enemies_defeated", 0)
+    player.boss_defeated = data.get("boss_defeated", False)
 
     player.has_skateboard = data.get("has_skateboard", player.has_skateboard)
     player.home_upgrades = data.get("home_upgrades", [])
@@ -1224,6 +1232,9 @@ def main():
                 elif in_building == "dungeon" and event.key == pygame.K_e:
                     shop_message = fight_enemy(player)
                     shop_message_timer = 60
+                elif in_building == "boss" and event.key == pygame.K_e:
+                    shop_message = fight_final_boss(player)
+                    shop_message_timer = 60
                 elif in_building == "forest" and event.key == pygame.K_e:
                     # fallback if player enters the woods via in_building
                     shop_message = fight_forest_enemy(player, random.randrange(3))
@@ -1754,6 +1765,8 @@ def main():
                 msg = "[E] to relax at the beach"
             elif near_building.btype == "suburbs":
                 msg = "[E] to visit the suburbs"
+            elif near_building.btype == "boss":
+                msg = "[E] to challenge the boss"
             if msg:
                 if not building_open(near_building.btype, player.time, player):
                     msg += " (Closed)"
@@ -1792,6 +1805,8 @@ def main():
                 txt = "[E] Fight  [Q] Leave"
             elif in_building == "forest":
                 txt = "[E] Fight  [Q] Leave"
+            elif in_building == "boss":
+                txt = "[E] Fight boss  [Q] Leave"
             elif in_building == "petshop":
                 txt = "[1-6] Adopt"
                 if player.companion:

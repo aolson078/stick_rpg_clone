@@ -1,7 +1,7 @@
 """Combat-related helper functions and constants."""
 import random
 from typing import List, Tuple
-from entities import Player
+from entities import Player, InventoryItem
 
 # Number of bar challengers
 BRAWLER_COUNT = 5
@@ -12,6 +12,15 @@ FOREST_ENEMIES: List[dict] = [
     {"attack": 6, "defense": 2, "speed": 3, "health": 28, "reward": 45},
     {"attack": 8, "defense": 3, "speed": 2, "health": 36, "reward": 60},
 ]
+
+# Stats for the ultimate boss encountered at the end of the game
+FINAL_BOSS = {
+    "attack": 12,
+    "defense": 6,
+    "speed": 4,
+    "health": 80,
+    "reward": 200,
+}
 
 # Combat tweaks
 DODGE_BASE = 0.1
@@ -217,3 +226,49 @@ def fight_forest_enemy(player: Player, index: int) -> str:
         loot = f" +1 {res}"
     player.enemies_defeated += 1
     return f"Enemy defeated! +${enemy['reward']}{loot}"
+
+
+def fight_final_boss(player: Player) -> str:
+    """Battle the ultimate boss. Returns the fight result message."""
+    if player.boss_defeated:
+        return "The boss has already been slain"
+    if player.energy < 20:
+        return "Too tired to fight!"
+    player.energy -= energy_cost(player, 20)
+
+    enemy = FINAL_BOSS
+    p_atk, p_def, p_spd, p_combo = _combat_stats(player)
+    p_hp = player.health
+    e_hp = enemy["health"]
+    turn_player = p_spd >= enemy["speed"]
+    special_used = False
+    bleed_turns = 0
+    while p_hp > 0 and e_hp > 0:
+        if turn_player:
+            for _ in range(p_combo):
+                dmg = max(1, p_atk - enemy["defense"])
+                if not special_used and random.random() < POWER_STRIKE_CHANCE:
+                    dmg *= 2
+                    bleed_turns = BLEED_TURNS
+                    special_used = True
+                e_hp -= dmg
+        else:
+            if random.random() < (DODGE_BASE + player.speed * 0.02):
+                pass
+            else:
+                dmg = max(1, enemy["attack"] - p_def)
+                p_hp -= dmg
+        turn_player = not turn_player
+        if bleed_turns > 0:
+            e_hp -= BLEED_DAMAGE
+            bleed_turns -= 1
+
+    player.health = max(p_hp, 0)
+    if p_hp <= 0:
+        return "You were defeated by the boss!"
+
+    player.money += enemy["reward"]
+    player.boss_defeated = True
+    # Legendary sword reward
+    player.inventory.append(InventoryItem("Legendary Sword", "weapon", attack=8, speed=1, combo=2))
+    return "Boss defeated! You earned the Legendary Sword"

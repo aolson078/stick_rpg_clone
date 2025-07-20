@@ -390,6 +390,9 @@ def check_hidden_perks(player: Player) -> str | None:
     ):
         player.perk_levels["Home Owner"] = 1
         return "Secret perk unlocked: Home Owner!"
+    if player.boss_defeated and "Champion" not in player.perk_levels:
+        player.perk_levels["Champion"] = 1
+        return "Secret perk unlocked: Champion!"
     return None
 
 
@@ -417,4 +420,7 @@ def check_achievements(player: Player) -> str | None:
         player.achievements.append("Story Hero")
         update_leaderboard(player)
         return "Achievement unlocked: Story Hero!"
+    if "Boss Slayer" not in player.achievements and player.boss_defeated:
+        player.achievements.append("Boss Slayer")
+        return "Achievement unlocked: Boss Slayer!"
     return None

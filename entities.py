@@ -46,6 +46,8 @@ class Player:
 
     enemies_defeated: int = 0
 
+    boss_defeated: bool = False
+
     companion: Optional[str] = None
     companion_level: int = 0
 
