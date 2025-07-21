@@ -80,7 +80,13 @@ MALL_QUEST = SideQuest(
 # Lookup active side quests by name
 SIDE_QUESTS = {q.name: q for q in [SIDE_QUEST, NPC_QUEST, MALL_QUEST]}
 
-NPCS = [NPC(pygame.Rect(500, 500, 40, 40), "Sam", NPC_QUEST)]
+# Friendly townsfolk found around the city
+NPCS = [
+    NPC(pygame.Rect(500, 500, 40, 40), "Sam", NPC_QUEST),
+    NPC(pygame.Rect(600, 400, 40, 40), "Alice", None, True, "F"),
+    NPC(pygame.Rect(700, 600, 40, 40), "Bella", None, True, "F"),
+    NPC(pygame.Rect(400, 700, 40, 40), "Chris", None, True, "M"),
+]
 
 # Main storyline quests progressed via story_stage
 STORY_QUESTS = [
