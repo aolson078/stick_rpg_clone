@@ -88,6 +88,8 @@ the secret **Perk Master** perk.
 An achievement system tracks milestones like your first victory, amassing
 $1000, and finishing the main quest line. Clearing the story records your
 completion day and money in a local leaderboard shown on the title screen.
+Achievements now also grant flavorful epithets such as *the Slayer* which
+appear beside your stats.
 
 A shady **Alley** building lets you battle random enemies for cash and the
 occasional token. Victories count toward quest progress and scale in difficulty
