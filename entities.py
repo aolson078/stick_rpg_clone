@@ -28,6 +28,9 @@ class Player:
     dealer_shifts: int = 0
     clinic_level: int = 1
     clinic_shifts: int = 0
+    office_exp: int = 0
+    dealer_exp: int = 0
+    clinic_exp: int = 0
     tokens: int = 0
     has_skateboard: bool = False
     facing_left: bool = False
