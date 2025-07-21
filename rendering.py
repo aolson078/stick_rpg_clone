@@ -362,6 +362,9 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         FONT_COLOR,
     )
     bar.blit(text, (16, 6))
+    if player.epithet:
+        ep_txt = font.render(player.epithet, True, FONT_COLOR)
+        bar.blit(ep_txt, (settings.SCREEN_WIDTH // 2 - ep_txt.get_width() // 2, 6))
     res_txt = font.render(
         f"M:{player.resources.get('metal',0)} C:{player.resources.get('cloth',0)} H:{player.resources.get('herbs',0)} S:{player.resources.get('seeds',0)}",
         True,

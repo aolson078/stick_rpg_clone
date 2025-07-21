@@ -11,6 +11,15 @@ from entities import Player, Quest, Event, SideQuest, NPC
 from inventory import HOME_UPGRADES
 from combat import BRAWLER_COUNT
 
+# Epithets awarded for certain achievements
+ACHIEVEMENT_EPITHETS = {
+    "First Blood": "the Rookie",
+    "Brawler Master": "the Brawler",
+    "Wealthy": "the Rich",
+    "Story Hero": "the Hero",
+    "Boss Slayer": "the Slayer",
+}
+
 # Names of collectible trading cards
 CARD_NAMES = [
     "Slime",
@@ -403,15 +412,18 @@ def check_achievements(player: Player) -> str | None:
         and player.enemies_defeated >= 1
     ):
         player.achievements.append("First Blood")
+        player.epithet = ACHIEVEMENT_EPITHETS.get("First Blood", player.epithet)
         return "Achievement unlocked: First Blood!"
     if (
         "Brawler Master" not in player.achievements
         and player.brawls_won >= BRAWLER_COUNT
     ):
         player.achievements.append("Brawler Master")
+        player.epithet = ACHIEVEMENT_EPITHETS.get("Brawler Master", player.epithet)
         return "Achievement unlocked: Brawler Master!"
     if "Wealthy" not in player.achievements and player.money >= 1000:
         player.achievements.append("Wealthy")
+        player.epithet = ACHIEVEMENT_EPITHETS.get("Wealthy", player.epithet)
         return "Achievement unlocked: Wealthy!"
     if (
         "Story Hero" not in player.achievements
@@ -419,8 +431,10 @@ def check_achievements(player: Player) -> str | None:
     ):
         player.achievements.append("Story Hero")
         update_leaderboard(player)
+        player.epithet = ACHIEVEMENT_EPITHETS.get("Story Hero", player.epithet)
         return "Achievement unlocked: Story Hero!"
     if "Boss Slayer" not in player.achievements and player.boss_defeated:
         player.achievements.append("Boss Slayer")
+        player.epithet = ACHIEVEMENT_EPITHETS.get("Boss Slayer", player.epithet)
         return "Achievement unlocked: Boss Slayer!"
     return None

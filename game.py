@@ -623,6 +623,7 @@ def save_game(player):
         "weather": player.weather,
         "achievements": player.achievements,
         "cards": player.cards,
+        "epithet": player.epithet,
     }
     with open(SAVE_FILE, "w") as f:
         json.dump(data, f)
@@ -692,6 +693,7 @@ def load_game():
     player.weather = data.get("weather", "Clear")
     player.achievements = data.get("achievements", [])
     player.cards = data.get("cards", [])
+    player.epithet = data.get("epithet", "")
     for item in data.get("inventory", []):
         player.inventory.append(InventoryItem(**item))
     for slot, item in data.get("equipment", {}).items():

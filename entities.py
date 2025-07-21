@@ -97,6 +97,9 @@ class Player:
     # Collection of discovered trading cards
     cards: List[str] = field(default_factory=list)
 
+    # Current honorific title earned through achievements
+    epithet: str = ""
+
     # Active combat ability primed for next fight
     active_ability: Optional[str] = None
     # Cooldown timers for abilities (in frames)
