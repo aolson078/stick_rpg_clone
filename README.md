@@ -18,12 +18,17 @@ side quest. Accept the job, bring the papers to the Library, and earn $50.
 You can also deposit or withdraw cash at the bank. Any money left in the bank
 earns 1% interest each day.
 
-Jobs now offer promotions based on your stats. The office rewards
+Jobs now offer promotions based on your stats and the experience you build.
+The office rewards
 intelligence and charisma while dealing drugs in the park relies on strength
 and charisma. A new clinic job values intelligence and strength. Higher stats
 increase your job level and the pay you receive. The park offers a riskier
 "drug dealer" job at night that pays more but depends on strength and
 charisma.
+Working jobs now grants experience toward promotions. Each job has unique
+titles such as Intern or Nurse and awards a small stat bonus when you level
+up. Progress and experience are shown in the HUD so you always know how close
+you are to the next promotion.
 
 A new bar sells $10 tokens that can be used to play blackjack or the slots.
 Win games to earn extra tokens, or lose them if luck is not on your side.

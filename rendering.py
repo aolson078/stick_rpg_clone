@@ -36,6 +36,7 @@ from settings import (
     FLOWER_COLORS,
     SHADOW_COLOR,
 )
+from careers import get_job_title, job_progress
 
 PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
@@ -342,11 +343,21 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     hour = int(player.time) // 60
     minute = int(player.time) % 60
     time_str = f"{hour:02d}:{minute:02d}"
+    o_exp, o_need = job_progress(player, "office")
+    d_exp, d_need = job_progress(player, "dealer")
+    c_exp, c_need = job_progress(player, "clinic")
+    office_prog = f"{o_exp}/{o_need}" if o_need else "MAX"
+    dealer_prog = f"{d_exp}/{d_need}" if d_need else "MAX"
+    clinic_prog = f"{c_exp}/{c_need}" if c_need else "MAX"
+    job_info = (
+        f"Office:{get_job_title(player, 'office')} L{player.office_level}({office_prog})  "
+        f"Dealer:{get_job_title(player, 'dealer')} L{player.dealer_level}({dealer_prog})  "
+        f"Clinic:{get_job_title(player, 'clinic')} L{player.clinic_level}({clinic_prog})"
+    )
     text = font.render(
         f"Money: ${int(player.money)}  Tokens: {player.tokens}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
         f"STR:{player.strength} DEF:{player.defense} SPD:{player.speed} INT:{player.intelligence} CHA:{player.charisma}  "
-
-        f"Office Lv: {player.office_level}  Dealer Lv: {player.dealer_level}  Clinic Lv: {player.clinic_level}  Day: {player.day}  Time: {time_str}",
+        f"{job_info}  Day: {player.day}  Time: {time_str}",
         True,
         FONT_COLOR,
     )

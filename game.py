@@ -91,6 +91,7 @@ from quests import (
     STORY_TARGETS,
     SIDE_QUESTS,
 )
+from careers import work_job, get_job_title, job_pay
 import settings
 from settings import (
     MAP_WIDTH,
@@ -554,6 +555,9 @@ def save_game(player):
         "dealer_shifts": player.dealer_shifts,
         "clinic_level": player.clinic_level,
         "clinic_shifts": player.clinic_shifts,
+        "office_exp": player.office_exp,
+        "dealer_exp": player.dealer_exp,
+        "clinic_exp": player.clinic_exp,
         "tokens": player.tokens,
 
         "brawls_won": player.brawls_won,
@@ -630,10 +634,13 @@ def load_game():
 
     player.office_level = data.get("office_level", player.office_level)
     player.office_shifts = data.get("office_shifts", player.office_shifts)
+    player.office_exp = data.get("office_exp", 0)
     player.dealer_level = data.get("dealer_level", player.dealer_level)
     player.dealer_shifts = data.get("dealer_shifts", player.dealer_shifts)
+    player.dealer_exp = data.get("dealer_exp", 0)
     player.clinic_level = data.get("clinic_level", player.clinic_level)
     player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
+    player.clinic_exp = data.get("clinic_exp", 0)
     player.tokens = data.get("tokens", player.tokens)
     player.brawls_won = data.get("brawls_won", 0)
     player.enemies_defeated = data.get("enemies_defeated", 0)
@@ -1091,25 +1098,7 @@ def main():
 
             if event.type == pygame.KEYDOWN and in_building:
                 if in_building == "job" and event.key == pygame.K_e:
-                    if player.energy >= 20:
-                        pay = 20 + 15 * (player.office_level - 1)
-                        player.money += pay
-                        player.energy -= energy_cost(player, 20)
-                        player.office_shifts += 1
-                        if (
-                            player.office_shifts >= 10
-                            and player.intelligence >= 5 * player.office_level
-                            and player.charisma >= 5 * player.office_level
-                        ):
-                            player.office_level += 1
-                            player.office_shifts = 0
-                            shop_message = (
-                                f"You were promoted! Office level {player.office_level}"
-                            )
-                        else:
-                            shop_message = f"You worked! +${pay}, -20 energy"
-                    else:
-                        shop_message = "Too tired to work!"
+                    shop_message = work_job(player, "office")
                     shop_message_timer = 60
                 elif in_building == "home":
                     player.energy = 100
@@ -1390,42 +1379,10 @@ def main():
                         continue
                     shop_message_timer = 90
                 elif in_building == "dealer" and event.key == pygame.K_e:
-                    if player.energy >= 20:
-                        pay = 40 + 20 * (player.dealer_level - 1)
-                        player.money += pay
-                        player.energy -= energy_cost(player, 20)
-                        player.dealer_shifts += 1
-                        if (
-                            player.dealer_shifts >= 10
-                            and player.strength >= 5 * player.dealer_level
-                            and player.charisma >= 5 * player.dealer_level
-                        ):
-                            player.dealer_level += 1
-                            player.dealer_shifts = 0
-                            shop_message = f"You were promoted! Dealer level {player.dealer_level}"
-                        else:
-                            shop_message = f"You dealt! +${pay}, -20 energy"
-                    else:
-                        shop_message = "Too tired to deal!"
+                    shop_message = work_job(player, "dealer")
                     shop_message_timer = 60
                 elif in_building == "clinic" and event.key == pygame.K_e:
-                    if player.energy >= 20:
-                        pay = 30 + 15 * (player.clinic_level - 1)
-                        player.money += pay
-                        player.energy -= energy_cost(player, 20)
-                        player.clinic_shifts += 1
-                        if (
-                            player.clinic_shifts >= 10
-                            and player.intelligence >= 5 * player.clinic_level
-                            and player.strength >= 5 * player.clinic_level
-                        ):
-                            player.clinic_level += 1
-                            player.clinic_shifts = 0
-                            shop_message = f"You were promoted! Clinic level {player.clinic_level}"
-                        else:
-                            shop_message = f"You treated patients! +${pay}, -20 energy"
-                    else:
-                        shop_message = "Too tired to work here!"
+                    shop_message = work_job(player, "clinic")
                     shop_message_timer = 60
 
         dx = dy = 0
@@ -1723,13 +1680,13 @@ def main():
         if near_building and not in_building:
             msg = ""
             if near_building.btype == "job":
-                pay = 20 + 15 * (player.office_level - 1)
+                pay = job_pay(player, "office")
                 msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "dealer":
-                pay = 40 + 20 * (player.dealer_level - 1)
+                pay = job_pay(player, "dealer")
                 msg = f"[E] to Deal drugs (+${pay}, -20 energy)"
             elif near_building.btype == "clinic":
-                pay = 30 + 15 * (player.clinic_level - 1)
+                pay = job_pay(player, "clinic")
                 msg = f"[E] to Work here (+${pay}, -20 energy)"
             elif near_building.btype == "home":
                 msg = "[E] to enter home"
@@ -1779,13 +1736,13 @@ def main():
         if in_building:
             txt = ""
             if in_building == "job":
-                pay = 20 + 15 * (player.office_level - 1)
+                pay = job_pay(player, "office")
                 txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "dealer":
-                pay = 40 + 20 * (player.dealer_level - 1)
+                pay = job_pay(player, "dealer")
                 txt = f"[E] Deal (+${pay})  [Q] Leave"
             elif in_building == "clinic":
-                pay = 30 + 15 * (player.clinic_level - 1)
+                pay = job_pay(player, "clinic")
                 txt = f"[E] Work (+${pay})  [Q] Leave"
             elif in_building == "home":
                 txt = "[E] Sleep  [1-9] Buy upgrade  [Q] Leave"
