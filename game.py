@@ -532,6 +532,27 @@ def solve_puzzle(player: Player) -> str:
     return "Couldn't solve it"
 
 
+def dig_for_treasure(player: Player) -> str:
+    """Dig on the beach for buried goodies."""
+    if player.energy < 5:
+        return "Too tired to dig!"
+    player.energy -= energy_cost(player, 5)
+    roll = random.random()
+    if roll < 0.5:
+        return "Found nothing."
+    if roll < 0.8:
+        amount = random.randint(5, 15)
+        player.money += amount
+        return f"Found ${amount} buried in the sand"
+    if roll < 0.95:
+        player.inventory.append(InventoryItem("Golden Seashell", "furniture"))
+        return "You unearthed a Golden Seashell!"
+    player.inventory.append(
+        InventoryItem("Pearl Necklace", "chest", defense=1, speed=1)
+    )
+    return "You dug up a Pearl Necklace!"
+
+
 
 
 
@@ -1347,6 +1368,9 @@ def main():
                     else:
                         shop_message = "Too tired to relax!"
                     shop_message_timer = 60
+                elif in_building == "beach" and event.key == pygame.K_d:
+                    shop_message = dig_for_treasure(player)
+                    shop_message_timer = 60
                 elif in_building == "suburbs" and event.key == pygame.K_e:
                     if player.energy >= 5:
                         player.energy -= energy_cost(player, 5)
@@ -1732,7 +1756,8 @@ def main():
             elif near_building.btype == "mall":
                 msg = "[E] to browse the mall"
             elif near_building.btype == "beach":
-                msg = "[E] to relax at the beach"
+                msg = "[E] to relax"
+                msg += "  [D] dig"
             elif near_building.btype == "suburbs":
                 msg = "[E] to visit the suburbs"
             elif near_building.btype == "boss":
@@ -1789,7 +1814,7 @@ def main():
             elif in_building == "mall":
                 txt = "[E] Pick up order  [Q] Leave"
             elif in_building == "beach":
-                txt = "[E] Relax/Deliver  [Q] Leave"
+                txt = "[E] Relax/Deliver  D:Dig  [Q] Leave"
             elif in_building == "suburbs":
                 txt = "[E] Help locals  [Q] Leave"
             draw_tip_panel(screen, font, f"Inside: {in_building.upper()}   {txt}")
