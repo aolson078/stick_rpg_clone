@@ -126,6 +126,11 @@ class Player:
         default_factory=lambda: {f"slot{i}": (0, 0) for i in range(1, 7)}
     )
 
+    # Relationship data with NPCs
+    relationships: Dict[str, int] = field(default_factory=dict)
+    last_talk: Dict[str, int] = field(default_factory=dict)
+    romanced: List[str] = field(default_factory=list)
+
 
 
 @dataclass
@@ -159,6 +164,8 @@ class NPC:
     rect: pygame.Rect
     name: str
     quest: Optional[SideQuest] = None
+    romanceable: bool = False
+    gender: str = ""
     bubble_message: str = ""
     bubble_timer: int = 0
 

@@ -168,6 +168,11 @@ huge cash prize and claim the powerful **Legendary Sword**.
 A new set of ten trading cards can also be discovered at random. Keep exploring
 to complete your collection!
 
+A simple social system lets you befriend townsfolk. Talk to residents each day
+to earn hearts and give them items from your inventory for an extra boost. Reach
+eight hearts with someone to start dating them. Three characters can be
+romanced: **Alice**, **Bella**, and **Chris**.
+
 You can save your progress with **F5** and load it back with **F9**. If a
 `savegame.json` file exists, it will automatically be loaded when the game
 starts. Press **F1** at any time for a quick reminder of the controls.
@@ -195,6 +200,8 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 - **Arrow keys/WASD**: Move
 - **E**: Interact with nearby buildings
 - **E** near bar objects: Buy tokens, gamble, or fight
+- **E** near NPCs: Chat with them
+- **G** near NPCs: Give a gift
 
 - **0-9**: Buy items in the shop
 - **1-6**: Adopt a pet in the Pet Shop

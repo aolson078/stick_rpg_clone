@@ -368,6 +368,9 @@ SECRET_PERKS = [
     ("Champion", "Defeat the final boss"),
 ]
 
+# Maximum hearts an NPC can have
+MAX_HEARTS = 10
+
 
 
 SAVE_FILE = "savegame.json"
@@ -612,6 +615,9 @@ def save_game(player):
             for slot, it in player.furniture.items()
         },
         "furniture_pos": player.furniture_pos,
+        "relationships": player.relationships,
+        "last_talk": player.last_talk,
+        "romanced": player.romanced,
 
         "x": player.rect.x,
         "y": player.rect.y,
@@ -714,6 +720,9 @@ def load_game():
         slot: tuple(pos)
         for slot, pos in data.get("furniture_pos", {f"slot{i}": (0,0) for i in range(1,7)}).items()
     }
+    player.relationships = data.get("relationships", {})
+    player.last_talk = data.get("last_talk", {})
+    player.romanced = data.get("romanced", [])
 
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
@@ -1638,17 +1647,43 @@ def main():
             and not show_log
         ):
             if keys[pygame.K_e]:
-                state = player.npc_progress.get(near_npc.name)
-                if state is None:
-                    text = near_npc.quest.description
-                    player.side_quest = near_npc.quest.name
-                    player.npc_progress[near_npc.name] = 1
-                elif state == 1 and player.side_quest is None:
-                    near_npc.quest.reward(player)
-                    player.npc_progress[near_npc.name] = 2
-                    text = "Thanks for the help!"
-                else:
+                text = "Hi there!"
+                if near_npc.quest:
+                    state = player.npc_progress.get(near_npc.name)
+                    if state is None:
+                        text = near_npc.quest.description
+                        player.side_quest = near_npc.quest.name
+                        player.npc_progress[near_npc.name] = 1
+                    elif state == 1 and player.side_quest is None:
+                        near_npc.quest.reward(player)
+                        player.npc_progress[near_npc.name] = 2
+                        text = "Thanks for the help!"
+                if near_npc.romanceable:
+                    hearts = player.relationships.get(near_npc.name, 0)
+                    if player.last_talk.get(near_npc.name) != player.day:
+                        hearts = min(MAX_HEARTS, hearts + 1)
+                        player.relationships[near_npc.name] = hearts
+                        player.last_talk[near_npc.name] = player.day
+                        text = f"+1 heart ({hearts}/{MAX_HEARTS})"
+                    if hearts >= 8 and near_npc.name not in player.romanced:
+                        player.romanced.append(near_npc.name)
+                        text = f"You are now dating {near_npc.name}!"
+                elif near_npc.quest is None:
                     text = "Good to see you."
+                near_npc.bubble_message = text
+                near_npc.bubble_timer = 90
+                shop_message = f"{near_npc.name}: {text}"
+                shop_message_timer = 90
+            elif keys[pygame.K_g] and near_npc.romanceable and player.inventory:
+                item = player.inventory.pop(0)
+                hearts = player.relationships.get(near_npc.name, 0)
+                hearts = min(MAX_HEARTS, hearts + 2)
+                player.relationships[near_npc.name] = hearts
+                player.last_talk[near_npc.name] = player.day
+                text = f"Gave {item.name}! ({hearts}/{MAX_HEARTS})"
+                if hearts >= 8 and near_npc.name not in player.romanced:
+                    player.romanced.append(near_npc.name)
+                    text = f"{near_npc.name} is now your partner!"
                 near_npc.bubble_message = text
                 near_npc.bubble_timer = 90
                 shop_message = f"{near_npc.name}: {text}"
