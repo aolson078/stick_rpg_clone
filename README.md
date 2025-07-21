@@ -18,6 +18,9 @@ side quest. Accept the job, bring the papers to the Library, and earn $50.
 You can also deposit or withdraw cash at the bank. Any money left in the bank
 earns 1% interest each day.
 
+The **Clinic** now offers medical treatment. Press **H** inside to fully heal
+and restore energy for $20.
+
 Jobs now offer promotions based on your stats and the experience you build.
 The office rewards
 intelligence and charisma while dealing drugs in the park relies on strength
@@ -200,6 +203,7 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 - **P** at the library: Solve puzzle
 - **P** at the farm: Plant seed
 - **H** at the farm: Harvest crops
+- **H** in the Clinic: Heal for $20
 - **Shift**: Ride skateboard (if owned)
 - **T**: Skip 3 in-game hours
 - **L**: View quest log

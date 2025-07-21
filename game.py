@@ -1384,6 +1384,19 @@ def main():
                 elif in_building == "clinic" and event.key == pygame.K_e:
                     shop_message = work_job(player, "clinic")
                     shop_message_timer = 60
+                elif in_building == "clinic" and event.key == pygame.K_h:
+                    if player.money >= 20 and (
+                        player.health < 100 or player.energy < 100
+                    ):
+                        player.money -= 20
+                        player.health = 100
+                        player.energy = 100
+                        shop_message = "Treatment complete"
+                    elif player.money < 20:
+                        shop_message = "Need $20"
+                    else:
+                        shop_message = "Already healthy"
+                    shop_message_timer = 60
 
         dx = dy = 0
         keys = pygame.key.get_pressed()
@@ -1687,7 +1700,7 @@ def main():
                 msg = f"[E] to Deal drugs (+${pay}, -20 energy)"
             elif near_building.btype == "clinic":
                 pay = job_pay(player, "clinic")
-                msg = f"[E] to Work here (+${pay}, -20 energy)"
+                msg = f"[E] to Work here (+${pay}, -20 energy)  [H] heal for $20"
             elif near_building.btype == "home":
                 msg = "[E] to enter home"
             elif near_building.btype == "shop":
@@ -1743,7 +1756,7 @@ def main():
                 txt = f"[E] Deal (+${pay})  [Q] Leave"
             elif in_building == "clinic":
                 pay = job_pay(player, "clinic")
-                txt = f"[E] Work (+${pay})  [Q] Leave"
+                txt = f"[E] Work (+${pay})  H:Heal $20  [Q] Leave"
             elif in_building == "home":
                 txt = "[E] Sleep  [1-9] Buy upgrade  [Q] Leave"
             elif in_building == "shop":
