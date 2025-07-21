@@ -40,6 +40,7 @@ from careers import get_job_title, job_progress
 
 PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
+PLAYER_SPRITE_COLOR = None
 FOREST_ENEMY_IMAGES = []
 STARS = []
 CLOUDS = []
@@ -47,26 +48,38 @@ RAINDROPS = []
 SNOWFLAKES = []
 
 
-def load_player_sprites():
-    """Load player sprite frames from the assets/images folder."""
-    global PLAYER_SPRITES
-    if PLAYER_SPRITES:
+def load_player_sprites(color=None):
+    """Load player sprite frames and optionally tint them."""
+    global PLAYER_SPRITES, PLAYER_SPRITE_COLOR
+    if PLAYER_SPRITES and PLAYER_SPRITE_COLOR == color:
         return PLAYER_SPRITES
-    # Load all sequentially numbered sprite frames until a file is missing
+
+    def tint(img, col):
+        tinted = img.copy()
+        overlay = pygame.Surface(img.get_size()).convert_alpha()
+        overlay.fill(col)
+        tinted.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        return tinted
+
+    PLAYER_SPRITES = []
+    PLAYER_SPRITE_COLOR = color
     i = 0
     while True:
         path = os.path.join(settings.IMAGE_DIR, f"player_{i}.png")
         if not os.path.exists(path):
             break
-        PLAYER_SPRITES.append(pygame.image.load(path).convert_alpha())
+        img = pygame.image.load(path).convert_alpha()
+        if color:
+            img = tint(img, color)
+        PLAYER_SPRITES.append(img)
         i += 1
     return PLAYER_SPRITES
 
 
-def draw_player_sprite(surface, rect, frame=0, facing_left=False):
-    sprites = load_player_sprites()
+def draw_player_sprite(surface, rect, frame=0, facing_left=False, color=None, head_color=None):
+    sprites = load_player_sprites(color)
     if not sprites:
-        return draw_player(surface, rect, frame)
+        return draw_player(surface, rect, frame, facing_left, color, head_color)
     image = sprites[frame % len(sprites)]
     if facing_left:
         image = pygame.transform.flip(image, True, False)
@@ -79,7 +92,7 @@ def draw_player_sprite(surface, rect, frame=0, facing_left=False):
     surface.blit(image, (x, y))
 
 
-def draw_player(surface, rect, frame=0, facing_left=False):
+def draw_player(surface, rect, frame=0, facing_left=False, color=None, head_color=None):
     """Fallback stick figure drawing if sprites fail to load."""
     x = rect.x + rect.width // 2
     y = rect.y + rect.height
@@ -88,15 +101,17 @@ def draw_player(surface, rect, frame=0, facing_left=False):
     surface.blit(shadow, (x - 20, y - 6))
 
     swing = math.sin(frame / 6) * 7 if frame else 0
-    pygame.draw.circle(surface, PLAYER_HEAD_COLOR, (x, y - 24), 10)
-    pygame.draw.circle(surface, PLAYER_COLOR, (x, y - 24), 10, 2)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 14), (x, y), 3)
+    color = color or PLAYER_COLOR
+    head_color = head_color or PLAYER_HEAD_COLOR
+    pygame.draw.circle(surface, head_color, (x, y - 24), 10)
+    pygame.draw.circle(surface, color, (x, y - 24), 10, 2)
+    pygame.draw.line(surface, color, (x, y - 14), (x, y), 3)
     arm_offset = -13 if not facing_left else 13
     leg_offset = -9 if not facing_left else 9
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x + arm_offset, y - 2 + int(swing)), 3)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y - 10), (x - arm_offset, y - 2 - int(swing)), 3)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x + leg_offset, y + 16 + int(swing)), 3)
-    pygame.draw.line(surface, PLAYER_COLOR, (x, y), (x - leg_offset, y + 16 - int(swing)), 3)
+    pygame.draw.line(surface, color, (x, y - 10), (x + arm_offset, y - 2 + int(swing)), 3)
+    pygame.draw.line(surface, color, (x, y - 10), (x - arm_offset, y - 2 - int(swing)), 3)
+    pygame.draw.line(surface, color, (x, y), (x + leg_offset, y + 16 + int(swing)), 3)
+    pygame.draw.line(surface, color, (x, y), (x - leg_offset, y + 16 - int(swing)), 3)
 
 
 def draw_npc(surface, npc, font, offset=(0, 0)):
@@ -368,6 +383,8 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         FONT_COLOR,
     )
     bar.blit(res_txt, (16, 20))
+    name_txt = font.render(player.name, True, FONT_COLOR)
+    bar.blit(name_txt, (16, 32))
     card_stat = font.render(
         f"Cards: {len(player.cards)}/10",
         True,
@@ -623,7 +640,7 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_r
             txt = font.render(item.name, True, FONT_COLOR)
             surface.blit(txt, (rect.x + 4, rect.y + 20))
 
-    draw_player_sprite(surface, player.rect, frame, player.facing_left)
+    draw_player_sprite(surface, player.rect, frame, player.facing_left, player.color, player.head_color)
 
 
 def load_forest_enemy_images():
@@ -653,7 +670,7 @@ def draw_forest_area(surface, font, player, frame, enemy_rects, door_rect):
     for rect, img in zip(enemy_rects, images):
         surface.blit(img, rect)
 
-    draw_player_sprite(surface, player.rect, frame, player.facing_left)
+    draw_player_sprite(surface, player.rect, frame, player.facing_left, player.color, player.head_color)
 
 
 def draw_bar_interior(
@@ -705,4 +722,4 @@ def draw_bar_interior(
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
     pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
 
-    draw_player_sprite(surface, player.rect, frame, player.facing_left)
+    draw_player_sprite(surface, player.rect, frame, player.facing_left, player.color, player.head_color)

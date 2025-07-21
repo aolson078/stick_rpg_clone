@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Callable, List, Dict, Optional, Tuple
 import pygame
+import settings
 
 @dataclass
 class Building:
@@ -11,6 +12,9 @@ class Building:
 @dataclass
 class Player:
     rect: pygame.Rect
+    name: str = "Player"
+    color: Tuple[int, int, int] = settings.PLAYER_COLOR
+    head_color: Tuple[int, int, int] = settings.PLAYER_HEAD_COLOR
     money: float = 50
     energy: float = 100
     health: float = 100
