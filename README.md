@@ -11,6 +11,7 @@ Buildings now cast subtle drop shadows for a little extra depth.
 Soft white clouds drift across the sky to add more life to the background.
 When the game launches you are greeted with a small start menu allowing you to
 load a save or begin anew.
+Before entering the city you can also choose a name and pick both a body and head color.
 
 The city now includes a **Bank** where you can pick up a small delivery
 side quest. Accept the job, bring the papers to the Library, and earn $50.

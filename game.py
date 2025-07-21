@@ -558,6 +558,9 @@ def dig_for_treasure(player: Player) -> str:
 
 def save_game(player):
     data = {
+        "name": player.name,
+        "color": list(player.color),
+        "head_color": list(player.head_color),
         "money": player.money,
         "energy": player.energy,
         "health": player.health,
@@ -641,6 +644,9 @@ def load_game():
             PLAYER_SIZE,
         )
     )
+    player.name = data.get("name", player.name)
+    player.color = tuple(data.get("color", list(player.color)))
+    player.head_color = tuple(data.get("head_color", list(player.head_color)))
     player.money = data.get("money", player.money)
     player.energy = data.get("energy", player.energy)
     player.health = data.get("health", player.health)
@@ -755,6 +761,69 @@ def start_menu(screen, font):
         pygame.time.wait(20)
 
 
+def character_creation(screen, font):
+    """Prompt for a name and body/head color selection before starting the game."""
+    name = ""
+    colors = [
+        (40, 40, 40),
+        (200, 50, 50),
+        (50, 90, 200),
+    ]
+    color_names = ["Black", "Red", "Blue"]
+    head_colors = [
+        (245, 219, 164),
+        (224, 188, 135),
+        (192, 152, 109),
+    ]
+    head_color_names = ["Light", "Tan", "Brown"]
+    body_idx = 0
+    head_idx = 0
+    selecting_head = False
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return (name or "Player"), colors[body_idx], head_colors[head_idx]
+                if event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                elif event.key == pygame.K_TAB:
+                    selecting_head = not selecting_head
+                elif event.key == pygame.K_LEFT:
+                    if selecting_head:
+                        head_idx = (head_idx - 1) % len(head_colors)
+                    else:
+                        body_idx = (body_idx - 1) % len(colors)
+                elif event.key == pygame.K_RIGHT:
+                    if selecting_head:
+                        head_idx = (head_idx + 1) % len(head_colors)
+                    else:
+                        body_idx = (body_idx + 1) % len(colors)
+                elif event.unicode and event.unicode.isprintable() and len(name) < 12:
+                    name += event.unicode
+        screen.fill((0, 0, 0))
+        title = font.render("Create Character", True, (255, 255, 255))
+        prompt = font.render(f"Name: {name}", True, (230, 230, 230))
+        body_txt = font.render(
+            f"Body Color: {color_names[body_idx]} (\u2190/\u2192)", True, colors[body_idx]
+        )
+        head_txt = font.render(
+            f"Head Color: {head_color_names[head_idx]} (\u2190/\u2192)", True, head_colors[head_idx]
+        )
+        toggle_txt = font.render("Press TAB to switch", True, (230, 230, 230))
+        confirm = font.render("Press Enter to Start", True, (230, 230, 230))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 240))
+        screen.blit(prompt, (settings.SCREEN_WIDTH // 2 - prompt.get_width() // 2, 280))
+        screen.blit(body_txt, (settings.SCREEN_WIDTH // 2 - body_txt.get_width() // 2, 320))
+        screen.blit(head_txt, (settings.SCREEN_WIDTH // 2 - head_txt.get_width() // 2, 350))
+        screen.blit(toggle_txt, (settings.SCREEN_WIDTH // 2 - toggle_txt.get_width() // 2, 380))
+        screen.blit(confirm, (settings.SCREEN_WIDTH // 2 - confirm.get_width() // 2, 410))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
+
 def main():
     screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.RESIZABLE)
     pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
@@ -778,13 +847,21 @@ def main():
     else:
         step_sound = enter_sound = quest_sound = None
 
-    load_player_sprites()
+    if loaded:
+        player = loaded
+    else:
+        name, color, head_color = character_creation(screen, font)
+        player = Player(
+            pygame.Rect(MAP_WIDTH // 2, MAP_HEIGHT // 2, PLAYER_SIZE, PLAYER_SIZE),
+            name=name,
+            color=color,
+            head_color=head_color,
+        )
 
-    player = Player(pygame.Rect(MAP_WIDTH // 2, MAP_HEIGHT // 2, PLAYER_SIZE, PLAYER_SIZE))
-    loaded_player = loaded
+    load_player_sprites(player.color)
+
     shop_message = ""
-    if loaded_player:
-        player = loaded_player
+    if loaded:
         update_weather(player)
         init_furniture_positions(player)
         shop_message = "Game loaded!"
@@ -1673,7 +1750,7 @@ def main():
             draw_npc(screen, n, font, (-cam_x, -cam_y))
 
         pr = player.rect.move(-cam_x, -cam_y)
-        draw_player_sprite(screen, pr, frame if dx or dy else 0, player.facing_left)
+        draw_player_sprite(screen, pr, frame if dx or dy else 0, player.facing_left, player.color, player.head_color)
 
         target_building = quest_target_building(player)
         if target_building:
