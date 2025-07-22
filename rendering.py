@@ -381,7 +381,7 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         ep_txt = font.render(player.epithet, True, FONT_COLOR)
         bar.blit(ep_txt, (settings.SCREEN_WIDTH // 2 - ep_txt.get_width() // 2, 6))
     res_txt = font.render(
-        f"M:{player.resources.get('metal',0)} C:{player.resources.get('cloth',0)} H:{player.resources.get('herbs',0)} S:{player.resources.get('seeds',0)}",
+        f"M:{player.resources.get('metal',0)} C:{player.resources.get('cloth',0)} H:{player.resources.get('herbs',0)} S:{player.resources.get('seeds',0)} P:{player.resources.get('produce',0)}",
         True,
         FONT_COLOR,
     )
@@ -479,7 +479,12 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         surface.blit(bg, bg_rect.topleft)
         surface.blit(txt, (bg_rect.x + 4, bg_rect.y + 20))
 
-    res = f"Metal:{player.resources.get('metal',0)} Cloth:{player.resources.get('cloth',0)} Herbs:{player.resources.get('herbs',0)}"
+    res = (
+        f"Metal:{player.resources.get('metal',0)} "
+        f"Cloth:{player.resources.get('cloth',0)} "
+        f"Herbs:{player.resources.get('herbs',0)} "
+        f"Produce:{player.resources.get('produce',0)}"
+    )
     res_txt = font.render(res, True, FONT_COLOR)
     surface.blit(res_txt, (100, settings.SCREEN_HEIGHT - 120))
     card_line = ", ".join(player.cards) if player.cards else "None"

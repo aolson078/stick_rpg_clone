@@ -50,6 +50,7 @@ from inventory import (
     train_companion,
     plant_seed,
     harvest_crops,
+    sell_produce,
 )
 from combat import (
     energy_cost,
@@ -698,7 +699,8 @@ def load_game():
     player.story_branch = data.get("story_branch")
     player.gang_package_done = data.get("gang_package_done", False)
     player.resources = data.get(
-        "resources", {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0}
+        "resources",
+        {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0, "produce": 0},
     )
     player.crops = data.get("crops", [])
     player.season = data.get("season", "Spring")
@@ -1026,6 +1028,9 @@ def main():
                         elif item.name in ("Protein Bar", "Health Potion"):
                             gain = 30 if item.name == "Health Potion" else 5
                             player.health = min(100, player.health + gain)
+                        elif item.name == "Fruit Pie":
+                            player.energy = min(100, player.energy + 10)
+                            player.health = min(100, player.health + 10)
                         player.hotkeys[idx] = None
                         shop_message = f"Used {item.name}"
                     else:
@@ -1426,6 +1431,13 @@ def main():
                             shop_message = "Forged Flaming Sword"
                         else:
                             shop_message = "Need 5 metal & 2 herbs"
+                    elif event.key == pygame.K_8:
+                        if player.resources.get("produce", 0) >= 2:
+                            player.resources["produce"] -= 2
+                            player.inventory.append(InventoryItem("Fruit Pie", "consumable"))
+                            shop_message = "Baked Fruit Pie"
+                        else:
+                            shop_message = "Need 2 produce"
                     else:
                         continue
                     shop_message_timer = 60
@@ -1434,6 +1446,8 @@ def main():
                         shop_message = plant_seed(player)
                     elif event.key == pygame.K_h:
                         shop_message = harvest_crops(player)
+                    elif event.key == pygame.K_s:
+                        shop_message = sell_produce(player)
                     else:
                         continue
                     shop_message_timer = 60
@@ -1924,7 +1938,7 @@ def main():
             elif in_building == "workshop":
                 txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm  [Q] Leave"
             elif in_building == "farm":
-                txt = "[P] Plant seed  [H] Harvest  [Q] Leave"
+                txt = "[P] Plant seed  [H] Harvest  S:Sell  [Q] Leave"
             elif in_building == "mall":
                 txt = "[E] Pick up order  [Q] Leave"
             elif in_building == "beach":
@@ -1958,12 +1972,13 @@ def main():
                     "5:Decorations (1 metal,2 cloth)",
                     "6:Energy Potion (3 herbs)",
                     "7:Flaming Sword (5 metal,2 herbs)",
+                    "8:Fruit Pie (2 produce)",
                 ]
                 for i, txt_opt in enumerate(opts):
                     item_surf = font.render(txt_opt, True, (80, 40, 40))
                     screen.blit(item_surf, (30 + i * 300, settings.SCREEN_HEIGHT - 60))
             elif in_building == "farm":
-                opts = ["P:Plant (-1 seed)", "H:Harvest (ready crops)"]
+                opts = ["P:Plant (-1 seed)", "H:Harvest", "S:Sell produce"]
                 for i, txt_opt in enumerate(opts):
                     item_surf = font.render(txt_opt, True, (80, 40, 40))
                     screen.blit(item_surf, (30 + i * 260, settings.SCREEN_HEIGHT - 60))

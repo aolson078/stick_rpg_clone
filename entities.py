@@ -85,7 +85,13 @@ class Player:
 
     # Crafting resources
     resources: Dict[str, int] = field(
-        default_factory=lambda: {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0}
+        default_factory=lambda: {
+            "metal": 0,
+            "cloth": 0,
+            "herbs": 0,
+            "seeds": 0,
+            "produce": 0,
+        }
     )
 
     # Days when seeds were planted on the farm

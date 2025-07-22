@@ -112,7 +112,8 @@ You can also craft home decorations, brew Energy Potions, and forge a
 powerful Flaming Sword using extra resources.
 
 A small **Farm** south of town lets you grow crops. Buy seeds in the shop, plant
-them at the farm, and harvest them three days later for extra cash.
+them at the farm, harvest them three days later, then sell the produce or use it
+in crafting recipes.
 
 The city map now stretches further east with three new areas. The **Suburbs**
 contain friendly neighbors who sometimes need a hand, the bustling **Mall**
@@ -215,6 +216,7 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 - **P** at the library: Solve puzzle
 - **P** at the farm: Plant seed
 - **H** at the farm: Harvest crops
+- **S** at the farm: Sell produce
 - **H** in the Clinic: Heal for $20
 - **Shift**: Ride skateboard (if owned)
 - **T**: Skip 3 in-game hours
