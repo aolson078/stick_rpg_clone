@@ -153,11 +153,22 @@ def harvest_crops(player: Player) -> str:
         return "Nothing ready"
     for d in ready:
         player.crops.remove(d)
-        gain = 15
-        if player.companion == "Llama":
-            gain += 5 * player.companion_level
-        player.money += gain
-    return f"Harvested {len(ready)} crops"
+        player.resources["produce"] = player.resources.get("produce", 0) + 1
+    return f"Harvested {len(ready)} produce"
+
+
+def sell_produce(player: Player) -> str:
+    """Sell all harvested produce for cash."""
+    count = player.resources.get("produce", 0)
+    if count <= 0:
+        return "No produce"
+    bonus = 0
+    if player.companion == "Llama":
+        bonus = 5 * player.companion_level
+    gain = (15 + bonus) * count
+    player.money += gain
+    player.resources["produce"] = 0
+    return f"Sold {count} produce"
 
 
 def train_companion(player: Player) -> str:
