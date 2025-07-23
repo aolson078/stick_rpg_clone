@@ -77,6 +77,11 @@ class Player:
     # 1=apartment, 2=house, 3=mansion
     home_level: int = 1
 
+    # Player owned businesses with base profits
+    businesses: Dict[str, int] = field(default_factory=dict)
+    # Temporary profit bonuses earned from management
+    business_bonus: Dict[str, int] = field(default_factory=dict)
+
     # Tracks per-NPC interaction states
     npc_progress: Dict[str, int] = field(default_factory=dict)
 

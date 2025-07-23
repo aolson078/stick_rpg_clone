@@ -20,6 +20,7 @@ from quests import (
     QUEST_TARGETS,
 )
 from combat import energy_cost
+from businesses import collect_profits
 import settings
 
 
@@ -159,6 +160,7 @@ OPEN_HOURS = {
     "workshop": (8, 20),
     "farm": (6, 20),
     "forest": (0, 24),
+    "business": (8, 18),
     "mall": (10, 21),
     "suburbs": (0, 24),
     "beach": (6, 20),
@@ -240,6 +242,9 @@ def sleep(player: Player) -> Optional[str]:
     if "Arcade Room" in player.home_upgrades and random.random() < 0.3:
         player.tokens += 1
         messages.append("Won a token in your arcade")
+    profits = collect_profits(player)
+    if profits:
+        messages.append(f"Your businesses earned ${profits}")
     if interest:
         messages.append(f"Earned ${interest} interest")
     return " ".join(messages) if messages else None
@@ -381,6 +386,8 @@ def save_game(player: Player) -> None:
         "next_strength_perk": player.next_strength_perk,
         "next_intelligence_perk": player.next_intelligence_perk,
         "next_charisma_perk": player.next_charisma_perk,
+        "businesses": player.businesses,
+        "business_bonus": player.business_bonus,
         "current_quest": player.current_quest,
         "enemies_defeated": player.enemies_defeated,
         "inventory": [item.__dict__ for item in player.inventory],
@@ -447,6 +454,8 @@ def load_game() -> Optional[Player]:
     player.has_skateboard = data.get("has_skateboard", player.has_skateboard)
     player.home_upgrades = data.get("home_upgrades", [])
     player.home_level = data.get("home_level", 1)
+    player.businesses = data.get("businesses", {})
+    player.business_bonus = data.get("business_bonus", {})
     player.bank_balance = data.get("bank_balance", 0.0)
     player.perk_points = data.get("perk_points", 0)
     player.perk_levels = data.get("perk_levels", {})
