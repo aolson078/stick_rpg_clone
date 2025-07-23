@@ -40,7 +40,16 @@ def energy_cost(player: Player, base: float) -> float:
 
 def _combat_stats(player: Player) -> Tuple[int, int, int, int]:
     """Return player's attack, defense, speed and combo with equipment."""
-    atk = player.strength
+    weapon = player.equipment.get("weapon")
+    base_atk = player.strength
+    if weapon:
+        wtype = getattr(weapon, "weapon_type", "melee")
+        if wtype == "ranged":
+            base_atk = player.speed
+        elif wtype == "magic":
+            base_atk = player.intelligence
+
+    atk = base_atk
     df = player.defense
     spd = player.speed
     combo = 1

@@ -187,4 +187,6 @@ class InventoryItem:
     speed: int = 0
     combo: int = 1
     level: int = 0
+    # melee, ranged or magic for weapons
+    weapon_type: str = "melee"
 

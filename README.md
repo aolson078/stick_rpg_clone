@@ -60,6 +60,7 @@ Basic equipment pieces like a leather helmet, leather armor, and boots can be
 purchased and equipped through the inventory screen. A wooden sword is also
 available for the weapon slot. Each item lists its attack (A), defense (D) and
 speed (S) bonuses.
+New Magic Wands and Crossbows let you specialize as a mage or ranger. Wands scale with Intelligence while bows and crossbows use your Speed for damage.
 Prices have been raised across the board and jobs pay a bit less, so it takes
 time to afford the best gear and home upgrades.
 
