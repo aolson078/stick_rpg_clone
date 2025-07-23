@@ -110,6 +110,8 @@ yield metal, cloth, and herbs. Spend these resources to brew Health Potions,
 forge stronger weapons, or enhance your armor.
 You can also craft home decorations, brew Energy Potions, and forge a
 powerful Flaming Sword using extra resources.
+Successful crafting now grants **crafting XP**. Gaining levels unlocks
+advanced recipes like Energy Potions and the Flaming Sword.
 
 A small **Farm** south of town lets you grow crops. Buy seeds in the shop, plant
 them at the farm, harvest them three days later, then sell the produce or use it

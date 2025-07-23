@@ -36,6 +36,8 @@ class Player:
     dealer_exp: int = 0
     clinic_exp: int = 0
     tokens: int = 0
+    crafting_level: int = 1
+    crafting_exp: int = 0
     has_skateboard: bool = False
     facing_left: bool = False
     inventory: List["InventoryItem"] = field(default_factory=list)
