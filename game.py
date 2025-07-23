@@ -54,6 +54,7 @@ from inventory import (
     crafting_exp_needed,
     gain_crafting_exp,
 )
+from businesses import BUSINESSES, buy_business, manage_business
 from combat import (
     energy_cost,
     fight_brawler,
@@ -185,6 +186,7 @@ BUILDINGS = [
     Building(pygame.Rect(1800, 350, 240, 180), "Mall", "mall"),
     Building(pygame.Rect(2100, 150, 300, 200), "Suburbs", "suburbs"),
     Building(pygame.Rect(2400, 900, 260, 140), "Beach", "beach"),
+    Building(pygame.Rect(1900, 800, 220, 120), "Stall", "business"),
     Building(pygame.Rect(2900, 500, 220, 160), "Tower", "boss"),
 ]
 
@@ -924,6 +926,19 @@ def main():
                     else:
                         continue
                     shop_message_timer = 60
+                elif in_building == "business":
+                    if event.key == pygame.K_e:
+                        if player.businesses:
+                            name = next(iter(player.businesses))
+                            shop_message = manage_business(player, name)
+                        else:
+                            shop_message = "Press 1-2 to buy a business"
+                    elif pygame.K_1 <= event.key <= pygame.K_9:
+                        idx = event.key - pygame.K_1
+                        shop_message = buy_business(player, idx)
+                    else:
+                        continue
+                    shop_message_timer = 60
                 elif in_building == "mall" and event.key == pygame.K_e:
                     if not player.side_quest:
                         player.side_quest = MALL_QUEST.name
@@ -1354,6 +1369,8 @@ def main():
                 msg = "[E] to craft gear"
             elif near_building.btype == "farm":
                 msg = "[E] to manage crops"
+            elif near_building.btype == "business":
+                msg = "[E] manage or 1-2 buy"
             elif near_building.btype == "mall":
                 msg = "[E] to browse the mall"
             elif near_building.btype == "beach":
@@ -1412,6 +1429,12 @@ def main():
                 txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm  [Q] Leave"
             elif in_building == "farm":
                 txt = "[P] Plant seed  [H] Harvest  S:Sell  [Q] Leave"
+            elif in_building == "business":
+                opts = []
+                for i, (name, cost, _p) in enumerate(BUSINESSES):
+                    status = "Owned" if name in player.businesses else f"${cost}"
+                    opts.append(f"{i+1}:{name} {status}")
+                txt = " ".join(opts) + "  E:Manage  [Q] Leave"
             elif in_building == "mall":
                 txt = "[E] Pick up order  [Q] Leave"
             elif in_building == "beach":

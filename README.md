@@ -118,6 +118,11 @@ A small **Farm** south of town lets you grow crops. Buy seeds in the shop, plant
 them at the farm, harvest them three days later, then sell the produce or use it
 in crafting recipes.
 
+Entrepreneurs can now purchase their own **Stall** or **Store** in the market.
+Press **1** or **2** inside the Stall to buy a business. Each day your
+charisma adds to its profits, and you can press **E** to play a short management
+minigame for extra earnings.
+
 The city map now stretches further east with three new areas. The **Suburbs**
 contain friendly neighbors who sometimes need a hand, the bustling **Mall**
 offers a short delivery side quest, and a sunny **Beach** lets you relax. You
