@@ -198,3 +198,22 @@ def train_companion(player: Player) -> str:
     elif player.companion == "Rhino":
         player.strength += 1
     return f"{player.companion} reached level {player.companion_level}!"
+
+
+CRAFT_EXP_BASE = 50
+
+
+def crafting_exp_needed(player: Player) -> int:
+    """Experience required for next crafting level."""
+    return CRAFT_EXP_BASE * player.crafting_level
+
+
+def gain_crafting_exp(player: Player, amount: int = 5) -> str:
+    """Add crafting XP and handle level ups."""
+    player.crafting_exp += amount
+    msg = ""
+    while player.crafting_exp >= crafting_exp_needed(player):
+        player.crafting_exp -= crafting_exp_needed(player)
+        player.crafting_level += 1
+        msg = f"Crafting leveled to {player.crafting_level}!"
+    return msg

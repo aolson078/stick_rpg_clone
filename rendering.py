@@ -37,6 +37,7 @@ from settings import (
     SHADOW_COLOR,
 )
 from careers import get_job_title, job_progress
+from inventory import crafting_exp_needed
 
 PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
@@ -381,7 +382,7 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         ep_txt = font.render(player.epithet, True, FONT_COLOR)
         bar.blit(ep_txt, (settings.SCREEN_WIDTH // 2 - ep_txt.get_width() // 2, 6))
     res_txt = font.render(
-        f"M:{player.resources.get('metal',0)} C:{player.resources.get('cloth',0)} H:{player.resources.get('herbs',0)} S:{player.resources.get('seeds',0)} P:{player.resources.get('produce',0)}",
+        f"M:{player.resources.get('metal',0)} C:{player.resources.get('cloth',0)} H:{player.resources.get('herbs',0)} S:{player.resources.get('seeds',0)} P:{player.resources.get('produce',0)} Craft:{player.crafting_level}",
         True,
         FONT_COLOR,
     )
@@ -394,6 +395,9 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         FONT_COLOR,
     )
     bar.blit(card_stat, (settings.SCREEN_WIDTH - card_stat.get_width() - 20, 20))
+    craft_prog = f"{player.crafting_exp}/{crafting_exp_needed(player)}"
+    craft_txt = font.render(f"Craft XP: {craft_prog}", True, FONT_COLOR)
+    bar.blit(craft_txt, (settings.SCREEN_WIDTH - craft_txt.get_width() - 20, 32))
     season_txt = font.render(f"{player.season} - {player.weather}", True, FONT_COLOR)
     bar.blit(season_txt, (settings.SCREEN_WIDTH // 2 - season_txt.get_width() // 2, 32))
     if player.companion:
