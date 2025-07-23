@@ -26,7 +26,11 @@ SHOP_ITEMS: List[Tuple[str, int, any]] = [
     ("Spear", 55, lambda p: p.inventory.append(
         InventoryItem("Spear", "weapon", attack=3, combo=2))),
     ("Bow", 70, lambda p: p.inventory.append(
-        InventoryItem("Bow", "weapon", attack=2, speed=1, combo=2))),
+        InventoryItem("Bow", "weapon", attack=2, speed=1, combo=2, weapon_type="ranged"))),
+    ("Magic Wand", 80, lambda p: p.inventory.append(
+        InventoryItem("Magic Wand", "weapon", attack=3, speed=1, combo=1, weapon_type="magic"))),
+    ("Crossbow", 90, lambda p: p.inventory.append(
+        InventoryItem("Crossbow", "weapon", attack=4, combo=2, weapon_type="ranged"))),
     ("Seeds x3", 15, lambda p: p.resources.__setitem__(
         "seeds", p.resources.get("seeds", 0) + 3)),
 ]
