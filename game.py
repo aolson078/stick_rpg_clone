@@ -1,20 +1,13 @@
 import sys
-import os
-import json
 import random
 import pygame
 
 from entities import (
     Player,
     Building,
-    Quest,
-    Event,
     InventoryItem,
-    SideQuest,
-    NPC,
 )
 from rendering import (
-    draw_player,
     draw_player_sprite,
     load_player_sprites,
     draw_building,
@@ -43,7 +36,6 @@ from inventory import (
     COMPANIONS,
     buy_shop_item,
     buy_home_upgrade,
-    available_home_upgrades,
     bank_deposit,
     bank_withdraw,
     adopt_companion,
@@ -51,7 +43,6 @@ from inventory import (
     plant_seed,
     harvest_crops,
     sell_produce,
-    crafting_exp_needed,
     gain_crafting_exp,
 )
 from businesses import BUSINESSES, buy_business, manage_business
@@ -61,12 +52,6 @@ from combat import (
     fight_enemy,
     fight_forest_enemy,
     fight_final_boss,
-    BRAWLER_COUNT,
-    DODGE_BASE,
-    POWER_STRIKE_CHANCE,
-    BLEED_TURNS,
-    BLEED_DAMAGE,
-    FOREST_ENEMIES,
 )
 from quests import (
     QUESTS,
@@ -75,13 +60,6 @@ from quests import (
     MALL_QUEST,
     NPCS,
     STORY_QUESTS,
-    EVENTS,
-    SEASON_EVENTS,
-    WEATHER_EVENTS,
-    LOCATION_EVENTS,
-    TIMED_EVENTS,
-    LEADERBOARD_FILE,
-    update_leaderboard,
     check_quests,
     check_perk_unlocks,
     check_hidden_perks,
@@ -90,13 +68,11 @@ from quests import (
     update_npcs,
     advance_story,
     check_story,
-    EVENT_CHANCE,
-    QUEST_TARGETS,
-    STORY_TARGETS,
-    SIDE_QUESTS,
 )
+
 from careers import work_job, get_job_title, job_pay
 from constants import PERK_MAX_LEVEL
+
 import settings
 from settings import (
     MAP_WIDTH,
@@ -104,7 +80,6 @@ from settings import (
     PLAYER_SIZE,
     PLAYER_SPEED,
     SKATEBOARD_SPEED_MULT,
-    BG_COLOR,
     MINUTES_PER_FRAME,
 
     MUSIC_FILE,
@@ -149,7 +124,6 @@ from helpers import (
     FOREST_WIDTH,
     FOREST_HEIGHT,
     FOREST_DOOR_RECT,
-    FURNITURE_RECTS,
 )
 from menus import start_menu, character_creation
 
@@ -196,64 +170,7 @@ FOREST_ENEMY_RECTS = [
     pygame.Rect(700, 300, 60, 60),
     pygame.Rect(500, 500, 60, 60),
 ]
-
-
-# Random events that may occur while exploring
-def _ev_found_money(p: Player) -> None:
-    """Give the player money found on the ground."""
-    p.money += 5
-    bonus = 5 * p.perk_levels.get("Lucky", 0)
-    p.money += 5 + bonus
-
-
-def _ev_gain_int(p: Player) -> None:
-    """Increase the player's intelligence."""
-    p.intelligence += 1
-    p.intelligence += 1 + p.perk_levels.get("Lucky", 0)
-
-
-def _ev_gain_cha(p: Player) -> None:
-    """Increase the player's charisma."""
-    p.charisma += 1
-    p.charisma += 1 + p.perk_levels.get("Lucky", 0)
-
-
-def _ev_trip(p: Player) -> None:
-    """Cause the player to lose a small amount of health."""
-    p.health = max(p.health - 5, 0)
-
-
-def _ev_theft(p: Player) -> None:
-    """Steal money from the player."""
-    p.money = max(p.money - 10, 0)
-
-
-def _ev_free_food(p: Player) -> None:
-    """Restore some of the player's energy."""
-    p.energy = min(100, p.energy + 10 + 2 * p.perk_levels.get("Lucky", 0))
-
-
-def _ev_help_reward(p: Player) -> None:
-    """Reward the player for helping someone."""
-    p.money += 15 + 5 * p.perk_levels.get("Lucky", 0)
-
-
-def _ev_found_token(p: Player) -> None:
-    """Grant the player a casino token."""
-    p.tokens += 1
-
-
-def _ev_found_metal(p: Player) -> None:
-    """Give the player a piece of scrap metal."""
-    p.resources["metal"] = p.resources.get("metal", 0) + 1
-
-
-def _ev_found_cloth(p: Player) -> None:
-    """Give the player a piece of cloth."""
-    p.resources["cloth"] = p.resources.get("cloth", 0) + 1
-
 # Items sold at the shop: name, cost, and effect function
-
 # Perks that can be unlocked with perk points
 # Each perk can be upgraded up to PERK_MAX_LEVEL levels
 PERKS = [
@@ -275,9 +192,6 @@ SECRET_PERKS = [
 
 # Maximum hearts an NPC can have
 MAX_HEARTS = 10
-
-
-
 
 
 def main():
