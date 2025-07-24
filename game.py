@@ -69,7 +69,10 @@ from quests import (
     advance_story,
     check_story,
 )
-from careers import work_job, job_pay
+
+from careers import work_job, get_job_title, job_pay
+from constants import PERK_MAX_LEVEL
+
 import settings
 from settings import (
     MAP_WIDTH,
@@ -170,7 +173,6 @@ FOREST_ENEMY_RECTS = [
 # Items sold at the shop: name, cost, and effect function
 # Perks that can be unlocked with perk points
 # Each perk can be upgraded up to PERK_MAX_LEVEL levels
-PERK_MAX_LEVEL = 3
 PERKS = [
     ("Gym Rat", "STR training gives +1 per level"),
     ("Book Worm", "INT studying gives +1 per level"),
