@@ -5,6 +5,8 @@ import json
 import random
 from typing import List, Tuple
 
+from loaders import load_quests, load_sidequests
+
 import pygame
 
 from entities import Player, Quest, Event, SideQuest, NPC
@@ -35,23 +37,7 @@ CARD_NAMES = [
 ]
 
 # Storyline quests completed in order
-QUESTS: List[Quest] = [
-    Quest("Earn $200", lambda p: p.money >= 200),
-    Quest("Reach STR 5", lambda p: p.strength >= 5),
-    Quest("Reach INT 5", lambda p: p.intelligence >= 5),
-    Quest("Earn $300", lambda p: p.money >= 300, next_index=1),
-    Quest("Reach STR 5", lambda p: p.strength >= 5, next_index=2),
-    Quest(
-        "Defeat 3 alley thugs",
-        lambda p: p.enemies_defeated >= 3,
-        next_index=3,
-    ),
-    Quest(
-        "Own every home upgrade",
-        lambda p: set(p.home_upgrades) == {u[0] for u in HOME_UPGRADES},
-        next_index=None,
-    ),
-]
+QUESTS: List[Quest] = load_quests()
 
 # Building targets for quest markers
 QUEST_TARGETS = {
@@ -65,29 +51,10 @@ QUEST_TARGETS = {
 }
 
 # Optional side quests
-SIDE_QUEST = SideQuest(
-    "Bank Delivery",
-    "Deliver paperwork from the Bank to the Library",
-    "library",
-    lambda p: setattr(p, "money", p.money + 50),
-)
-
-NPC_QUEST = SideQuest(
-    "Courier Errand",
-    "Deliver a package from Sam to the Gym",
-    "gym",
-    lambda p: setattr(p, "money", p.money + 30),
-)
-
-MALL_QUEST = SideQuest(
-    "Beach Delivery",
-    "Pick up sunglasses from the Mall and bring them to the Beach",
-    "beach",
-    lambda p: setattr(p, "money", p.money + 40),
-)
-
-# Lookup active side quests by name
-SIDE_QUESTS = {q.name: q for q in [SIDE_QUEST, NPC_QUEST, MALL_QUEST]}
+SIDE_QUESTS = load_sidequests()
+SIDE_QUEST = SIDE_QUESTS.get("Bank Delivery")
+NPC_QUEST = SIDE_QUESTS.get("Courier Errand")
+MALL_QUEST = SIDE_QUESTS.get("Beach Delivery")
 
 # Friendly townsfolk found around the city
 NPCS = [

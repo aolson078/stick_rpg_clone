@@ -46,6 +46,7 @@ from inventory import (
     gain_crafting_exp,
 )
 from businesses import BUSINESSES, buy_business, manage_business
+from loaders import load_buildings
 from combat import (
     energy_cost,
     fight_brawler,
@@ -138,32 +139,7 @@ except pygame.error:
     SOUND_ENABLED = False
     print("Audio disabled: mixer could not initialize")
 
-BUILDINGS = [
-    Building(pygame.Rect(200, 150, 200, 120), "Home", "home"),
-    Building(pygame.Rect(600, 300, 180, 240), "Office", "job"),
-    Building(pygame.Rect(1100, 700, 300, 100), "Shop", "shop"),
-    Building(pygame.Rect(400, 900, 160, 180), "Park", "park"),
-    Building(pygame.Rect(460, 960, 80, 80), "Deal Spot", "dealer"),
-    # Move the deal spot just outside the park so the player can reach it
-    Building(pygame.Rect(580, 960, 80, 80), "Deal Spot", "dealer"),
-    Building(pygame.Rect(900, 450, 220, 160), "Gym", "gym"),
-    Building(pygame.Rect(1200, 250, 200, 160), "Library", "library"),
-    Building(pygame.Rect(300, 600, 180, 160), "Clinic", "clinic"),
-    Building(pygame.Rect(800, 750, 200, 150), "Bar", "bar"),
-    Building(pygame.Rect(1400, 950, 160, 120), "Alley", "dungeon"),
-    Building(pygame.Rect(1300, 550, 180, 150), "Pet Shop", "petshop"),
-    Building(pygame.Rect(1000, 100, 200, 140), "Bank", "bank"),
-    Building(pygame.Rect(400, 200, 200, 150), "Town Hall", "townhall"),
-    Building(pygame.Rect(150, 400, 200, 150), "Workshop", "workshop"),
-    Building(pygame.Rect(100, 1050, 220, 120), "Farm", "farm"),
-    Building(pygame.Rect(1500, 400, 80, 100), "Woods", "forest"),
-    # Expanded map locations
-    Building(pygame.Rect(1800, 350, 240, 180), "Mall", "mall"),
-    Building(pygame.Rect(2100, 150, 300, 200), "Suburbs", "suburbs"),
-    Building(pygame.Rect(2400, 900, 260, 140), "Beach", "beach"),
-    Building(pygame.Rect(1900, 800, 220, 120), "Stall", "business"),
-    Building(pygame.Rect(2900, 500, 220, 160), "Tower", "boss"),
-]
+BUILDINGS = load_buildings()
 
 FOREST_ENEMY_RECTS = [
     pygame.Rect(300, 300, 60, 60),
