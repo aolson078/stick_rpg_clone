@@ -96,6 +96,7 @@ from quests import (
     SIDE_QUESTS,
 )
 from careers import work_job, get_job_title, job_pay
+from constants import PERK_MAX_LEVEL
 import settings
 from settings import (
     MAP_WIDTH,
@@ -255,7 +256,6 @@ def _ev_found_cloth(p: Player) -> None:
 
 # Perks that can be unlocked with perk points
 # Each perk can be upgraded up to PERK_MAX_LEVEL levels
-PERK_MAX_LEVEL = 3
 PERKS = [
     ("Gym Rat", "STR training gives +1 per level"),
     ("Book Worm", "INT studying gives +1 per level"),
