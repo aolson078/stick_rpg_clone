@@ -34,8 +34,8 @@ from settings import (
 )
 from careers import get_job_title, job_progress
 from inventory import crafting_exp_needed
+from constants import PERK_MAX_LEVEL
 
-PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
 PLAYER_SPRITE_COLOR = None
 FOREST_ENEMY_IMAGES = []

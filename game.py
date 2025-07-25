@@ -1,20 +1,13 @@
 import sys
-import os
-import json
 import random
 import pygame
 
 from entities import (
     Player,
     Building,
-    Quest,
-    Event,
     InventoryItem,
-    SideQuest,
-    NPC,
 )
 from rendering import (
-    draw_player,
     draw_player_sprite,
     load_player_sprites,
     draw_building,
@@ -43,7 +36,6 @@ from inventory import (
     COMPANIONS,
     buy_shop_item,
     buy_home_upgrade,
-    available_home_upgrades,
     bank_deposit,
     bank_withdraw,
     adopt_companion,
@@ -51,22 +43,16 @@ from inventory import (
     plant_seed,
     harvest_crops,
     sell_produce,
-    crafting_exp_needed,
     gain_crafting_exp,
 )
 from businesses import BUSINESSES, buy_business, manage_business
+from loaders import load_buildings
 from combat import (
     energy_cost,
     fight_brawler,
     fight_enemy,
     fight_forest_enemy,
     fight_final_boss,
-    BRAWLER_COUNT,
-    DODGE_BASE,
-    POWER_STRIKE_CHANCE,
-    BLEED_TURNS,
-    BLEED_DAMAGE,
-    FOREST_ENEMIES,
 )
 from quests import (
     QUESTS,
@@ -75,13 +61,6 @@ from quests import (
     MALL_QUEST,
     NPCS,
     STORY_QUESTS,
-    EVENTS,
-    SEASON_EVENTS,
-    WEATHER_EVENTS,
-    LOCATION_EVENTS,
-    TIMED_EVENTS,
-    LEADERBOARD_FILE,
-    update_leaderboard,
     check_quests,
     check_perk_unlocks,
     check_hidden_perks,
@@ -90,12 +69,11 @@ from quests import (
     update_npcs,
     advance_story,
     check_story,
-    EVENT_CHANCE,
-    QUEST_TARGETS,
-    STORY_TARGETS,
-    SIDE_QUESTS,
 )
+
 from careers import work_job, get_job_title, job_pay
+from constants import PERK_MAX_LEVEL
+
 import settings
 from settings import (
     MAP_WIDTH,
@@ -103,7 +81,6 @@ from settings import (
     PLAYER_SIZE,
     PLAYER_SPEED,
     SKATEBOARD_SPEED_MULT,
-    BG_COLOR,
     MINUTES_PER_FRAME,
     MUSIC_FILE,
     STEP_SOUND_FILE,
@@ -147,7 +124,6 @@ from helpers import (
     FOREST_WIDTH,
     FOREST_HEIGHT,
     FOREST_DOOR_RECT,
-    FURNITURE_RECTS,
 )
 from menus import start_menu, character_creation
 
@@ -162,38 +138,14 @@ except pygame.error:
     SOUND_ENABLED = False
     print("Audio disabled: mixer could not initialize")
 
-BUILDINGS = [
-    Building(pygame.Rect(200, 150, 200, 120), "Home", "home"),
-    Building(pygame.Rect(600, 300, 180, 240), "Office", "job"),
-    Building(pygame.Rect(1100, 700, 300, 100), "Shop", "shop"),
-    Building(pygame.Rect(400, 900, 160, 180), "Park", "park"),
-    Building(pygame.Rect(460, 960, 80, 80), "Deal Spot", "dealer"),
-    # Move the deal spot just outside the park so the player can reach it
-    Building(pygame.Rect(580, 960, 80, 80), "Deal Spot", "dealer"),
-    Building(pygame.Rect(900, 450, 220, 160), "Gym", "gym"),
-    Building(pygame.Rect(1200, 250, 200, 160), "Library", "library"),
-    Building(pygame.Rect(300, 600, 180, 160), "Clinic", "clinic"),
-    Building(pygame.Rect(800, 750, 200, 150), "Bar", "bar"),
-    Building(pygame.Rect(1400, 950, 160, 120), "Alley", "dungeon"),
-    Building(pygame.Rect(1300, 550, 180, 150), "Pet Shop", "petshop"),
-    Building(pygame.Rect(1000, 100, 200, 140), "Bank", "bank"),
-    Building(pygame.Rect(400, 200, 200, 150), "Town Hall", "townhall"),
-    Building(pygame.Rect(150, 400, 200, 150), "Workshop", "workshop"),
-    Building(pygame.Rect(100, 1050, 220, 120), "Farm", "farm"),
-    Building(pygame.Rect(1500, 400, 80, 100), "Woods", "forest"),
-    # Expanded map locations
-    Building(pygame.Rect(1800, 350, 240, 180), "Mall", "mall"),
-    Building(pygame.Rect(2100, 150, 300, 200), "Suburbs", "suburbs"),
-    Building(pygame.Rect(2400, 900, 260, 140), "Beach", "beach"),
-    Building(pygame.Rect(1900, 800, 220, 120), "Stall", "business"),
-    Building(pygame.Rect(2900, 500, 220, 160), "Tower", "boss"),
-]
+BUILDINGS = load_buildings()
 
 FOREST_ENEMY_RECTS = [
     pygame.Rect(300, 300, 60, 60),
     pygame.Rect(700, 300, 60, 60),
     pygame.Rect(500, 500, 60, 60),
 ]
+
 
 
 # Random events that may occur while exploring
@@ -251,11 +203,10 @@ def _ev_found_cloth(p: Player) -> None:
     p.resources["cloth"] = p.resources.get("cloth", 0) + 1
 
 
-# Items sold at the shop: name, cost, and effect function
 
+# Items sold at the shop: name, cost, and effect function
 # Perks that can be unlocked with perk points
 # Each perk can be upgraded up to PERK_MAX_LEVEL levels
-PERK_MAX_LEVEL = 3
 PERKS = [
     ("Gym Rat", "STR training gives +1 per level"),
     ("Book Worm", "INT studying gives +1 per level"),
@@ -275,6 +226,7 @@ SECRET_PERKS = [
 
 # Maximum hearts an NPC can have
 MAX_HEARTS = 10
+
 
 
 def main():
@@ -312,38 +264,38 @@ def main():
             color=color,
             head_color=head_color,
         )
+        pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont(None, 28)
 
-    load_player_sprites(player.color)
+        if start_menu(self.screen, self.font):
+            loaded = load_game()
+        else:
+            loaded = None
 
-    shop_message = ""
-    if loaded:
-        update_weather(player)
-        init_furniture_positions(player)
-        shop_message = "Game loaded!"
-        shop_message_timer = 60
-    else:
-        update_weather(player)
-        init_furniture_positions(player)
-        shop_message_timer = 0
-    in_building = None
-    frame = 0
-    show_inventory = False
-    show_perk_menu = False
-    show_log = False
-    show_help = False
-    inside_home = False
-    inside_bar = False
-    inside_forest = False
-    home_return = (0, 0)
-    bar_return = (0, 0)
-    forest_return = (0, 0)
-    dragging_item = None
-    drag_origin = None
-    drag_pos = (0, 0)
-    slot_rects = compute_slot_rects()
-    hotkey_rects = compute_hotkey_rects()
-    fullscreen = False
-    muted = False
+        if SOUND_ENABLED:
+            self.step_sound = pygame.mixer.Sound(STEP_SOUND_FILE)
+            self.enter_sound = pygame.mixer.Sound(ENTER_SOUND_FILE)
+            self.quest_sound = pygame.mixer.Sound(QUEST_SOUND_FILE)
+            for snd in (self.step_sound, self.enter_sound, self.quest_sound):
+                snd.set_volume(SFX_VOLUME)
+            pygame.mixer.music.load(MUSIC_FILE)
+            pygame.mixer.music.set_volume(MUSIC_VOLUME)
+            pygame.mixer.music.play(-1)
+        else:
+            self.step_sound = self.enter_sound = self.quest_sound = None
+
+        if loaded:
+            self.player = loaded
+        else:
+            name, color, head_color = character_creation(self.screen, self.font)
+            self.player = Player(
+                pygame.Rect(MAP_WIDTH // 2, MAP_HEIGHT // 2, PLAYER_SIZE, PLAYER_SIZE),
+                name=name,
+                color=color,
+                head_color=head_color,
+            )
+
 
     while True:
         frame += 1
@@ -532,18 +484,22 @@ def main():
                             if rect.collidepoint(pos) and player.equipment.get(slot):
                                 dragging_item = player.equipment[slot]
                                 drag_origin = ("slot", slot)
+
                                 drag_pos = pos
-                                player.equipment[slot] = None
+                                player.inventory.pop(i)
+                                handled = True
                                 break
                         if not handled:
+
                             for i, rect in enumerate(hotkey_rects):
                                 if rect.collidepoint(pos) and player.hotkeys[i]:
                                     dragging_item = player.hotkeys[i]
                                     drag_origin = ("hotkey", i)
+
                                     drag_pos = pos
-                                    player.hotkeys[i] = None
-                                    handled = True
+                                    player.equipment[slot] = None
                                     break
+
                         if not handled:
                             furn_rects = compute_furniture_rects(player)
                             for idx, rect in enumerate(furn_rects):
@@ -596,138 +552,223 @@ def main():
                                 player.furniture_pos[f"slot{idx+1}"] = (rect.x, rect.y)
                                 placed = True
                                 break
-                    if not placed:
-                        player.inventory.append(dragging_item)
-                    dragging_item = None
-            if show_perk_menu and event.type == pygame.KEYDOWN:
-                if pygame.K_1 <= event.key <= pygame.K_9:
-                    idx = event.key - pygame.K_1
-                    if idx < len(PERKS):
-                        name = PERKS[idx][0]
-                        level = player.perk_levels.get(name, 0)
-                        if level < PERK_MAX_LEVEL and player.perk_points > 0:
-                            player.perk_levels[name] = level + 1
-                            player.perk_points -= 1
-                            shop_message = f"Perk upgraded: {name} Lv{level+1}"
-                            shop_message_timer = 90
-                        else:
-                            shop_message = "Perk at max level"
-                            shop_message_timer = 60
-                    show_perk_menu = False
-                elif event.key in (pygame.K_q, pygame.K_p):
-                    show_perk_menu = False
-            if show_log and event.type == pygame.KEYDOWN:
-                if event.key in (pygame.K_l, pygame.K_q):
-                    show_log = False
-            if event.type == pygame.KEYDOWN and inside_home:
-                if event.key == pygame.K_e:
-                    if player.rect.colliderect(BED_RECT):
-                        extra = sleep(player)
-                        shop_message = "You slept. New day!"
-                        if extra:
-                            shop_message += " " + extra
-                        shop_message_timer = 60
-                    elif player.rect.colliderect(DOOR_RECT):
-                        inside_home = False
-                        player.rect.topleft = home_return
-                elif pygame.K_1 <= event.key <= pygame.K_9:
-                    avail = [u for u in HOME_UPGRADES if u[3] <= player.home_level]
-                    idx = event.key - pygame.K_1
-                    if idx < len(avail):
-                        full_idx = HOME_UPGRADES.index(avail[idx])
-                        shop_message = buy_home_upgrade(player, full_idx)
-                    else:
-                        shop_message = "Invalid choice"
-                    shop_message_timer = 60
-
-            if event.type == pygame.KEYDOWN and inside_bar:
-                if event.key == pygame.K_e:
-                    if (
-                        player.story_branch == "gang"
-                        and player.side_quest == "Gang Package"
-                        and player.rect.colliderect(COUNTER_RECT)
-                    ):
-                        player.side_quest = None
-                        player.gang_package_done = True
-                        shop_message = "You delivered the package"
-                        shop_message_timer = 60
-                        continue
-                    if (
-                        player.story_branch == "gang"
-                        and player.story_stage == 3
-                        and player.rect.colliderect(COUNTER_RECT)
-                    ):
-                        player.story_stage = 4
-                        shop_message = "Gang Leader: Nice work"
-                        shop_message_timer = 60
-                        continue
-                    if player.rect.colliderect(COUNTER_RECT):
-                        if player.money >= 10:
-                            player.money -= 10
-                            player.tokens += 1
-                            shop_message = "Bought a token"
-                        else:
-                            shop_message = "Need $10"
-                    elif player.rect.colliderect(BJ_RECT):
-                        shop_message = play_blackjack(player)
-                    elif player.rect.colliderect(SLOT_RECT):
-                        shop_message = play_slots(player)
-                    elif player.rect.colliderect(DART_RECT):
-                        shop_message = play_darts(player)
-                    elif player.rect.colliderect(BRAWL_RECT):
-                        shop_message = fight_brawler(player)
-                    elif player.rect.colliderect(BAR_DOOR_RECT):
-                        inside_bar = False
-                        player.rect.topleft = bar_return
-                    else:
-                        shop_message = ""
-                    shop_message_timer = 60
-
-            if event.type == pygame.KEYDOWN and inside_forest:
-                if event.key == pygame.K_e:
-                    for i, rect in enumerate(FOREST_ENEMY_RECTS):
-                        if player.rect.colliderect(rect):
-                            shop_message = fight_forest_enemy(player, i)
-                            break
-                    else:
-                        if player.rect.colliderect(FOREST_DOOR_RECT):
-                            inside_forest = False
-                            player.rect.topleft = forest_return
-                    shop_message_timer = 60
-
-            if event.type == pygame.KEYDOWN and in_building:
-                if in_building == "job" and event.key == pygame.K_e:
-                    shop_message = work_job(player, "office")
-                    shop_message_timer = 60
-                elif in_building == "home":
-                    player.energy = 100
-                    player.time = 8 * 60
-                    player.day += 1
-                    shop_message = "You slept. New day!"
-                    shop_message_timer = 60
-                    if event.key == pygame.K_e:
-                        extra = sleep(player)
-                        shop_message = "You slept. New day!"
-                        if extra:
-                            shop_message += " " + extra
-                        shop_message_timer = 60
-                    elif pygame.K_1 <= event.key <= pygame.K_9:
-                        idx = event.key - pygame.K_1
-                        shop_message = buy_home_upgrade(player, idx)
-                        shop_message_timer = 60
-                    else:
-                        continue
-                elif in_building == "shop":
+                        if not placed:
+                            for i, rect in enumerate(hotkey_rects):
+                                if rect.collidepoint(pos) and dragging_item.slot == 'consumable' and player.hotkeys[i] is None:
+                                    player.hotkeys[i] = dragging_item
+                                    placed = True
+                                    break
+                        if not placed:
+                            for idx, rect in enumerate(furn_rects):
+                                if (
+                                    rect.collidepoint(pos)
+                                    and dragging_item.slot == 'furniture'
+                                    and player.furniture.get(f'slot{idx+1}') is None
+                                ):
+                                    player.furniture[f'slot{idx+1}'] = dragging_item
+                                    player.furniture_pos[f'slot{idx+1}'] = (rect.x, rect.y)
+                                    placed = True
+                                    break
+                        if not placed:
+                            player.inventory.append(dragging_item)
+                        dragging_item = None
+                if show_perk_menu and event.type == pygame.KEYDOWN:
                     if pygame.K_1 <= event.key <= pygame.K_9:
                         idx = event.key - pygame.K_1
-                        shop_message = buy_shop_item(player, idx)
+                        if idx < len(PERKS):
+                            name = PERKS[idx][0]
+                            level = player.perk_levels.get(name, 0)
+                            if level < PERK_MAX_LEVEL and player.perk_points > 0:
+                                player.perk_levels[name] = level + 1
+                                player.perk_points -= 1
+                                shop_message = f"Perk upgraded: {name} Lv{level+1}"
+                                shop_message_timer = 90
+                            else:
+                                shop_message = "Perk at max level"
+                                shop_message_timer = 60
+                        show_perk_menu = False
+                    elif event.key in (pygame.K_q, pygame.K_p):
+                        show_perk_menu = False
+                if show_log and event.type == pygame.KEYDOWN:
+                    if event.key in (pygame.K_l, pygame.K_q):
+                        show_log = False
+                if event.type == pygame.KEYDOWN and inside_home:
+                    if event.key == pygame.K_e:
+                        if player.rect.colliderect(BED_RECT):
+                            extra = sleep(player)
+                            shop_message = "You slept. New day!"
+                            if extra:
+                                shop_message += " " + extra
+                            shop_message_timer = 60
+                        elif player.rect.colliderect(DOOR_RECT):
+                            inside_home = False
+                            player.rect.topleft = home_return
+                    elif pygame.K_1 <= event.key <= pygame.K_9:
+                        avail = [u for u in HOME_UPGRADES if u[3] <= player.home_level]
+                        idx = event.key - pygame.K_1
+                        if idx < len(avail):
+                            full_idx = HOME_UPGRADES.index(avail[idx])
+                            shop_message = buy_home_upgrade(player, full_idx)
+                        else:
+                            shop_message = "Invalid choice"
                         shop_message_timer = 60
-                    elif event.key == pygame.K_0:
-                        shop_message = buy_shop_item(player, 9)
+    
+                if event.type == pygame.KEYDOWN and inside_bar:
+                    if event.key == pygame.K_e:
+                        if (
+                            player.story_branch == "gang"
+                            and player.side_quest == "Gang Package"
+                            and player.rect.colliderect(COUNTER_RECT)
+                        ):
+                            player.side_quest = None
+                            player.gang_package_done = True
+                            shop_message = "You delivered the package"
+                            shop_message_timer = 60
+                            continue
+                        if (
+                            player.story_branch == "gang"
+                            and player.story_stage == 3
+                            and player.rect.colliderect(COUNTER_RECT)
+                        ):
+                            player.story_stage = 4
+                            shop_message = "Gang Leader: Nice work"
+                            shop_message_timer = 60
+                            continue
+                        if player.rect.colliderect(COUNTER_RECT):
+                            if player.money >= 10:
+                                player.money -= 10
+                                player.tokens += 1
+                                shop_message = "Bought a token"
+                            else:
+                                shop_message = "Need $10"
+                        elif player.rect.colliderect(BJ_RECT):
+                            shop_message = play_blackjack(player)
+                        elif player.rect.colliderect(SLOT_RECT):
+                            shop_message = play_slots(player)
+                        elif player.rect.colliderect(DART_RECT):
+                            shop_message = play_darts(player)
+                        elif player.rect.colliderect(BRAWL_RECT):
+                            shop_message = fight_brawler(player)
+                        elif player.rect.colliderect(BAR_DOOR_RECT):
+                            inside_bar = False
+                            player.rect.topleft = bar_return
+                        else:
+                            shop_message = ""
                         shop_message_timer = 60
-                    elif event.key == pygame.K_e:
-                        shop_message = "Press number keys to buy"
+    
+                if event.type == pygame.KEYDOWN and inside_forest:
+                    if event.key == pygame.K_e:
+                        for i, rect in enumerate(FOREST_ENEMY_RECTS):
+                            if player.rect.colliderect(rect):
+                                shop_message = fight_forest_enemy(player, i)
+                                break
+                        else:
+                            if player.rect.colliderect(FOREST_DOOR_RECT):
+                                inside_forest = False
+                                player.rect.topleft = forest_return
                         shop_message_timer = 60
+    
+                if event.type == pygame.KEYDOWN and in_building:
+                    if in_building == "job" and event.key == pygame.K_e:
+                        shop_message = work_job(player, "office")
+                        shop_message_timer = 60
+                    elif in_building == "home":
+                        player.energy = 100
+                        player.time = 8 * 60
+                        player.day += 1
+                        shop_message = "You slept. New day!"
+                        shop_message_timer = 60
+                        if event.key == pygame.K_e:
+                            extra = sleep(player)
+                            shop_message = "You slept. New day!"
+                            if extra:
+                                shop_message += " " + extra
+                            shop_message_timer = 60
+                        elif pygame.K_1 <= event.key <= pygame.K_9:
+                            idx = event.key - pygame.K_1
+                            shop_message = buy_home_upgrade(player, idx)
+                            shop_message_timer = 60
+                        else:
+                            continue
+                    elif in_building == "shop":
+                        if pygame.K_1 <= event.key <= pygame.K_9:
+                            idx = event.key - pygame.K_1
+                            shop_message = buy_shop_item(player, idx)
+                            shop_message_timer = 60
+                        elif event.key == pygame.K_0:
+                            shop_message = buy_shop_item(player, 9)
+                            shop_message_timer = 60
+                        elif event.key == pygame.K_e:
+                            shop_message = "Press number keys to buy"
+                            shop_message_timer = 60
+                        else:
+                            continue
+                    elif in_building == "gym" and event.key == pygame.K_e:
+                        if player.side_quest == NPC_QUEST.name:
+                            NPC_QUEST.reward(player)
+                            player.side_quest = None
+                            shop_message = "Delivered the package!"
+                        elif player.money >= 10 and player.energy >= 10:
+                            player.money -= 10
+                            player.energy -= 10
+                            player.energy -= energy_cost(player, 10)
+                            player.health = min(player.health + 5, 100)
+                            player.strength += 1
+                            shop_message = "You worked out! +1 STR, +5 health"
+                            bonus = player.perk_levels.get("Gym Rat", 0)
+                            gain = 1 + bonus
+                            player.strength += gain
+                            msg_gain = f" +{gain} STR"
+                            shop_message = "You worked out!" + msg_gain + ", +5 health"
+                        elif player.money < 10:
+                            shop_message = "Need $10 to train"
+                        else:
+                            shop_message = "Too tired to train!"
+                        shop_message_timer = 60
+                    elif in_building == "library" and event.key == pygame.K_e:
+                        if player.money >= 5 and player.energy >= 5:
+                            player.money -= 5
+                            player.energy -= 5
+                            player.intelligence += 1
+                            shop_message = "You studied! +1 INT"
+                            player.energy -= energy_cost(player, 5)
+                            bonus = player.perk_levels.get("Book Worm", 0)
+                            gain = 1 + bonus
+                            player.intelligence += gain
+                            msg_gain = f" +{gain} INT"
+                            shop_message = "You studied!" + msg_gain
+                            if player.side_quest == SIDE_QUEST.name:
+                                SIDE_QUEST.reward(player)
+                                player.side_quest = None
+                                shop_message += " and delivered the papers"
+                        elif player.money < 5:
+                            shop_message = "Need $5 to study"
+                        else:
+                            shop_message = "Too tired to study!"
+                        shop_message_timer = 60
+                    elif in_building == "library" and event.key == pygame.K_p:
+                        shop_message = solve_puzzle(player)
+                        shop_message_timer = 60
+                    elif in_building == "park" and event.key == pygame.K_e:
+                        if player.energy >= 5:
+                            player.energy -= 5
+                            player.charisma += 1
+                            shop_message = "You socialized! +1 CHA"
+                            player.energy -= energy_cost(player, 5)
+                            bonus = player.perk_levels.get("Social Butterfly", 0)
+                            gain = 1 + bonus
+                            if player.companion == "Peacock":
+                                gain += player.companion_level
+                            player.charisma += gain
+                            msg_gain = f" +{gain} CHA"
+                            shop_message = "You socialized!" + msg_gain
+                        else:
+                            shop_message = "Too tired to chat!"
+                        shop_message_timer = 60
+                    elif in_building == "park" and event.key == pygame.K_f:
+                        shop_message = go_fishing(player)
+                        shop_message_timer = 60
+
                     else:
                         continue
                 elif in_building == "gym" and event.key == pygame.K_e:
@@ -839,67 +880,160 @@ def main():
                         if not player.side_quest:
                             player.side_quest = SIDE_QUEST.name
                             shop_message = "Accepted delivery job!"
+
                         else:
-                            shop_message = "Talk to the librarian to finish"
-                    elif event.key == pygame.K_d:
-                        shop_message = bank_deposit(player)
-                    elif event.key == pygame.K_w:
-                        shop_message = bank_withdraw(player)
-                    else:
-                        continue
-                    shop_message_timer = 60
-                elif in_building == "workshop":
-                    if event.key == pygame.K_1:
-                        if player.resources.get("herbs", 0) >= 2:
-                            player.resources["herbs"] -= 2
-                            player.inventory.append(
-                                InventoryItem("Health Potion", "consumable")
-                            )
-                            shop_message = "Crafted Health Potion"
-                            lvl_msg = gain_crafting_exp(player)
-                            if lvl_msg:
-                                shop_message += f"  {lvl_msg}"
+                            continue
+                        shop_message_timer = 60
+                    elif in_building == "dungeon" and event.key == pygame.K_e:
+                        shop_message = fight_enemy(player)
+                        shop_message_timer = 60
+                    elif in_building == "boss" and event.key == pygame.K_e:
+                        shop_message = fight_final_boss(player)
+                        shop_message_timer = 60
+                    elif in_building == "forest" and event.key == pygame.K_e:
+                        # fallback if player enters the woods via in_building
+                        shop_message = fight_forest_enemy(player, random.randrange(3))
+                        shop_message_timer = 60
+                    elif in_building == "petshop" and pygame.K_1 <= event.key <= pygame.K_6:
+                        idx = event.key - pygame.K_1
+                        shop_message = adopt_companion(player, idx)
+                        shop_message_timer = 60
+                    elif in_building == "petshop" and event.key == pygame.K_t:
+                        shop_message = train_companion(player)
+                        shop_message_timer = 60
+                    elif in_building == "bank":
+                        if event.key == pygame.K_e:
+                            if not player.side_quest:
+                                player.side_quest = SIDE_QUEST.name
+                                shop_message = "Accepted delivery job!"
+                            else:
+                                shop_message = "Talk to the librarian to finish"
+                        elif event.key == pygame.K_d:
+                            shop_message = bank_deposit(player)
+                        elif event.key == pygame.K_w:
+                            shop_message = bank_withdraw(player)
                         else:
-                            shop_message = "Need 2 herbs"
-                    elif event.key == pygame.K_2:
-                        if player.resources.get("metal", 0) >= 3:
-                            player.resources["metal"] -= 3
-                            player.inventory.append(
-                                InventoryItem(
-                                    "Iron Sword",
-                                    "weapon",
-                                    attack=4,
+                            continue
+                        shop_message_timer = 60
+                    elif in_building == "workshop":
+                        if event.key == pygame.K_1:
+                            if player.resources.get("herbs", 0) >= 2:
+                                player.resources["herbs"] -= 2
+                                player.inventory.append(
+                                    InventoryItem("Health Potion", "consumable")
                                 )
-                            )
-                            shop_message = "Forged Iron Sword"
-                            lvl_msg = gain_crafting_exp(player)
-                            if lvl_msg:
-                                shop_message += f"  {lvl_msg}"
+                                shop_message = "Crafted Health Potion"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need 2 herbs"
+                        elif event.key == pygame.K_2:
+                            if player.resources.get("metal", 0) >= 3:
+                                player.resources["metal"] -= 3
+                                player.inventory.append(
+                                    InventoryItem(
+                                        "Iron Sword",
+                                        "weapon",
+                                        attack=4,
+                                    )
+                                )
+                                shop_message = "Forged Iron Sword"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need 3 metal"
+                        elif event.key == pygame.K_3:
+                            weapon = player.equipment.get("weapon")
+                            if weapon and player.resources.get("metal", 0) >= 2:
+                                player.resources["metal"] -= 2
+                                weapon.attack += 1
+                                weapon.level += 1
+                                shop_message = "Upgraded weapon"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need weapon & 2 metal"
+                        elif event.key == pygame.K_4:
+                            armor = player.equipment.get("chest")
+                            if armor and player.resources.get("cloth", 0) >= 2:
+                                player.resources["cloth"] -= 2
+                                armor.defense += 1
+                                armor.level += 1
+                                shop_message = "Upgraded armor"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need armor & 2 cloth"
+                        elif event.key == pygame.K_5:
+                            if player.crafting_level < 2:
+                                shop_message = "Need Craft Lv2"
+                            elif player.resources.get("metal", 0) >= 1 and player.resources.get("cloth", 0) >= 2:
+                                player.resources["metal"] -= 1
+                                player.resources["cloth"] -= 2
+                                if "Decorations" not in player.home_upgrades:
+                                    player.home_upgrades.append("Decorations")
+                                    shop_message = "Built home decorations"
+                                else:
+                                    player.inventory.append(InventoryItem("Decor Chair", "furniture"))
+                                    shop_message = "Crafted Decor Chair"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need 1 metal & 2 cloth"
+                        elif event.key == pygame.K_6:
+                            if player.crafting_level < 2:
+                                shop_message = "Need Craft Lv2"
+                            elif player.resources.get("herbs", 0) >= 3:
+                                player.resources["herbs"] -= 3
+                                player.inventory.append(InventoryItem("Energy Potion", "consumable"))
+                                shop_message = "Brewed Energy Potion"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need 3 herbs"
+                        elif event.key == pygame.K_7:
+                            if player.crafting_level < 3:
+                                shop_message = "Need Craft Lv3"
+                            elif player.resources.get("metal", 0) >= 5 and player.resources.get("herbs", 0) >= 2:
+                                player.resources["metal"] -= 5
+                                player.resources["herbs"] -= 2
+                                player.inventory.append(InventoryItem("Flaming Sword", "weapon", attack=6))
+                                shop_message = "Forged Flaming Sword"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need 5 metal & 2 herbs"
+                        elif event.key == pygame.K_8:
+                            if player.crafting_level < 3:
+                                shop_message = "Need Craft Lv3"
+                            elif player.resources.get("produce", 0) >= 2:
+                                player.resources["produce"] -= 2
+                                player.inventory.append(InventoryItem("Fruit Pie", "consumable"))
+                                shop_message = "Baked Fruit Pie"
+                                lvl_msg = gain_crafting_exp(player)
+                                if lvl_msg:
+                                    shop_message += f"  {lvl_msg}"
+                            else:
+                                shop_message = "Need 2 produce"
                         else:
-                            shop_message = "Need 3 metal"
-                    elif event.key == pygame.K_3:
-                        weapon = player.equipment.get("weapon")
-                        if weapon and player.resources.get("metal", 0) >= 2:
-                            player.resources["metal"] -= 2
-                            weapon.attack += 1
-                            weapon.level += 1
-                            shop_message = "Upgraded weapon"
-                            lvl_msg = gain_crafting_exp(player)
-                            if lvl_msg:
-                                shop_message += f"  {lvl_msg}"
+                            continue
+                        shop_message_timer = 60
+                    elif in_building == "farm":
+                        if event.key == pygame.K_p:
+                            shop_message = plant_seed(player)
+                        elif event.key == pygame.K_h:
+                            shop_message = harvest_crops(player)
+                        elif event.key == pygame.K_s:
+                            shop_message = sell_produce(player)
                         else:
-                            shop_message = "Need weapon & 2 metal"
-                    elif event.key == pygame.K_4:
-                        armor = player.equipment.get("chest")
-                        if armor and player.resources.get("cloth", 0) >= 2:
-                            player.resources["cloth"] -= 2
-                            armor.defense += 1
-                            armor.level += 1
-                            shop_message = "Upgraded armor"
-                            lvl_msg = gain_crafting_exp(player)
-                            if lvl_msg:
-                                shop_message += f"  {lvl_msg}"
-                        else:
+
                             shop_message = "Need armor & 2 cloth"
                     elif event.key == pygame.K_5:
                         if player.crafting_level < 2:
@@ -967,107 +1101,53 @@ def main():
                             lvl_msg = gain_crafting_exp(player)
                             if lvl_msg:
                                 shop_message += f"  {lvl_msg}"
-                        else:
-                            shop_message = "Need 2 produce"
-                    else:
-                        continue
-                    shop_message_timer = 60
-                elif in_building == "farm":
-                    if event.key == pygame.K_p:
-                        shop_message = plant_seed(player)
-                    elif event.key == pygame.K_h:
-                        shop_message = harvest_crops(player)
-                    elif event.key == pygame.K_s:
-                        shop_message = sell_produce(player)
-                    else:
-                        continue
-                    shop_message_timer = 60
-                elif in_building == "business":
-                    if event.key == pygame.K_e:
-                        if player.businesses:
-                            name = next(iter(player.businesses))
-                            shop_message = manage_business(player, name)
-                        else:
-                            shop_message = "Press 1-2 to buy a business"
-                    elif pygame.K_1 <= event.key <= pygame.K_9:
-                        idx = event.key - pygame.K_1
-                        shop_message = buy_business(player, idx)
-                    else:
-                        continue
-                    shop_message_timer = 60
-                elif in_building == "mall" and event.key == pygame.K_e:
-                    if not player.side_quest:
-                        player.side_quest = MALL_QUEST.name
-                        shop_message = "Picked up sunglasses order"
-                    else:
-                        shop_message = "Finish your current job first"
-                    shop_message_timer = 60
-                elif in_building == "beach" and event.key == pygame.K_e:
-                    if player.side_quest == MALL_QUEST.name:
-                        MALL_QUEST.reward(player)
-                        player.side_quest = None
-                        shop_message = "Delivered sunglasses!"
-                    elif player.energy >= 5:
-                        player.energy -= energy_cost(player, 5)
-                        player.charisma += 1
-                        shop_message = "Relaxed on the beach"
-                    else:
-                        shop_message = "Too tired to relax!"
-                    shop_message_timer = 60
-                elif in_building == "beach" and event.key == pygame.K_d:
-                    shop_message = dig_for_treasure(player)
-                    shop_message_timer = 60
-                elif in_building == "suburbs" and event.key == pygame.K_e:
-                    if player.energy >= 5:
-                        player.energy -= energy_cost(player, 5)
-                        player.money += 5
-                        shop_message = "Helped a neighbor! +$5"
-                    else:
-                        shop_message = "Too tired to help"
-                    shop_message_timer = 60
-                elif in_building == "townhall":
-                    if player.story_stage == 0 and event.key == pygame.K_e:
-                        player.story_stage = 1
-                        shop_message = "Mayor: Help clean up the city? Y/N"
-                    elif player.story_stage == 1 and event.key == pygame.K_y:
-                        player.story_branch = "mayor"
-                        player.story_stage = 2
-                        shop_message = "Mayor: Defeat 3 thugs in the alley."
-                    elif player.story_stage == 1 and event.key == pygame.K_n:
-                        player.story_branch = "gang"
-                        player.story_stage = 2
-                        player.side_quest = "Gang Package"
-                        shop_message = "A shady figure gives you a package."
-                    elif (
-                        player.story_branch == "mayor"
-                        and player.story_stage == 3
-                        and event.key == pygame.K_e
-                    ):
-                        player.story_stage = 4
-                        shop_message = "Mayor: Thank you for your help!"
-                    else:
-                        continue
-                    shop_message_timer = 90
-                elif in_building == "dealer" and event.key == pygame.K_e:
-                    shop_message = work_job(player, "dealer")
-                    shop_message_timer = 60
-                elif in_building == "clinic" and event.key == pygame.K_e:
-                    shop_message = work_job(player, "clinic")
-                    shop_message_timer = 60
-                elif in_building == "clinic" and event.key == pygame.K_h:
-                    if player.money >= 20 and (
-                        player.health < 100 or player.energy < 100
-                    ):
-                        player.money -= 20
-                        player.health = 100
-                        player.energy = 100
-                        shop_message = "Treatment complete"
-                    elif player.money < 20:
-                        shop_message = "Need $20"
-                    else:
-                        shop_message = "Already healthy"
-                    shop_message_timer = 60
 
+                        else:
+                            shop_message = "Too tired to help"
+                        shop_message_timer = 60
+                    elif in_building == "townhall":
+                        if player.story_stage == 0 and event.key == pygame.K_e:
+                            player.story_stage = 1
+                            shop_message = "Mayor: Help clean up the city? Y/N"
+                        elif player.story_stage == 1 and event.key == pygame.K_y:
+                            player.story_branch = "mayor"
+                            player.story_stage = 2
+                            shop_message = "Mayor: Defeat 3 thugs in the alley."
+                        elif player.story_stage == 1 and event.key == pygame.K_n:
+                            player.story_branch = "gang"
+                            player.story_stage = 2
+                            player.side_quest = "Gang Package"
+                            shop_message = "A shady figure gives you a package."
+                        elif (
+                            player.story_branch == "mayor"
+                            and player.story_stage == 3
+                            and event.key == pygame.K_e
+                        ):
+                            player.story_stage = 4
+                            shop_message = "Mayor: Thank you for your help!"
+                        else:
+                            continue
+                        shop_message_timer = 90
+                    elif in_building == "dealer" and event.key == pygame.K_e:
+                        shop_message = work_job(player, "dealer")
+                        shop_message_timer = 60
+                    elif in_building == "clinic" and event.key == pygame.K_e:
+                        shop_message = work_job(player, "clinic")
+                        shop_message_timer = 60
+                    elif in_building == "clinic" and event.key == pygame.K_h:
+                        if player.money >= 20 and (
+                            player.health < 100 or player.energy < 100
+                        ):
+                            player.money -= 20
+                            player.health = 100
+                            player.energy = 100
+                            shop_message = "Treatment complete"
+                        elif player.money < 20:
+                            shop_message = "Need $20"
+                        else:
+                            shop_message = "Already healthy"
+                        shop_message_timer = 60
+    
         dx = dy = 0
         keys = pygame.key.get_pressed()
         speed = PLAYER_SPEED
@@ -1656,3 +1736,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
