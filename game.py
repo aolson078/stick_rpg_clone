@@ -35,7 +35,7 @@ from rendering import (
     draw_decorations,
     draw_hotkey_bar,
     draw_help_screen,
-    draw_quest_marker
+    draw_quest_marker,
 )
 from inventory import (
     SHOP_ITEMS,
@@ -105,7 +105,6 @@ from settings import (
     SKATEBOARD_SPEED_MULT,
     BG_COLOR,
     MINUTES_PER_FRAME,
-
     MUSIC_FILE,
     STEP_SOUND_FILE,
     ENTER_SOUND_FILE,
@@ -251,6 +250,7 @@ def _ev_found_cloth(p: Player) -> None:
     """Give the player a piece of cloth."""
     p.resources["cloth"] = p.resources.get("cloth", 0) + 1
 
+
 # Items sold at the shop: name, cost, and effect function
 
 # Perks that can be unlocked with perk points
@@ -277,11 +277,10 @@ SECRET_PERKS = [
 MAX_HEARTS = 10
 
 
-
-
-
 def main():
-    screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.RESIZABLE)
+    screen = pygame.display.set_mode(
+        (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.RESIZABLE
+    )
     pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 28)
@@ -379,7 +378,10 @@ def main():
                 )
         for event in pygame.event.get():
             if show_help:
-                if event.type == pygame.KEYDOWN and event.key in (pygame.K_F1, pygame.K_q):
+                if event.type == pygame.KEYDOWN and event.key in (
+                    pygame.K_F1,
+                    pygame.K_q,
+                ):
                     show_help = False
                 continue
             if event.type == pygame.QUIT:
@@ -413,7 +415,9 @@ def main():
                 elif event.key == pygame.K_F11:
                     fullscreen = not fullscreen
                     flags = pygame.FULLSCREEN if fullscreen else pygame.RESIZABLE
-                    screen = pygame.display.set_mode((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), flags)
+                    screen = pygame.display.set_mode(
+                        (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), flags
+                    )
                     recalc_layouts()
                     slot_rects = compute_slot_rects()
                     hotkey_rects = compute_hotkey_rects()
@@ -426,9 +430,18 @@ def main():
                         pygame.mixer.music.set_volume(0 if muted else MUSIC_VOLUME)
                     shop_message = "Sound muted" if muted else "Sound on"
                     shop_message_timer = 60
-                elif event.key == pygame.K_h and not show_inventory and not show_log and not in_building:
-                    pot = next((i for i in player.inventory if i.name == "Health Potion"), None)
-                    ener = next((i for i in player.inventory if i.name == "Energy Potion"), None)
+                elif (
+                    event.key == pygame.K_h
+                    and not show_inventory
+                    and not show_log
+                    and not in_building
+                ):
+                    pot = next(
+                        (i for i in player.inventory if i.name == "Health Potion"), None
+                    )
+                    ener = next(
+                        (i for i in player.inventory if i.name == "Energy Potion"), None
+                    )
                     if pot:
                         player.inventory.remove(pot)
                         player.health = min(100, player.health + 30)
@@ -440,7 +453,12 @@ def main():
                     else:
                         shop_message = "No potion"
                     shop_message_timer = 60
-                elif event.key == pygame.K_z and not show_inventory and not show_log and not in_building:
+                elif (
+                    event.key == pygame.K_z
+                    and not show_inventory
+                    and not show_log
+                    and not in_building
+                ):
                     if player.ability_cooldowns["heavy"] == 0:
                         player.active_ability = "heavy"
                         player.ability_cooldowns["heavy"] = 300
@@ -448,7 +466,12 @@ def main():
                     else:
                         shop_message = "Heavy Strike cooling"
                     shop_message_timer = 60
-                elif event.key == pygame.K_x and not show_inventory and not show_log and not in_building:
+                elif (
+                    event.key == pygame.K_x
+                    and not show_inventory
+                    and not show_log
+                    and not in_building
+                ):
                     if player.ability_cooldowns["guard"] == 0:
                         player.active_ability = "guard"
                         player.ability_cooldowns["guard"] = 300
@@ -479,7 +502,12 @@ def main():
                     else:
                         shop_message = "No item"
                     shop_message_timer = 60
-                elif event.key == pygame.K_t and not in_building and not show_inventory and not show_log:
+                elif (
+                    event.key == pygame.K_t
+                    and not in_building
+                    and not show_inventory
+                    and not show_log
+                ):
                     player.time += 180
                     if player.time >= 1440:
                         player.time -= 1440
@@ -494,7 +522,7 @@ def main():
                     for i, (rect, item) in enumerate(item_rects):
                         if rect.collidepoint(pos):
                             dragging_item = item
-                            drag_origin = ('inventory', i)
+                            drag_origin = ("inventory", i)
                             drag_pos = pos
                             player.inventory.pop(i)
                             handled = True
@@ -503,7 +531,7 @@ def main():
                         for slot, rect in slot_rects.items():
                             if rect.collidepoint(pos) and player.equipment.get(slot):
                                 dragging_item = player.equipment[slot]
-                                drag_origin = ('slot', slot)
+                                drag_origin = ("slot", slot)
                                 drag_pos = pos
                                 player.equipment[slot] = None
                                 break
@@ -511,7 +539,7 @@ def main():
                             for i, rect in enumerate(hotkey_rects):
                                 if rect.collidepoint(pos) and player.hotkeys[i]:
                                     dragging_item = player.hotkeys[i]
-                                    drag_origin = ('hotkey', i)
+                                    drag_origin = ("hotkey", i)
                                     drag_pos = pos
                                     player.hotkeys[i] = None
                                     handled = True
@@ -519,27 +547,41 @@ def main():
                         if not handled:
                             furn_rects = compute_furniture_rects(player)
                             for idx, rect in enumerate(furn_rects):
-                                slot = f'slot{idx+1}'
-                                if rect.collidepoint(pos) and player.furniture.get(slot):
+                                slot = f"slot{idx+1}"
+                                if rect.collidepoint(pos) and player.furniture.get(
+                                    slot
+                                ):
                                     dragging_item = player.furniture[slot]
-                                    drag_origin = ('furn', slot)
+                                    drag_origin = ("furn", slot)
                                     drag_pos = pos
                                     player.furniture[slot] = None
                                     handled = True
                                     break
                 elif event.type == pygame.MOUSEMOTION and dragging_item:
                     drag_pos = event.pos
-                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and dragging_item:
+                elif (
+                    event.type == pygame.MOUSEBUTTONUP
+                    and event.button == 1
+                    and dragging_item
+                ):
                     pos = event.pos
                     placed = False
                     for slot, rect in slot_rects.items():
-                        if rect.collidepoint(pos) and dragging_item.slot == slot and player.equipment.get(slot) is None:
+                        if (
+                            rect.collidepoint(pos)
+                            and dragging_item.slot == slot
+                            and player.equipment.get(slot) is None
+                        ):
                             player.equipment[slot] = dragging_item
                             placed = True
                             break
                     if not placed:
                         for i, rect in enumerate(hotkey_rects):
-                            if rect.collidepoint(pos) and dragging_item.slot == 'consumable' and player.hotkeys[i] is None:
+                            if (
+                                rect.collidepoint(pos)
+                                and dragging_item.slot == "consumable"
+                                and player.hotkeys[i] is None
+                            ):
                                 player.hotkeys[i] = dragging_item
                                 placed = True
                                 break
@@ -547,11 +589,11 @@ def main():
                         for idx, rect in enumerate(furn_rects):
                             if (
                                 rect.collidepoint(pos)
-                                and dragging_item.slot == 'furniture'
-                                and player.furniture.get(f'slot{idx+1}') is None
+                                and dragging_item.slot == "furniture"
+                                and player.furniture.get(f"slot{idx+1}") is None
                             ):
-                                player.furniture[f'slot{idx+1}'] = dragging_item
-                                player.furniture_pos[f'slot{idx+1}'] = (rect.x, rect.y)
+                                player.furniture[f"slot{idx+1}"] = dragging_item
+                                player.furniture_pos[f"slot{idx+1}"] = (rect.x, rect.y)
                                 placed = True
                                 break
                     if not placed:
@@ -760,7 +802,7 @@ def main():
                             player.tokens += 1
                             shop_message = "Bought a token"
                         else:
-                            shop_message = "Need $10" 
+                            shop_message = "Need $10"
                             shop_message = "Need $10"
                     elif event.key == pygame.K_j:
                         shop_message = play_blackjack(player)
@@ -862,14 +904,19 @@ def main():
                     elif event.key == pygame.K_5:
                         if player.crafting_level < 2:
                             shop_message = "Need Craft Lv2"
-                        elif player.resources.get("metal", 0) >= 1 and player.resources.get("cloth", 0) >= 2:
+                        elif (
+                            player.resources.get("metal", 0) >= 1
+                            and player.resources.get("cloth", 0) >= 2
+                        ):
                             player.resources["metal"] -= 1
                             player.resources["cloth"] -= 2
                             if "Decorations" not in player.home_upgrades:
                                 player.home_upgrades.append("Decorations")
                                 shop_message = "Built home decorations"
                             else:
-                                player.inventory.append(InventoryItem("Decor Chair", "furniture"))
+                                player.inventory.append(
+                                    InventoryItem("Decor Chair", "furniture")
+                                )
                                 shop_message = "Crafted Decor Chair"
                             lvl_msg = gain_crafting_exp(player)
                             if lvl_msg:
@@ -881,7 +928,9 @@ def main():
                             shop_message = "Need Craft Lv2"
                         elif player.resources.get("herbs", 0) >= 3:
                             player.resources["herbs"] -= 3
-                            player.inventory.append(InventoryItem("Energy Potion", "consumable"))
+                            player.inventory.append(
+                                InventoryItem("Energy Potion", "consumable")
+                            )
                             shop_message = "Brewed Energy Potion"
                             lvl_msg = gain_crafting_exp(player)
                             if lvl_msg:
@@ -891,10 +940,15 @@ def main():
                     elif event.key == pygame.K_7:
                         if player.crafting_level < 3:
                             shop_message = "Need Craft Lv3"
-                        elif player.resources.get("metal", 0) >= 5 and player.resources.get("herbs", 0) >= 2:
+                        elif (
+                            player.resources.get("metal", 0) >= 5
+                            and player.resources.get("herbs", 0) >= 2
+                        ):
                             player.resources["metal"] -= 5
                             player.resources["herbs"] -= 2
-                            player.inventory.append(InventoryItem("Flaming Sword", "weapon", attack=6))
+                            player.inventory.append(
+                                InventoryItem("Flaming Sword", "weapon", attack=6)
+                            )
                             shop_message = "Forged Flaming Sword"
                             lvl_msg = gain_crafting_exp(player)
                             if lvl_msg:
@@ -906,7 +960,9 @@ def main():
                             shop_message = "Need Craft Lv3"
                         elif player.resources.get("produce", 0) >= 2:
                             player.resources["produce"] -= 2
-                            player.inventory.append(InventoryItem("Fruit Pie", "consumable"))
+                            player.inventory.append(
+                                InventoryItem("Fruit Pie", "consumable")
+                            )
                             shop_message = "Baked Fruit Pie"
                             lvl_msg = gain_crafting_exp(player)
                             if lvl_msg:
@@ -1032,7 +1088,10 @@ def main():
                 player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
-            if 40 <= next_rect.x <= HOME_WIDTH - PLAYER_SIZE - 40 and 40 <= next_rect.y <= HOME_HEIGHT - PLAYER_SIZE - 40:
+            if (
+                40 <= next_rect.x <= HOME_WIDTH - PLAYER_SIZE - 40
+                and 40 <= next_rect.y <= HOME_HEIGHT - PLAYER_SIZE - 40
+            ):
                 if dx != 0 or dy != 0:
                     if frame % 12 == 0 and SOUND_ENABLED:
                         step_sound.play()
@@ -1053,7 +1112,10 @@ def main():
                 player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
-            if 40 <= next_rect.x <= BAR_WIDTH - PLAYER_SIZE - 40 and 40 <= next_rect.y <= BAR_HEIGHT - PLAYER_SIZE - 40:
+            if (
+                40 <= next_rect.x <= BAR_WIDTH - PLAYER_SIZE - 40
+                and 40 <= next_rect.y <= BAR_HEIGHT - PLAYER_SIZE - 40
+            ):
                 if dx != 0 or dy != 0:
                     if frame % 12 == 0 and SOUND_ENABLED:
                         step_sound.play()
@@ -1074,7 +1136,10 @@ def main():
                 player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
-            if 40 <= next_rect.x <= FOREST_WIDTH - PLAYER_SIZE - 40 and 40 <= next_rect.y <= FOREST_HEIGHT - PLAYER_SIZE - 40:
+            if (
+                40 <= next_rect.x <= FOREST_WIDTH - PLAYER_SIZE - 40
+                and 40 <= next_rect.y <= FOREST_HEIGHT - PLAYER_SIZE - 40
+            ):
                 if dx != 0 or dy != 0:
                     if frame % 12 == 0 and SOUND_ENABLED:
                         step_sound.play()
@@ -1095,7 +1160,10 @@ def main():
                 player.facing_left = False
 
             next_rect = player.rect.move(dx, dy)
-            if 0 <= next_rect.x <= MAP_WIDTH - PLAYER_SIZE and 0 <= next_rect.y <= MAP_HEIGHT - PLAYER_SIZE:
+            if (
+                0 <= next_rect.x <= MAP_WIDTH - PLAYER_SIZE
+                and 0 <= next_rect.y <= MAP_HEIGHT - PLAYER_SIZE
+            ):
                 collision = False
                 for b in BUILDINGS:
                     overlap = next_rect.clip(b.rect)
@@ -1129,7 +1197,14 @@ def main():
                     near_building = b
                     break
 
-        if not inside_home and not inside_bar and not inside_forest and not in_building and shop_message_timer == 0 and not show_log:
+        if (
+            not inside_home
+            and not inside_bar
+            and not inside_forest
+            and not in_building
+            and shop_message_timer == 0
+            and not show_log
+        ):
             location = near_building.btype if near_building else None
             desc = random_event(player, location)
             if desc:
@@ -1191,7 +1266,15 @@ def main():
                 shop_message = f"{near_npc.name}: {text}"
                 shop_message_timer = 90
 
-        if not inside_home and not inside_bar and not inside_forest and not in_building and near_building and not show_inventory and not show_log:
+        if (
+            not inside_home
+            and not inside_bar
+            and not inside_forest
+            and not in_building
+            and near_building
+            and not show_inventory
+            and not show_log
+        ):
             if keys[pygame.K_e]:
                 if building_open(near_building.btype, player.time, player):
                     in_building = near_building.btype
@@ -1216,7 +1299,10 @@ def main():
                         forest_return = (player.rect.x, player.rect.y)
                         player.rect.topleft = (
                             FOREST_DOOR_RECT.x + 10,
-                            FOREST_DOOR_RECT.y + FOREST_DOOR_RECT.height - PLAYER_SIZE - 10,
+                            FOREST_DOOR_RECT.y
+                            + FOREST_DOOR_RECT.height
+                            - PLAYER_SIZE
+                            - 10,
                         )
                     else:
                         in_building = near_building.btype
@@ -1234,8 +1320,14 @@ def main():
         if player.energy == 0:
             player.health = max(player.health - 0.08, 0)
 
-        cam_x = min(max(0, player.rect.centerx - settings.SCREEN_WIDTH // 2), MAP_WIDTH - settings.SCREEN_WIDTH)
-        cam_y = min(max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2), MAP_HEIGHT - settings.SCREEN_HEIGHT)
+        cam_x = min(
+            max(0, player.rect.centerx - settings.SCREEN_WIDTH // 2),
+            MAP_WIDTH - settings.SCREEN_WIDTH,
+        )
+        cam_y = min(
+            max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2),
+            MAP_HEIGHT - settings.SCREEN_HEIGHT,
+        )
         if inside_home:
             cam_x = cam_y = 0
             draw_home_interior(
@@ -1272,8 +1364,14 @@ def main():
                 FOREST_DOOR_RECT,
             )
         else:
-            cam_x = min(max(0, player.rect.centerx - settings.SCREEN_WIDTH // 2), MAP_WIDTH - settings.SCREEN_WIDTH)
-            cam_y = min(max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2), MAP_HEIGHT - settings.SCREEN_HEIGHT)
+            cam_x = min(
+                max(0, player.rect.centerx - settings.SCREEN_WIDTH // 2),
+                MAP_WIDTH - settings.SCREEN_WIDTH,
+            )
+            cam_y = min(
+                max(0, player.rect.centery - settings.SCREEN_HEIGHT // 2),
+                MAP_HEIGHT - settings.SCREEN_HEIGHT,
+            )
 
         draw_sky(screen, player.time)
 
@@ -1283,22 +1381,31 @@ def main():
 
         for b in BUILDINGS:
             draw_rect = b.rect.move(-cam_x, -cam_y)
-            draw_building(screen, Building(draw_rect, b.name, b.btype), highlight=(b == near_building))
+            draw_building(
+                screen,
+                Building(draw_rect, b.name, b.btype),
+                highlight=(b == near_building),
+            )
 
         for n in NPCS:
             draw_npc(screen, n, font, (-cam_x, -cam_y))
 
         pr = player.rect.move(-cam_x, -cam_y)
-        draw_player_sprite(screen, pr, frame if dx or dy else 0, player.facing_left, player.color, player.head_color)
+        draw_player_sprite(
+            screen,
+            pr,
+            frame if dx or dy else 0,
+            player.facing_left,
+            player.color,
+            player.head_color,
+        )
 
         target_building = quest_target_building(player, BUILDINGS)
         if target_building:
             draw_quest_marker(screen, pr, target_building.rect, cam_x, cam_y)
 
-
         draw_day_night(screen, player.time)
         draw_weather(screen, player.weather)
-
 
         draw_ui(screen, font, player, QUESTS, STORY_QUESTS)
         draw_hotkey_bar(screen, font, player, hotkey_rects)
@@ -1324,7 +1431,9 @@ def main():
         if near_npc and not in_building:
             msg = "[E] Talk"
             msg_surf = font.render(msg, True, (30, 30, 30))
-            bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA)
+            bg = pygame.Surface(
+                (msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA
+            )
             bg.fill((255, 255, 255, 210))
             screen.blit(bg, (10, info_y - 4))
             screen.blit(msg_surf, (18, info_y))
@@ -1384,7 +1493,10 @@ def main():
                 if not building_open(near_building.btype, player.time, player):
                     msg += " (Closed)"
                 msg_surf = font.render(msg, True, (30, 30, 30))
-                bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 6), pygame.SRCALPHA)
+                bg = pygame.Surface(
+                    (msg_surf.get_width() + 16, msg_surf.get_height() + 6),
+                    pygame.SRCALPHA,
+                )
                 bg.fill((255, 255, 255, 210))
                 screen.blit(bg, (10, info_y - 4))
                 screen.blit(msg_surf, (18, info_y))
@@ -1411,9 +1523,15 @@ def main():
             elif in_building == "park":
                 txt = "[E] Chat  [F] Fish  [Q] Leave"
             elif in_building == "bank":
-                txt = f"[E] Talk  [D] Deposit $10  [W] Withdraw $10  [Q] Leave  Bal:${int(player.bank_balance)}"
+                txt = (
+                    "[E] Talk  [D] Deposit $10  [W] Withdraw $10  [Q] Leave  "
+                    f"Bal:${int(player.bank_balance)}"
+                )
             elif in_building == "bar":
-                txt = "[B] Buy token  [J] Blackjack  [S] Slots  [D] Darts  [F] Fight  [Q] Leave"
+                txt = (
+                    "[B] Buy token  [J] Blackjack  [S] Slots  [D] Darts  "
+                    "[F] Fight  [Q] Leave"
+                )
             elif in_building == "dungeon":
                 txt = "[E] Fight  [Q] Leave"
             elif in_building == "forest":
@@ -1444,16 +1562,26 @@ def main():
             draw_tip_panel(screen, font, f"Inside: {in_building.upper()}   {txt}")
             if in_building == "shop":
                 for i, (name, cost, _func) in enumerate(SHOP_ITEMS):
-                    item_surf = font.render(f"{(i+1)%10}:{name} ${cost}", True, (80, 40, 40))
+                    item_surf = font.render(
+                        f"{(i + 1) % 10}:{name} ${cost}", True, (80, 40, 40)
+                    )
                     row = i // 5
                     col = i % 5
-                    screen.blit(item_surf, (30 + col * 150, settings.SCREEN_HEIGHT - 60 - row * 24))
-                    screen.blit(item_surf, (30 + col * 200, settings.SCREEN_HEIGHT - 60 - row * 24))
+                    screen.blit(
+                        item_surf,
+                        (30 + col * 150, settings.SCREEN_HEIGHT - 60 - row * 24),
+                    )
+                    screen.blit(
+                        item_surf,
+                        (30 + col * 200, settings.SCREEN_HEIGHT - 60 - row * 24),
+                    )
             elif in_building == "home":
                 avail = [u for u in HOME_UPGRADES if u[3] <= player.home_level]
                 for i, (name, cost, _d, _req) in enumerate(avail):
                     status = "Owned" if name in player.home_upgrades else f"${cost}"
-                    item_surf = font.render(f"{i+1}:{name} {status}", True, (80, 40, 40))
+                    item_surf = font.render(
+                        f"{i+1}:{name} {status}", True, (80, 40, 40)
+                    )
                     screen.blit(item_surf, (30 + i * 260, settings.SCREEN_HEIGHT - 60))
             elif in_building == "petshop":
                 for i, (name, cost, _d) in enumerate(COMPANIONS):
@@ -1482,7 +1610,10 @@ def main():
                     screen.blit(item_surf, (30 + i * 260, settings.SCREEN_HEIGHT - 60))
 
         elif inside_bar:
-            txt = "Use counter to buy tokens, tables to gamble or throw darts, ring to fight, door to exit"
+            txt = (
+                "Use counter to buy tokens, tables to gamble or throw darts, "
+                "ring to fight, door to exit"
+            )
             draw_tip_panel(screen, font, txt)
         elif inside_forest:
             txt = "Fight enemies or exit via the door"
@@ -1494,7 +1625,9 @@ def main():
         if shop_message_timer > 0:
             shop_message_timer -= 1
             msg_surf = font.render(shop_message, True, (220, 40, 40))
-            bg = pygame.Surface((msg_surf.get_width() + 16, msg_surf.get_height() + 8), pygame.SRCALPHA)
+            bg = pygame.Surface(
+                (msg_surf.get_width() + 16, msg_surf.get_height() + 8), pygame.SRCALPHA
+            )
             bg.fill((255, 255, 255, 240))
             screen.blit(bg, (10, 90))
             screen.blit(msg_surf, (18, 94))
@@ -1504,8 +1637,12 @@ def main():
                 n.bubble_timer -= 1
 
         if player.health <= 0:
-            over = font.render("GAME OVER (You collapsed from exhaustion)", True, (255, 0, 0))
-            screen.blit(over, (settings.SCREEN_WIDTH // 2 - 240, settings.SCREEN_HEIGHT // 2))
+            over = font.render(
+                "GAME OVER (You collapsed from exhaustion)", True, (255, 0, 0)
+            )
+            screen.blit(
+                over, (settings.SCREEN_WIDTH // 2 - 240, settings.SCREEN_HEIGHT // 2)
+            )
             pygame.display.flip()
             pygame.time.wait(2500)
             return
@@ -1515,6 +1652,7 @@ def main():
 
         pygame.display.flip()
         clock.tick(60)
+
 
 if __name__ == "__main__":
     main()

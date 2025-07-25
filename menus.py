@@ -41,14 +41,25 @@ def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
         start_txt = font.render("Press Enter to Start", True, (230, 230, 230))
         load_txt = font.render("Press L to Load Game", True, (230, 230, 230))
         screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 260))
-        screen.blit(start_txt, (settings.SCREEN_WIDTH // 2 - start_txt.get_width() // 2, 320))
-        screen.blit(load_txt, (settings.SCREEN_WIDTH // 2 - load_txt.get_width() // 2, 360))
+        screen.blit(
+            start_txt, (settings.SCREEN_WIDTH // 2 - start_txt.get_width() // 2, 320)
+        )
+        screen.blit(
+            load_txt, (settings.SCREEN_WIDTH // 2 - load_txt.get_width() // 2, 360)
+        )
         if board:
             lb_title = font.render("Top Completions", True, (230, 230, 230))
-            screen.blit(lb_title, (settings.SCREEN_WIDTH // 2 - lb_title.get_width() // 2, 400))
+            screen.blit(
+                lb_title, (settings.SCREEN_WIDTH // 2 - lb_title.get_width() // 2, 400)
+            )
             for i, rec in enumerate(board):
-                txt = font.render(f"{i+1}. Day {rec['day']} - ${rec['money']}", True, (200, 200, 200))
-                screen.blit(txt, (settings.SCREEN_WIDTH // 2 - txt.get_width() // 2, 420 + i * 20))
+                txt = font.render(
+                    f"{i+1}. Day {rec['day']} - ${rec['money']}", True, (200, 200, 200)
+                )
+                screen.blit(
+                    txt,
+                    (settings.SCREEN_WIDTH // 2 - txt.get_width() // 2, 420 + i * 20),
+                )
         pygame.display.flip()
         pygame.time.wait(20)
 
@@ -90,15 +101,31 @@ def character_creation(screen: pygame.Surface, font: pygame.font.Font):
         screen.fill((0, 0, 0))
         title = font.render("Create Character", True, (255, 255, 255))
         prompt = font.render(f"Name: {name}", True, (230, 230, 230))
-        body_txt = font.render(f"Body Color: {color_names[body_idx]} (\u2190/\u2192)", True, colors[body_idx])
-        head_txt = font.render(f"Head Color: {head_color_names[head_idx]} (\u2190/\u2192)", True, head_colors[head_idx])
+        body_txt = font.render(
+            f"Body Color: {color_names[body_idx]} (\u2190/\u2192)",
+            True,
+            colors[body_idx],
+        )
+        head_txt = font.render(
+            f"Head Color: {head_color_names[head_idx]} (\u2190/\u2192)",
+            True,
+            head_colors[head_idx],
+        )
         toggle_txt = font.render("Press TAB to switch", True, (230, 230, 230))
         confirm = font.render("Press Enter to Start", True, (230, 230, 230))
         screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 240))
         screen.blit(prompt, (settings.SCREEN_WIDTH // 2 - prompt.get_width() // 2, 280))
-        screen.blit(body_txt, (settings.SCREEN_WIDTH // 2 - body_txt.get_width() // 2, 320))
-        screen.blit(head_txt, (settings.SCREEN_WIDTH // 2 - head_txt.get_width() // 2, 350))
-        screen.blit(toggle_txt, (settings.SCREEN_WIDTH // 2 - toggle_txt.get_width() // 2, 380))
-        screen.blit(confirm, (settings.SCREEN_WIDTH // 2 - confirm.get_width() // 2, 410))
+        screen.blit(
+            body_txt, (settings.SCREEN_WIDTH // 2 - body_txt.get_width() // 2, 320)
+        )
+        screen.blit(
+            head_txt, (settings.SCREEN_WIDTH // 2 - head_txt.get_width() // 2, 350)
+        )
+        screen.blit(
+            toggle_txt, (settings.SCREEN_WIDTH // 2 - toggle_txt.get_width() // 2, 380)
+        )
+        screen.blit(
+            confirm, (settings.SCREEN_WIDTH // 2 - confirm.get_width() // 2, 410)
+        )
         pygame.display.flip()
         pygame.time.wait(20)
