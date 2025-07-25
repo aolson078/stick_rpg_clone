@@ -1,3 +1,4 @@
+"""Configuration constants and asset paths."""
 import os
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1600, 1200

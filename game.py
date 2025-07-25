@@ -1,3 +1,4 @@
+"""Main game loop and event handling."""
 import sys
 import os
 import json
