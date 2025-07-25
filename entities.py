@@ -3,11 +3,13 @@ from typing import Callable, List, Dict, Optional, Tuple
 import pygame
 import settings
 
+
 @dataclass
 class Building:
     rect: pygame.Rect
     name: str
     btype: str
+
 
 @dataclass
 class Player:
@@ -125,9 +127,7 @@ class Player:
     )
 
     # Quick item hotkey slots
-    hotkeys: List[Optional["InventoryItem"]] = field(
-        default_factory=lambda: [None] * 5
-    )
+    hotkeys: List[Optional["InventoryItem"]] = field(default_factory=lambda: [None] * 5)
 
     # Furniture placed inside the home
     furniture: Dict[str, Optional["InventoryItem"]] = field(
@@ -145,7 +145,6 @@ class Player:
     romanced: List[str] = field(default_factory=list)
 
 
-
 @dataclass
 class Quest:
     description: str
@@ -158,6 +157,7 @@ class Quest:
 @dataclass
 class Event:
     """Random world events with effects on the player"""
+
     description: str
     apply: Callable[["Player"], None]
 
@@ -165,6 +165,7 @@ class Event:
 @dataclass
 class SideQuest:
     """Optional quests triggered by talking to NPCs"""
+
     name: str
     description: str
     target: str  # building type or NPC to complete
@@ -174,6 +175,7 @@ class SideQuest:
 @dataclass
 class NPC:
     """Simple moving NPC that can give side quests."""
+
     rect: pygame.Rect
     name: str
     quest: Optional[SideQuest] = None
@@ -194,4 +196,3 @@ class InventoryItem:
     level: int = 0
     # melee, ranged or magic for weapons
     weapon_type: str = "melee"
-

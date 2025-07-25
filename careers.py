@@ -108,9 +108,9 @@ def work_job(player: Player, job_key: str) -> str:
     title = get_job_title(player, job_key)
     return f"Worked as {title}! +${pay}, +{data['exp_per_shift']}xp"
 
+
 def job_pay(player: Player, job_key: str) -> int:
     """Return the current pay for the job based on level."""
     data = JOB_DATA[job_key]
     level = getattr(player, data["level_attr"])
     return data["base_pay"] + data["pay_step"] * (level - 1)
-

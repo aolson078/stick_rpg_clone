@@ -73,7 +73,9 @@ def recalc_layouts() -> None:
 
     FOREST_WIDTH = settings.SCREEN_WIDTH
     FOREST_HEIGHT = settings.SCREEN_HEIGHT
-    FOREST_DOOR_RECT = pygame.Rect(FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160)
+    FOREST_DOOR_RECT = pygame.Rect(
+        FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160
+    )
 
     FURNITURE_RECTS = [
         pygame.Rect(400 + col * 160, HOME_HEIGHT // 2 + row * 100, 120, 80)
@@ -83,6 +85,7 @@ def recalc_layouts() -> None:
 
 
 # --- Inventory UI helpers -------------------------------------------------
+
 
 def compute_slot_rects() -> Dict[str, pygame.Rect]:
     left = settings.SCREEN_WIDTH // 10
@@ -122,7 +125,10 @@ def init_furniture_positions(player: Player) -> None:
 
 # --- Quest helpers -------------------------------------------------------
 
-def quest_target_building(player: Player, buildings: List[Building]) -> Optional[Building]:
+
+def quest_target_building(
+    player: Player, buildings: List[Building]
+) -> Optional[Building]:
     """Return the building associated with the player's current objective."""
     if player.side_quest:
         sq = SIDE_QUESTS.get(player.side_quest)
@@ -252,6 +258,7 @@ def sleep(player: Player) -> Optional[str]:
 
 # --- Mini activities -----------------------------------------------------
 
+
 def play_blackjack(player: Player) -> str:
     if player.tokens < 1:
         return "No tokens left!"
@@ -337,7 +344,9 @@ def dig_for_treasure(player: Player) -> str:
     if roll < 0.95:
         player.inventory.append(InventoryItem("Golden Seashell", "furniture"))
         return "You unearthed a Golden Seashell!"
-    player.inventory.append(InventoryItem("Pearl Necklace", "chest", defense=1, speed=1))
+    player.inventory.append(
+        InventoryItem("Pearl Necklace", "chest", defense=1, speed=1)
+    )
     return "You dug up a Pearl Necklace!"
 
 
@@ -389,11 +398,14 @@ def save_game(player: Player) -> None:
         "businesses": player.businesses,
         "business_bonus": player.business_bonus,
         "current_quest": player.current_quest,
-        "enemies_defeated": player.enemies_defeated,
         "inventory": [item.__dict__ for item in player.inventory],
-        "equipment": {slot: (it.__dict__ if it else None) for slot, it in player.equipment.items()},
+        "equipment": {
+            slot: (it.__dict__ if it else None) for slot, it in player.equipment.items()
+        },
         "hotkeys": [it.__dict__ if it else None for it in player.hotkeys],
-        "furniture": {slot: (it.__dict__ if it else None) for slot, it in player.furniture.items()},
+        "furniture": {
+            slot: (it.__dict__ if it else None) for slot, it in player.furniture.items()
+        },
         "furniture_pos": player.furniture_pos,
         "relationships": player.relationships,
         "last_talk": player.last_talk,
@@ -422,7 +434,14 @@ def load_game() -> Optional[Player]:
         return None
     with open(SAVE_FILE) as f:
         data = json.load(f)
-    player = Player(pygame.Rect(data.get("x", settings.MAP_WIDTH // 2), data.get("y", settings.MAP_HEIGHT // 2), settings.PLAYER_SIZE, settings.PLAYER_SIZE))
+    player = Player(
+        pygame.Rect(
+            data.get("x", settings.MAP_WIDTH // 2),
+            data.get("y", settings.MAP_HEIGHT // 2),
+            settings.PLAYER_SIZE,
+            settings.PLAYER_SIZE,
+        )
+    )
     player.name = data.get("name", player.name)
     player.color = tuple(data.get("color", list(player.color)))
     player.head_color = tuple(data.get("head_color", list(player.head_color)))
@@ -470,7 +489,9 @@ def load_game() -> Optional[Player]:
     player.story_stage = data.get("story_stage", 0)
     player.story_branch = data.get("story_branch")
     player.gang_package_done = data.get("gang_package_done", False)
-    player.resources = data.get("resources", {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0, "produce": 0})
+    player.resources = data.get(
+        "resources", {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0, "produce": 0}
+    )
     player.crops = data.get("crops", [])
     player.season = data.get("season", "Spring")
     player.weather = data.get("weather", "Clear")
@@ -482,9 +503,21 @@ def load_game() -> Optional[Player]:
     for slot, item in data.get("equipment", {}).items():
         if item:
             player.equipment[slot] = InventoryItem(**item)
-    player.hotkeys = [InventoryItem(**it) if it else None for it in data.get("hotkeys", [None] * 5)]
-    player.furniture = {slot: (InventoryItem(**it) if it else None) for slot, it in data.get("furniture", {f"slot{i}": None for i in range(1,7)}).items()}
-    player.furniture_pos = {slot: tuple(pos) for slot, pos in data.get("furniture_pos", {f"slot{i}": (0,0) for i in range(1,7)}).items()}
+    player.hotkeys = [
+        InventoryItem(**it) if it else None for it in data.get("hotkeys", [None] * 5)
+    ]
+    player.furniture = {
+        slot: (InventoryItem(**it) if it else None)
+        for slot, it in data.get(
+            "furniture", {f"slot{i}": None for i in range(1, 7)}
+        ).items()
+    }
+    player.furniture_pos = {
+        slot: tuple(pos)
+        for slot, pos in data.get(
+            "furniture_pos", {f"slot{i}": (0, 0) for i in range(1, 7)}
+        ).items()
+    }
     player.relationships = data.get("relationships", {})
     player.last_talk = data.get("last_talk", {})
     player.romanced = data.get("romanced", [])

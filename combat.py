@@ -1,4 +1,5 @@
 """Combat-related helper functions and constants."""
+
 import random
 from typing import List, Tuple
 from entities import Player, InventoryItem
@@ -95,9 +96,7 @@ def fight_brawler(player: Player) -> str:
         if turn_player:
             for _ in range(p_combo):
                 dmg = max(1, p_atk - enemy["defense"])
-                if (
-                    not special_used and random.random() < POWER_STRIKE_CHANCE
-                ):
+                if not special_used and random.random() < POWER_STRIKE_CHANCE:
                     dmg *= 2
                     bleed_turns = BLEED_TURNS
                     special_used = True
@@ -147,9 +146,7 @@ def fight_enemy(player: Player) -> str:
         if turn_player:
             for _ in range(p_combo):
                 dmg = max(1, p_atk - enemy["defense"])
-                if (
-                    not special_used and random.random() < POWER_STRIKE_CHANCE
-                ):
+                if not special_used and random.random() < POWER_STRIKE_CHANCE:
                     dmg *= 2
                     bleed_turns = BLEED_TURNS
                     special_used = True
@@ -206,9 +203,7 @@ def fight_forest_enemy(player: Player, index: int) -> str:
         if turn_player:
             for _ in range(p_combo):
                 dmg = max(1, p_atk - enemy["defense"])
-                if (
-                    not special_used and random.random() < POWER_STRIKE_CHANCE
-                ):
+                if not special_used and random.random() < POWER_STRIKE_CHANCE:
                     dmg *= 2
                     bleed_turns = BLEED_TURNS
                     special_used = True
@@ -279,5 +274,7 @@ def fight_final_boss(player: Player) -> str:
     player.money += enemy["reward"]
     player.boss_defeated = True
     # Legendary sword reward
-    player.inventory.append(InventoryItem("Legendary Sword", "weapon", attack=8, speed=1, combo=2))
+    player.inventory.append(
+        InventoryItem("Legendary Sword", "weapon", attack=8, speed=1, combo=2)
+    )
     return "Boss defeated! You earned the Legendary Sword"

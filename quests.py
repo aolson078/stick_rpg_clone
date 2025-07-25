@@ -1,4 +1,5 @@
 """Quest and event data split from game.py."""
+
 from __future__ import annotations
 import os
 import json
@@ -82,6 +83,7 @@ STORY_TARGETS = {
 
 
 # Event helpers
+
 
 def _ev_found_money(p: Player) -> None:
     """Give the player a small amount of money."""
@@ -360,10 +362,7 @@ def check_perk_unlocks(player: Player) -> bool:
 
 def check_hidden_perks(player: Player) -> str | None:
     """Unlock secret perks when requirements are met."""
-    if (
-        player.brawls_won >= BRAWLER_COUNT
-        and "Bar Champion" not in player.perk_levels
-    ):
+    if player.brawls_won >= BRAWLER_COUNT and "Bar Champion" not in player.perk_levels:
         player.perk_levels["Bar Champion"] = 1
         return "Secret perk unlocked: Bar Champion!"
     if (
@@ -380,10 +379,7 @@ def check_hidden_perks(player: Player) -> str | None:
 
 def check_achievements(player: Player) -> str | None:
     """Unlock achievements based on notable milestones."""
-    if (
-        "First Blood" not in player.achievements
-        and player.enemies_defeated >= 1
-    ):
+    if "First Blood" not in player.achievements and player.enemies_defeated >= 1:
         player.achievements.append("First Blood")
         player.epithet = ACHIEVEMENT_EPITHETS.get("First Blood", player.epithet)
         return "Achievement unlocked: First Blood!"
@@ -398,9 +394,8 @@ def check_achievements(player: Player) -> str | None:
         player.achievements.append("Wealthy")
         player.epithet = ACHIEVEMENT_EPITHETS.get("Wealthy", player.epithet)
         return "Achievement unlocked: Wealthy!"
-    if (
-        "Story Hero" not in player.achievements
-        and all(q.completed for q in STORY_QUESTS)
+    if "Story Hero" not in player.achievements and all(
+        q.completed for q in STORY_QUESTS
     ):
         player.achievements.append("Story Hero")
         update_leaderboard(player)
