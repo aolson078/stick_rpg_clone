@@ -47,4 +47,3 @@ ENTER_SOUND_FILE = os.path.join(SOUND_DIR, "enter.wav")
 QUEST_SOUND_FILE = os.path.join(SOUND_DIR, "quest.wav")
 MUSIC_VOLUME = 0.3
 SFX_VOLUME = 0.5
-

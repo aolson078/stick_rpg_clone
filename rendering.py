@@ -25,12 +25,8 @@ from settings import (
     FONT_COLOR,
     MAP_WIDTH,
     MAP_HEIGHT,
-
-
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
-
-
     BG_COLOR,
     TREE_COLOR,
     TRUNK_COLOR,
@@ -39,8 +35,8 @@ from settings import (
 )
 from careers import get_job_title, job_progress
 from inventory import crafting_exp_needed
+from constants import PERK_MAX_LEVEL
 
-PERK_MAX_LEVEL = 3
 PLAYER_SPRITES = []
 PLAYER_SPRITE_COLOR = None
 FOREST_ENEMY_IMAGES = []
@@ -78,7 +74,9 @@ def load_player_sprites(color=None):
     return PLAYER_SPRITES
 
 
-def draw_player_sprite(surface, rect, frame=0, facing_left=False, color=None, head_color=None):
+def draw_player_sprite(
+    surface, rect, frame=0, facing_left=False, color=None, head_color=None
+):
     sprites = load_player_sprites(color)
     if not sprites:
         return draw_player(surface, rect, frame, facing_left, color, head_color)
@@ -110,8 +108,12 @@ def draw_player(surface, rect, frame=0, facing_left=False, color=None, head_colo
     pygame.draw.line(surface, color, (x, y - 14), (x, y), 3)
     arm_offset = -13 if not facing_left else 13
     leg_offset = -9 if not facing_left else 9
-    pygame.draw.line(surface, color, (x, y - 10), (x + arm_offset, y - 2 + int(swing)), 3)
-    pygame.draw.line(surface, color, (x, y - 10), (x - arm_offset, y - 2 - int(swing)), 3)
+    pygame.draw.line(
+        surface, color, (x, y - 10), (x + arm_offset, y - 2 + int(swing)), 3
+    )
+    pygame.draw.line(
+        surface, color, (x, y - 10), (x - arm_offset, y - 2 - int(swing)), 3
+    )
     pygame.draw.line(surface, color, (x, y), (x + leg_offset, y + 16 + int(swing)), 3)
     pygame.draw.line(surface, color, (x, y), (x - leg_offset, y + 16 - int(swing)), 3)
 
@@ -122,7 +124,9 @@ def draw_npc(surface, npc, font, offset=(0, 0)):
     pygame.draw.rect(surface, (60, 120, 220), rect)
     if npc.bubble_timer > 0 and npc.bubble_message:
         msg_surf = font.render(npc.bubble_message, True, (30, 30, 30))
-        bg = pygame.Surface((msg_surf.get_width() + 10, msg_surf.get_height() + 6), pygame.SRCALPHA)
+        bg = pygame.Surface(
+            (msg_surf.get_width() + 10, msg_surf.get_height() + 6), pygame.SRCALPHA
+        )
         bg.fill((255, 255, 255, 230))
         bx = rect.centerx - bg.get_width() // 2
         by = rect.top - bg.get_height() - 8
@@ -140,8 +144,14 @@ def draw_quest_marker(surface, player_rect, target_rect, cam_x, cam_y):
     x = px
     y = py - 40
     tip = (x + 20 * math.cos(angle), y + 20 * math.sin(angle))
-    left = (x + 8 * math.cos(angle + math.pi * 0.75), y + 8 * math.sin(angle + math.pi * 0.75))
-    right = (x + 8 * math.cos(angle - math.pi * 0.75), y + 8 * math.sin(angle - math.pi * 0.75))
+    left = (
+        x + 8 * math.cos(angle + math.pi * 0.75),
+        y + 8 * math.sin(angle + math.pi * 0.75),
+    )
+    right = (
+        x + 8 * math.cos(angle - math.pi * 0.75),
+        y + 8 * math.sin(angle - math.pi * 0.75),
+    )
     pygame.draw.polygon(surface, (255, 50, 50), [tip, left, right])
 
 
@@ -208,7 +218,9 @@ def draw_building(surface, building, highlight=False):
         pygame.draw.circle(surface, (220, 210, 120), (dx + 32, dy + 19), 3)
     font = pygame.font.SysFont(None, 28)
     label = font.render(building.name, True, FONT_COLOR)
-    label_bg = pygame.Surface((label.get_width() + 12, label.get_height() + 4), pygame.SRCALPHA)
+    label_bg = pygame.Surface(
+        (label.get_width() + 12, label.get_height() + 4), pygame.SRCALPHA
+    )
     label_bg.fill((255, 255, 255, 230))
     surface.blit(label_bg, (b.x + b.width // 2 - label.get_width() // 2 - 6, b.y - 32))
     surface.blit(label, (b.x + b.width // 2 - label.get_width() // 2, b.y - 30))
@@ -221,15 +233,21 @@ def draw_road_and_sidewalks(surface, cam_x, cam_y):
     pygame.draw.rect(surface, SIDEWALK_COLOR, (0 - cam_x, 460 - cam_y, MAP_WIDTH, 10))
     pygame.draw.rect(surface, SIDEWALK_COLOR, (0 - cam_x, 530 - cam_y, MAP_WIDTH, 10))
     for x in range(0, MAP_WIDTH, 80):
-        pygame.draw.rect(surface, (230, 220, 100), (x - cam_x, 498 - cam_y, 36, 6), border_radius=3)
+        pygame.draw.rect(
+            surface, (230, 220, 100), (x - cam_x, 498 - cam_y, 36, 6), border_radius=3
+        )
 
 
 def draw_city_walls(surface, cam_x, cam_y):
     """Draw the outer walls surrounding the city map."""
     pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, -cam_y, MAP_WIDTH, 12))
-    pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, MAP_HEIGHT - 12 - cam_y, MAP_WIDTH, 12))
+    pygame.draw.rect(
+        surface, CITY_WALL_COLOR, (-cam_x, MAP_HEIGHT - 12 - cam_y, MAP_WIDTH, 12)
+    )
     pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, -cam_y, 12, MAP_HEIGHT))
-    pygame.draw.rect(surface, CITY_WALL_COLOR, (MAP_WIDTH - 12 - cam_x, -cam_y, 12, MAP_HEIGHT))
+    pygame.draw.rect(
+        surface, CITY_WALL_COLOR, (MAP_WIDTH - 12 - cam_x, -cam_y, 12, MAP_HEIGHT)
+    )
 
 
 def _draw_tree(surface, x, y):
@@ -237,12 +255,14 @@ def _draw_tree(surface, x, y):
     pygame.draw.rect(surface, TRUNK_COLOR, (x + 10, y + 24, 12, 20))
     pygame.draw.circle(surface, TREE_COLOR, (x + 16, y + 16), 20)
 
+
 def _draw_flower_patch(surface, x, y):
     "Draw a small patch of flowers."
     for i, color in enumerate(FLOWER_COLORS):
         ox = (i % 2) * 6
         oy = (i // 2) * 6
         pygame.draw.circle(surface, color, (x + ox, y + oy), 3)
+
 
 def draw_decorations(surface, cam_x, cam_y):
     "Render decorative trees and flowers on the map."
@@ -265,7 +285,6 @@ def draw_sky(surface, current_time):
         pygame.draw.line(surface, (r, g, b), (0, y), (settings.SCREEN_WIDTH, y))
 
     # stars remain fixed across frames
-    global STARS, CLOUDS
     if not STARS:
         for _ in range(80):
             sx = random.randint(0, settings.SCREEN_WIDTH - 1)
@@ -305,6 +324,8 @@ def draw_sky(surface, current_time):
         pygame.draw.circle(surface, (230, 230, 255), (x, y), 30)
         for sx, sy in STARS:
             pygame.draw.circle(surface, (255, 255, 255), (sx, sy), 2)
+
+
 def draw_day_night(surface, current_time):
     """Darken the city during nighttime hours."""
     hour = int(current_time) // 60
@@ -326,7 +347,10 @@ def draw_weather(surface, weather):
     if weather == "Rain":
         if not RAINDROPS:
             RAINDROPS = [
-                [random.randint(0, settings.SCREEN_WIDTH), random.randint(-settings.SCREEN_HEIGHT, 0)]
+                [
+                    random.randint(0, settings.SCREEN_WIDTH),
+                    random.randint(-settings.SCREEN_HEIGHT, 0),
+                ]
                 for _ in range(180)
             ]
         for drop in RAINDROPS:
@@ -335,12 +359,22 @@ def draw_weather(surface, weather):
             if drop[1] > settings.SCREEN_HEIGHT:
                 drop[0] = random.randint(0, settings.SCREEN_WIDTH)
                 drop[1] = random.randint(-40, 0)
-            pygame.draw.line(surface, (180, 180, 255), (drop[0], drop[1]), (drop[0] + 3, drop[1] + 8), 1)
+            pygame.draw.line(
+                surface,
+                (180, 180, 255),
+                (drop[0], drop[1]),
+                (drop[0] + 3, drop[1] + 8),
+                1,
+            )
         SNOWFLAKES = []
     elif weather == "Snow":
         if not SNOWFLAKES:
             SNOWFLAKES = [
-                [random.randint(0, settings.SCREEN_WIDTH), random.randint(-settings.SCREEN_HEIGHT, 0), random.randint(1, 3)]
+                [
+                    random.randint(0, settings.SCREEN_WIDTH),
+                    random.randint(-settings.SCREEN_HEIGHT, 0),
+                    random.randint(1, 3),
+                ]
                 for _ in range(120)
             ]
         for flake in SNOWFLAKES:
@@ -349,7 +383,9 @@ def draw_weather(surface, weather):
             if flake[1] > settings.SCREEN_HEIGHT:
                 flake[0] = random.randint(0, settings.SCREEN_WIDTH)
                 flake[1] = random.randint(-40, 0)
-            pygame.draw.circle(surface, (255, 255, 255), (int(flake[0]), int(flake[1])), 2)
+            pygame.draw.circle(
+                surface, (255, 255, 255), (int(flake[0]), int(flake[1])), 2
+            )
         RAINDROPS = []
     else:
         RAINDROPS = []
@@ -372,13 +408,18 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     dealer_prog = f"{d_exp}/{d_need}" if d_need else "MAX"
     clinic_prog = f"{c_exp}/{c_need}" if c_need else "MAX"
     job_info = (
-        f"Office:{get_job_title(player, 'office')} L{player.office_level}({office_prog})  "
-        f"Dealer:{get_job_title(player, 'dealer')} L{player.dealer_level}({dealer_prog})  "
-        f"Clinic:{get_job_title(player, 'clinic')} L{player.clinic_level}({clinic_prog})"
+        f"Office:{get_job_title(player, 'office')} "
+        f"L{player.office_level}({office_prog})  "
+        f"Dealer:{get_job_title(player, 'dealer')} "
+        f"L{player.dealer_level}({dealer_prog})  "
+        f"Clinic:{get_job_title(player, 'clinic')} "
+        f"L{player.clinic_level}({clinic_prog})"
     )
     text = font.render(
-        f"Money: ${int(player.money)}  Tokens: {player.tokens}  Energy: {int(player.energy)}  Health: {int(player.health)}  "
-        f"STR:{player.strength} DEF:{player.defense} SPD:{player.speed} INT:{player.intelligence} CHA:{player.charisma}  "
+        f"Money: ${int(player.money)}  Tokens: {player.tokens}  "
+        f"Energy: {int(player.energy)}  Health: {int(player.health)}  "
+        f"STR:{player.strength} DEF:{player.defense} SPD:{player.speed} "
+        f"INT:{player.intelligence} CHA:{player.charisma}  "
         f"{job_info}  Day: {player.day}  Time: {time_str}",
         True,
         FONT_COLOR,
@@ -388,7 +429,12 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         ep_txt = font.render(player.epithet, True, FONT_COLOR)
         bar.blit(ep_txt, (settings.SCREEN_WIDTH // 2 - ep_txt.get_width() // 2, 6))
     res_txt = font.render(
-        f"M:{player.resources.get('metal',0)} C:{player.resources.get('cloth',0)} H:{player.resources.get('herbs',0)} S:{player.resources.get('seeds',0)} P:{player.resources.get('produce',0)} Craft:{player.crafting_level}",
+        f"M:{player.resources.get('metal', 0)} "
+        f"C:{player.resources.get('cloth', 0)} "
+        f"H:{player.resources.get('herbs', 0)} "
+        f"S:{player.resources.get('seeds', 0)} "
+        f"P:{player.resources.get('produce', 0)} "
+        f"Craft:{player.crafting_level}",
         True,
         FONT_COLOR,
     )
@@ -418,12 +464,17 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     h_txt = font.render("H", True, FONT_COLOR)
     bar.blit(e_txt, (6, 42))
     bar.blit(h_txt, (130, 42))
-    cd_txt = font.render(
-        f"Z:{player.ability_cooldowns['heavy']//60 if player.ability_cooldowns['heavy'] else 'R'} "
-        f"X:{player.ability_cooldowns['guard']//60 if player.ability_cooldowns['guard'] else 'R'}",
-        True,
-        FONT_COLOR,
+    heavy_cd = (
+        player.ability_cooldowns["heavy"] // 60
+        if player.ability_cooldowns["heavy"]
+        else "R"
     )
+    guard_cd = (
+        player.ability_cooldowns["guard"] // 60
+        if player.ability_cooldowns["guard"]
+        else "R"
+    )
+    cd_txt = font.render(f"Z:{heavy_cd} X:{guard_cd}", True, FONT_COLOR)
     bar.blit(cd_txt, (settings.SCREEN_WIDTH - cd_txt.get_width() - 20, 32))
     surface.blit(bar, (0, 0))
 
@@ -436,15 +487,19 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         quest_text = quests[player.current_quest].description
     if quest_text:
         qsurf = font.render(f"Quest: {quest_text}", True, FONT_COLOR)
-        qbg = pygame.Surface((qsurf.get_width() + 12, qsurf.get_height() + 4), pygame.SRCALPHA)
+        qbg = pygame.Surface(
+            (qsurf.get_width() + 12, qsurf.get_height() + 4), pygame.SRCALPHA
+        )
         qbg.fill((255, 255, 255, 220))
         surface.blit(qbg, (16, bar_height + 4))
         surface.blit(qsurf, (22, bar_height + 6))
 
 
+
 def draw_inventory_screen(surface, font, player, slot_rects, item_rects, dragging, hotkey_rects=None, furn_rects=None):
     """Display the inventory screen with equipment and items."""
     overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
@@ -462,7 +517,8 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         item = player.equipment.get(slot)
         if item:
             it = font.render(
-                f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed} C{item.combo}",
+                f"{item.name} Lv{item.level} A{item.attack} D{item.defense} "
+                f"S{item.speed} C{item.combo}",
                 True,
                 FONT_COLOR,
             )
@@ -471,7 +527,8 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
     for rect, item in item_rects:
         pygame.draw.rect(surface, (200, 220, 230), rect)
         txt = font.render(
-            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed} C{item.combo}",
+            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} "
+            f"S{item.speed} C{item.combo}",
             True,
             FONT_COLOR,
         )
@@ -480,7 +537,8 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
     if dragging:
         item, pos = dragging
         txt = font.render(
-            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} S{item.speed} C{item.combo}",
+            f"{item.name} Lv{item.level} A{item.attack} D{item.defense} "
+            f"S{item.speed} C{item.combo}",
             True,
             FONT_COLOR,
         )
@@ -491,10 +549,10 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         surface.blit(txt, (bg_rect.x + 4, bg_rect.y + 20))
 
     res = (
-        f"Metal:{player.resources.get('metal',0)} "
-        f"Cloth:{player.resources.get('cloth',0)} "
-        f"Herbs:{player.resources.get('herbs',0)} "
-        f"Produce:{player.resources.get('produce',0)}"
+        f"Metal:{player.resources.get('metal', 0)} "
+        f"Cloth:{player.resources.get('cloth', 0)} "
+        f"Herbs:{player.resources.get('herbs', 0)} "
+        f"Produce:{player.resources.get('produce', 0)}"
     )
     res_txt = font.render(res, True, FONT_COLOR)
     surface.blit(res_txt, (100, settings.SCREEN_HEIGHT - 120))
@@ -529,6 +587,7 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
 def draw_perk_menu(surface, font, player, perks):
     """Render the perk selection menu."""
     overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
@@ -553,6 +612,7 @@ def draw_perk_menu(surface, font, player, perks):
 def draw_quest_log(surface, font, quests, story_quests=None):
     """Show completed and active quests."""
     overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
@@ -586,7 +646,9 @@ def draw_quest_log(surface, font, quests, story_quests=None):
 
 def draw_help_screen(surface, font):
     """Show a simple overlay listing the main controls."""
-    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay = pygame.Surface(
+        (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA
+    )
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
@@ -642,9 +704,17 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_r
     surface.fill((235, 225, 200))
     # walls
     pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, 40))
-    pygame.draw.rect(surface, (160, 140, 110), (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40))
+    pygame.draw.rect(
+        surface,
+        (160, 140, 110),
+        (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40),
+    )
     pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, settings.SCREEN_HEIGHT))
-    pygame.draw.rect(surface, (160, 140, 110), (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT))
+    pygame.draw.rect(
+        surface,
+        (160, 140, 110),
+        (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT),
+    )
 
     # bed
     pygame.draw.rect(surface, (200, 70, 70), bed_rect)
@@ -652,7 +722,9 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_r
 
     # door
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
-    pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
+    pygame.draw.circle(
+        surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6
+    )
 
     for idx, rect in enumerate(furn_rects):
         pygame.draw.rect(surface, (200, 190, 150), rect)
@@ -662,12 +734,13 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_r
             txt = font.render(item.name, True, FONT_COLOR)
             surface.blit(txt, (rect.x + 4, rect.y + 20))
 
-    draw_player_sprite(surface, player.rect, frame, player.facing_left, player.color, player.head_color)
+    draw_player_sprite(
+        surface, player.rect, frame, player.facing_left, player.color, player.head_color
+    )
 
 
 def load_forest_enemy_images():
     """Load images for enemies in the forest area."""
-    global FOREST_ENEMY_IMAGES
     if FOREST_ENEMY_IMAGES:
         return FOREST_ENEMY_IMAGES
     for i in range(3):
@@ -686,13 +759,17 @@ def draw_forest_area(surface, font, player, frame, enemy_rects, door_rect):
     surface.fill((50, 140, 70))
 
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
-    pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
+    pygame.draw.circle(
+        surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6
+    )
 
     images = load_forest_enemy_images()
     for rect, img in zip(enemy_rects, images):
         surface.blit(img, rect)
 
-    draw_player_sprite(surface, player.rect, frame, player.facing_left, player.color, player.head_color)
+    draw_player_sprite(
+        surface, player.rect, frame, player.facing_left, player.color, player.head_color
+    )
 
 
 def draw_bar_interior(
@@ -711,15 +788,25 @@ def draw_bar_interior(
     surface.fill((225, 205, 170))
 
     pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, 40))
-    pygame.draw.rect(surface, (160, 140, 110), (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40))
+    pygame.draw.rect(
+        surface,
+        (160, 140, 110),
+        (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40),
+    )
     pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, settings.SCREEN_HEIGHT))
-    pygame.draw.rect(surface, (160, 140, 110), (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT))
+    pygame.draw.rect(
+        surface,
+        (160, 140, 110),
+        (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT),
+    )
 
     # counter for buying tokens
     pygame.draw.rect(surface, (120, 80, 60), counter_rect)
     pygame.draw.rect(surface, (180, 140, 100), counter_rect.inflate(-20, -20))
     ct = font.render("Tokens", True, FONT_COLOR)
-    surface.blit(ct, (counter_rect.x + 20, counter_rect.y + counter_rect.height // 2 - 10))
+    surface.blit(
+        ct, (counter_rect.x + 20, counter_rect.y + counter_rect.height // 2 - 10)
+    )
 
     # blackjack table
     pygame.draw.rect(surface, (60, 120, 60), bj_rect)
@@ -742,6 +829,10 @@ def draw_bar_interior(
     surface.blit(fb, (brawl_rect.x + 20, brawl_rect.y + brawl_rect.height // 2 - 10))
 
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
-    pygame.draw.circle(surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6)
+    pygame.draw.circle(
+        surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6
+    )
 
-    draw_player_sprite(surface, player.rect, frame, player.facing_left, player.color, player.head_color)
+    draw_player_sprite(
+        surface, player.rect, frame, player.facing_left, player.color, player.head_color
+    )

@@ -1,9 +1,12 @@
 """Quest and event data split from game.py."""
+
 from __future__ import annotations
 import os
 import json
 import random
 from typing import List, Tuple
+
+from loaders import load_quests, load_sidequests
 
 import pygame
 
@@ -35,23 +38,7 @@ CARD_NAMES = [
 ]
 
 # Storyline quests completed in order
-QUESTS: List[Quest] = [
-    Quest("Earn $200", lambda p: p.money >= 200),
-    Quest("Reach STR 5", lambda p: p.strength >= 5),
-    Quest("Reach INT 5", lambda p: p.intelligence >= 5),
-    Quest("Earn $300", lambda p: p.money >= 300, next_index=1),
-    Quest("Reach STR 5", lambda p: p.strength >= 5, next_index=2),
-    Quest(
-        "Defeat 3 alley thugs",
-        lambda p: p.enemies_defeated >= 3,
-        next_index=3,
-    ),
-    Quest(
-        "Own every home upgrade",
-        lambda p: set(p.home_upgrades) == {u[0] for u in HOME_UPGRADES},
-        next_index=None,
-    ),
-]
+QUESTS: List[Quest] = load_quests()
 
 # Building targets for quest markers
 QUEST_TARGETS = {
@@ -65,29 +52,10 @@ QUEST_TARGETS = {
 }
 
 # Optional side quests
-SIDE_QUEST = SideQuest(
-    "Bank Delivery",
-    "Deliver paperwork from the Bank to the Library",
-    "library",
-    lambda p: setattr(p, "money", p.money + 50),
-)
-
-NPC_QUEST = SideQuest(
-    "Courier Errand",
-    "Deliver a package from Sam to the Gym",
-    "gym",
-    lambda p: setattr(p, "money", p.money + 30),
-)
-
-MALL_QUEST = SideQuest(
-    "Beach Delivery",
-    "Pick up sunglasses from the Mall and bring them to the Beach",
-    "beach",
-    lambda p: setattr(p, "money", p.money + 40),
-)
-
-# Lookup active side quests by name
-SIDE_QUESTS = {q.name: q for q in [SIDE_QUEST, NPC_QUEST, MALL_QUEST]}
+SIDE_QUESTS = load_sidequests()
+SIDE_QUEST = SIDE_QUESTS.get("Bank Delivery")
+NPC_QUEST = SIDE_QUESTS.get("Courier Errand")
+MALL_QUEST = SIDE_QUESTS.get("Beach Delivery")
 
 # Friendly townsfolk found around the city
 NPCS = [
@@ -115,6 +83,7 @@ STORY_TARGETS = {
 
 
 # Event helpers
+
 
 def _ev_found_money(p: Player) -> None:
     """Give the player a small amount of money."""
@@ -393,10 +362,7 @@ def check_perk_unlocks(player: Player) -> bool:
 
 def check_hidden_perks(player: Player) -> str | None:
     """Unlock secret perks when requirements are met."""
-    if (
-        player.brawls_won >= BRAWLER_COUNT
-        and "Bar Champion" not in player.perk_levels
-    ):
+    if player.brawls_won >= BRAWLER_COUNT and "Bar Champion" not in player.perk_levels:
         player.perk_levels["Bar Champion"] = 1
         return "Secret perk unlocked: Bar Champion!"
     if (
@@ -413,10 +379,7 @@ def check_hidden_perks(player: Player) -> str | None:
 
 def check_achievements(player: Player) -> str | None:
     """Unlock achievements based on notable milestones."""
-    if (
-        "First Blood" not in player.achievements
-        and player.enemies_defeated >= 1
-    ):
+    if "First Blood" not in player.achievements and player.enemies_defeated >= 1:
         player.achievements.append("First Blood")
         player.epithet = ACHIEVEMENT_EPITHETS.get("First Blood", player.epithet)
         return "Achievement unlocked: First Blood!"
@@ -431,9 +394,8 @@ def check_achievements(player: Player) -> str | None:
         player.achievements.append("Wealthy")
         player.epithet = ACHIEVEMENT_EPITHETS.get("Wealthy", player.epithet)
         return "Achievement unlocked: Wealthy!"
-    if (
-        "Story Hero" not in player.achievements
-        and all(q.completed for q in STORY_QUESTS)
+    if "Story Hero" not in player.achievements and all(
+        q.completed for q in STORY_QUESTS
     ):
         player.achievements.append("Story Hero")
         update_leaderboard(player)

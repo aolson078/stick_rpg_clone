@@ -1,0 +1,9 @@
+[
+    {"description": "Earn $200", "next_index": null},
+    {"description": "Reach STR 5", "next_index": null},
+    {"description": "Reach INT 5", "next_index": null},
+    {"description": "Earn $300", "next_index": 1},
+    {"description": "Reach STR 5", "next_index": 2},
+    {"description": "Defeat 3 alley thugs", "next_index": 3},
+    {"description": "Own every home upgrade", "next_index": null}
+]
