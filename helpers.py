@@ -88,6 +88,7 @@ def recalc_layouts() -> None:
 
 
 def compute_slot_rects() -> Dict[str, pygame.Rect]:
+    """Return rects for each equipment slot."""
     left = settings.SCREEN_WIDTH // 10
     top = settings.SCREEN_HEIGHT // 6
     w, h = 100, 60
@@ -102,6 +103,7 @@ def compute_slot_rects() -> Dict[str, pygame.Rect]:
 
 
 def compute_hotkey_rects() -> List[pygame.Rect]:
+    """Return rects for quick item hotkey slots."""
     base = settings.SCREEN_WIDTH // 2 - 170
     y = settings.SCREEN_HEIGHT - 80
     w, h = 60, 40
@@ -109,6 +111,7 @@ def compute_hotkey_rects() -> List[pygame.Rect]:
 
 
 def compute_furniture_rects(player: Player) -> List[pygame.Rect]:
+    """Return rects for movable home furniture."""
     rects = []
     for i, base in enumerate(FURNITURE_RECTS, 1):
         pos = player.furniture_pos.get(f"slot{i}", (base.x, base.y))
@@ -117,6 +120,7 @@ def compute_furniture_rects(player: Player) -> List[pygame.Rect]:
 
 
 def init_furniture_positions(player: Player) -> None:
+    """Initialize furniture slots if coordinates are unset."""
     for i, base in enumerate(FURNITURE_RECTS, 1):
         slot = f"slot{i}"
         if player.furniture_pos.get(slot) == (0, 0):
@@ -175,9 +179,8 @@ OPEN_HOURS = {
 
 SEASONS = ["Spring", "Summer", "Fall", "Winter"]
 WEATHERS = ["Clear", "Rain", "Snow"]
-
-
 def building_open(btype: str, minutes: float, player: Player) -> bool:
+    """Check if a building type is open at the given time."""
     start, end = OPEN_HOURS.get(btype, (0, 24))
     hour = (minutes / 60) % 24
     if start <= end:
@@ -196,6 +199,7 @@ def building_open(btype: str, minutes: float, player: Player) -> bool:
 
 
 def update_weather(player: Player) -> None:
+    """Randomly set the current season and weather."""
     season_index = ((player.day - 1) // 30) % len(SEASONS)
     player.season = SEASONS[season_index]
     if player.season == "Winter":
@@ -210,6 +214,7 @@ def update_weather(player: Player) -> None:
 
 
 def advance_day(player: Player) -> int:
+    """Increment the day counter and apply daily effects."""
     player.day += 1
     update_weather(player)
     interest = int(player.bank_balance * 0.01)
@@ -219,6 +224,7 @@ def advance_day(player: Player) -> int:
 
 
 def sleep(player: Player) -> Optional[str]:
+    """Restore energy, advance the day, and handle home bonuses."""
     player.energy = 100
     if "Comfy Bed" in player.home_upgrades:
         player.energy += 20
@@ -260,6 +266,7 @@ def sleep(player: Player) -> Optional[str]:
 
 
 def play_blackjack(player: Player) -> str:
+    """Play a simple blackjack game using one token."""
     if player.tokens < 1:
         return "No tokens left!"
     player.tokens -= 1
@@ -277,6 +284,7 @@ def play_blackjack(player: Player) -> str:
 
 
 def play_slots(player: Player) -> str:
+    """Spin the slot machine to try for token rewards."""
     if player.tokens < 1:
         return "No tokens left!"
     player.tokens -= 1
@@ -291,6 +299,7 @@ def play_slots(player: Player) -> str:
 
 
 def play_darts(player: Player) -> str:
+    """Throw darts to win tokens based on your score."""
     if player.tokens < 1:
         return "No tokens left!"
     player.tokens -= 1
@@ -305,6 +314,7 @@ def play_darts(player: Player) -> str:
 
 
 def go_fishing(player: Player) -> str:
+    """Fish at the park and possibly earn money or herbs."""
     if player.energy < 5:
         return "Too tired to fish!"
     player.energy -= energy_cost(player, 5)
@@ -319,6 +329,7 @@ def go_fishing(player: Player) -> str:
 
 
 def solve_puzzle(player: Player) -> str:
+    """Attempt the library puzzle for a cash reward."""
     if player.energy < 5:
         return "Too tired to think!"
     player.energy -= energy_cost(player, 5)
@@ -331,6 +342,7 @@ def solve_puzzle(player: Player) -> str:
 
 
 def dig_for_treasure(player: Player) -> str:
+    """Dig on the beach for cash or rare items."""
     if player.energy < 5:
         return "Too tired to dig!"
     player.energy -= energy_cost(player, 5)
@@ -355,6 +367,7 @@ SAVE_FILE = "savegame.json"
 
 
 def save_game(player: Player) -> None:
+    """Serialize all player data to disk."""
     data = {
         "name": player.name,
         "color": list(player.color),
@@ -430,6 +443,7 @@ def save_game(player: Player) -> None:
 
 
 def load_game() -> Optional[Player]:
+    """Load saved player state if a save file exists."""
     if not os.path.exists(SAVE_FILE):
         return None
     with open(SAVE_FILE) as f:

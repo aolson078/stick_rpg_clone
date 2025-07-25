@@ -1,3 +1,4 @@
+"""Rendering helper functions for sprites, UI, and locations."""
 import math
 import os
 import random
@@ -155,6 +156,7 @@ def draw_quest_marker(surface, player_rect, target_rect, cam_x, cam_y):
 
 
 def building_color(btype):
+    """Return the color used to draw a building type."""
     if btype == "home":
         return HOME_COLOR
     if btype == "job":
@@ -185,6 +187,7 @@ def building_color(btype):
 
 
 def draw_building(surface, building, highlight=False):
+    """Draw a city building, optionally highlighted."""
     b = building.rect
     color = building_color(building.btype)
     if highlight:
@@ -224,6 +227,7 @@ def draw_building(surface, building, highlight=False):
 
 
 def draw_road_and_sidewalks(surface, cam_x, cam_y):
+    """Draw the road and sidewalk tiles of the city."""
     road_rect = pygame.Rect(0 - cam_x, 470 - cam_y, MAP_WIDTH, 60)
     pygame.draw.rect(surface, ROAD_COLOR, road_rect)
     pygame.draw.rect(surface, SIDEWALK_COLOR, (0 - cam_x, 460 - cam_y, MAP_WIDTH, 10))
@@ -235,6 +239,7 @@ def draw_road_and_sidewalks(surface, cam_x, cam_y):
 
 
 def draw_city_walls(surface, cam_x, cam_y):
+    """Draw the outer walls surrounding the city map."""
     pygame.draw.rect(surface, CITY_WALL_COLOR, (-cam_x, -cam_y, MAP_WIDTH, 12))
     pygame.draw.rect(
         surface, CITY_WALL_COLOR, (-cam_x, MAP_HEIGHT - 12 - cam_y, MAP_WIDTH, 12)
@@ -388,6 +393,7 @@ def draw_weather(surface, weather):
 
 
 def draw_ui(surface, font, player, quests, story_quests=None):
+    """Render the main HUD bar showing player stats."""
 
     bar_height = 60
     bar = pygame.Surface((settings.SCREEN_WIDTH, bar_height), pygame.SRCALPHA)
@@ -489,19 +495,11 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         surface.blit(qsurf, (22, bar_height + 6))
 
 
-def draw_inventory_screen(
-    surface,
-    font,
-    player,
-    slot_rects,
-    item_rects,
-    dragging,
-    hotkey_rects=None,
-    furn_rects=None,
-):
-    overlay = pygame.Surface(
-        (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA
-    )
+
+def draw_inventory_screen(surface, font, player, slot_rects, item_rects, dragging, hotkey_rects=None, furn_rects=None):
+    """Display the inventory screen with equipment and items."""
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
@@ -587,9 +585,9 @@ def draw_inventory_screen(
 
 
 def draw_perk_menu(surface, font, player, perks):
-    overlay = pygame.Surface(
-        (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA
-    )
+    """Render the perk selection menu."""
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
@@ -612,9 +610,9 @@ def draw_perk_menu(surface, font, player, perks):
 
 
 def draw_quest_log(surface, font, quests, story_quests=None):
-    overlay = pygame.Surface(
-        (settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA
-    )
+    """Show completed and active quests."""
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+
     overlay.fill((0, 0, 0, 160))
     surface.blit(overlay, (0, 0))
 
@@ -690,6 +688,7 @@ def draw_tip_panel(surface, font, text):
 
 
 def draw_hotkey_bar(surface, font, player, rects):
+    """Render hotkey slots showing bound items."""
     for i, rect in enumerate(rects):
         pygame.draw.rect(surface, (210, 210, 210), rect)
         label = font.render(str(i + 1), True, FONT_COLOR)

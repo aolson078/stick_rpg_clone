@@ -1,3 +1,4 @@
+"""Data classes for players, items, and NPC entities."""
 from dataclasses import dataclass, field
 from typing import Callable, List, Dict, Optional, Tuple
 import pygame
