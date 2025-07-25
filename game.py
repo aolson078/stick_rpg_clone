@@ -108,6 +108,8 @@ from helpers import (
     go_fishing,
     solve_puzzle,
     dig_for_treasure,
+    card_duel,
+    
     save_game,
     load_game,
     HOME_WIDTH,
@@ -916,7 +918,10 @@ def main():
                         else:
                             continue
                         shop_message_timer = 60
-                    elif in_building == "workshop":
+                elif in_building == "mall" and event.key == pygame.K_c:
+                    shop_message = card_duel(player)
+                    shop_message_timer = 60
+                elif in_building == "workshop":
                         if event.key == pygame.K_1:
                             if player.resources.get("herbs", 0) >= 2:
                                 player.resources["herbs"] -= 2
@@ -1562,7 +1567,7 @@ def main():
             elif near_building.btype == "business":
                 msg = "[E] manage or 1-2 buy"
             elif near_building.btype == "mall":
-                msg = "[E] to browse the mall"
+                msg = "[E] to browse the mall  [C] card duel"
             elif near_building.btype == "beach":
                 msg = "[E] to relax"
                 msg += "  [D] dig"
@@ -1635,7 +1640,7 @@ def main():
                     opts.append(f"{i+1}:{name} {status}")
                 txt = " ".join(opts) + "  E:Manage  [Q] Leave"
             elif in_building == "mall":
-                txt = "[E] Pick up order  [Q] Leave"
+                txt = "[E] Pick up order  C:Duel  [Q] Leave"
             elif in_building == "beach":
                 txt = "[E] Relax/Deliver  D:Dig  [Q] Leave"
             elif in_building == "suburbs":

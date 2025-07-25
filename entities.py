@@ -56,6 +56,9 @@ class Player:
 
     brawls_won: int = 0
 
+    # Wins in the trading card duel mini-game
+    card_duels_won: int = 0
+
     enemies_defeated: int = 0
 
     boss_defeated: bool = False
