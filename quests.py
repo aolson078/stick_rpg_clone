@@ -21,6 +21,8 @@ ACHIEVEMENT_EPITHETS = {
     "Wealthy": "the Rich",
     "Story Hero": "the Hero",
     "Boss Slayer": "the Slayer",
+    "Card Master": "the Duelist",
+    "Card Collector": "the Collector",
 }
 
 # Names of collectible trading cards
@@ -405,4 +407,18 @@ def check_achievements(player: Player) -> str | None:
         player.achievements.append("Boss Slayer")
         player.epithet = ACHIEVEMENT_EPITHETS.get("Boss Slayer", player.epithet)
         return "Achievement unlocked: Boss Slayer!"
+    if (
+        "Card Master" not in player.achievements
+        and player.card_duels_won >= 5
+    ):
+        player.achievements.append("Card Master")
+        player.epithet = ACHIEVEMENT_EPITHETS.get("Card Master", player.epithet)
+        return "Achievement unlocked: Card Master!"
+    if (
+        "Card Collector" not in player.achievements
+        and set(player.cards) >= set(CARD_NAMES)
+    ):
+        player.achievements.append("Card Collector")
+        player.epithet = ACHIEVEMENT_EPITHETS.get("Card Collector", player.epithet)
+        return "Achievement unlocked: Card Collector!"
     return None
