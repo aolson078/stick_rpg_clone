@@ -423,6 +423,7 @@ def save_game(player: Player) -> None:
         "relationships": player.relationships,
         "last_talk": player.last_talk,
         "romanced": player.romanced,
+        "reputation": player.reputation,
         "x": player.rect.x,
         "y": player.rect.y,
         "quests": [q.completed for q in QUESTS],
@@ -535,6 +536,9 @@ def load_game() -> Optional[Player]:
     player.relationships = data.get("relationships", {})
     player.last_talk = data.get("last_talk", {})
     player.romanced = data.get("romanced", [])
+    player.reputation = data.get(
+        "reputation", {"mayor": 0, "business": 0, "gang": 0}
+    )
     for completed, q in zip(data.get("quests", []), QUESTS):
         q.completed = completed
     return player

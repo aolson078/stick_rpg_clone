@@ -148,6 +148,11 @@ class Player:
     last_talk: Dict[str, int] = field(default_factory=dict)
     romanced: List[str] = field(default_factory=list)
 
+    # Reputation with various city factions
+    reputation: Dict[str, int] = field(
+        default_factory=lambda: {"mayor": 0, "business": 0, "gang": 0}
+    )
+
 
 @dataclass
 class Quest:
