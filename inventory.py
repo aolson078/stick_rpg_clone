@@ -3,6 +3,7 @@
 from typing import List, Tuple
 from entities import Player, InventoryItem
 from combat import energy_cost
+import factions
 
 # Items sold at the shop: name, cost, and effect
 SHOP_ITEMS: List[Tuple[str, int, any]] = [
@@ -114,6 +115,7 @@ def buy_shop_item(player: Player, index: int) -> str:
     name, cost, effect = SHOP_ITEMS[index]
     if name == "Skateboard" and player.has_skateboard:
         return "Already have skateboard"
+    cost = factions.business_price(player, cost)
     if player.money < cost:
         return "Not enough money!"
     player.money -= cost
