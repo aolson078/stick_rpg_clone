@@ -70,6 +70,7 @@ from quests import (
     update_npcs,
     advance_story,
     check_story,
+    choose_story_branch,
 )
 
 from careers import work_job, get_job_title, job_pay
@@ -1116,13 +1117,10 @@ def main():
                             player.story_stage = 1
                             shop_message = "Mayor: Help clean up the city? Y/N"
                         elif player.story_stage == 1 and event.key == pygame.K_y:
-                            player.story_branch = "mayor"
-                            player.story_stage = 2
+                            choose_story_branch(player, "mayor")
                             shop_message = "Mayor: Defeat 3 thugs in the alley."
                         elif player.story_stage == 1 and event.key == pygame.K_n:
-                            player.story_branch = "gang"
-                            player.story_stage = 2
-                            player.side_quest = "Gang Package"
+                            choose_story_branch(player, "gang")
                             shop_message = "A shady figure gives you a package."
                         elif (
                             player.story_branch == "mayor"

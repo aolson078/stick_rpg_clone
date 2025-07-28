@@ -1,5 +1,6 @@
 [
     {"name": "Bank Delivery", "description": "Deliver paperwork from the Bank to the Library", "target": "library", "reward": 50},
     {"name": "Courier Errand", "description": "Deliver a package from Sam to the Gym", "target": "gym", "reward": 30},
-    {"name": "Beach Delivery", "description": "Pick up sunglasses from the Mall and bring them to the Beach", "target": "beach", "reward": 40}
+    {"name": "Beach Delivery", "description": "Pick up sunglasses from the Mall and bring them to the Beach", "target": "beach", "reward": 40},
+    {"name": "Mayor Letter", "description": "Take a letter from the Mayor to the Library", "target": "library", "reward": 60}
 ]
