@@ -58,6 +58,7 @@ SIDE_QUESTS = load_sidequests()
 SIDE_QUEST = SIDE_QUESTS.get("Bank Delivery")
 NPC_QUEST = SIDE_QUESTS.get("Courier Errand")
 MALL_QUEST = SIDE_QUESTS.get("Beach Delivery")
+MAYOR_QUEST = SIDE_QUESTS.get("Mayor Letter")
 
 # Friendly townsfolk found around the city
 NPCS = [
@@ -73,6 +74,14 @@ STORY_QUESTS = [
     Quest("Choose an allegiance", lambda p: p.story_stage >= 2),
     Quest("Prove your loyalty", lambda p: p.story_stage >= 3),
     Quest("Report back to your ally", lambda p: p.story_stage >= 4),
+    Quest(
+        "Secure the Mayor's victory",
+        lambda p: p.story_branch == "mayor" and p.story_stage >= 4,
+    ),
+    Quest(
+        "Let the Gang seize control",
+        lambda p: p.story_branch == "gang" and p.story_stage >= 4,
+    ),
 ]
 
 # Suggested locations for story objectives
@@ -286,6 +295,16 @@ def update_npcs():
             rect = npc.rect.move(dx * 4, dy * 4)
             if 0 <= rect.x <= 1600 - 40 and 0 <= rect.y <= 1200 - 40:
                 npc.rect = rect
+
+
+def choose_story_branch(player: Player, branch: str) -> None:
+    """Set the player's chosen quest branch and initial tasks."""
+    player.story_branch = branch
+    player.story_stage = 2
+    if branch == "gang":
+        player.side_quest = "Gang Package"
+    elif branch == "mayor":
+        player.side_quest = MAYOR_QUEST.name if MAYOR_QUEST else None
 
 
 def advance_story(player: Player) -> None:
