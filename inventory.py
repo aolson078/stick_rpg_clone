@@ -271,3 +271,15 @@ def gain_crafting_exp(player: Player, amount: int = 5) -> str:
         player.crafting_level += 1
         msg = f"Crafting leveled to {player.crafting_level}!"
     return msg
+
+
+def repair_equipment(player: Player) -> str:
+    """Restore durability of all equipped items using 1 metal."""
+    if player.resources.get("metal", 0) < 1:
+        return "Need 1 metal"
+    player.resources["metal"] -= 1
+    for item in player.equipment.values():
+        if item:
+            item.durability = item.max_durability
+    lvl_msg = gain_crafting_exp(player)
+    return "Equipment repaired" + (f"  {lvl_msg}" if lvl_msg else "")

@@ -106,7 +106,7 @@ grant small bonuses like extra defense or charisma and may help you find money
 or tokens. Companions can be trained at the Pet Shop to improve these bonuses
 and unlock stronger abilities.
 
-A new **Workshop** lets you craft and upgrade gear. Fights and events can
+A new **Workshop** lets you craft, upgrade, and now repair your gear. Fights and events can
 yield metal, cloth, and herbs. Spend these resources to brew Health Potions,
 forge stronger weapons, or enhance your armor.
 You can also craft home decorations, brew Energy Potions, and forge a

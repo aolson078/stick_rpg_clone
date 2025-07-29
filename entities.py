@@ -213,3 +213,5 @@ class InventoryItem:
     level: int = 0
     # melee, ranged or magic for weapons
     weapon_type: str = "melee"
+    max_durability: int = 100
+    durability: int = 100
