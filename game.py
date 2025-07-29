@@ -60,6 +60,7 @@ from quests import (
     SIDE_QUEST,
     NPC_QUEST,
     MALL_QUEST,
+    RELATIONSHIP_QUESTS,
     NPCS,
     STORY_QUESTS,
     check_quests,
@@ -230,6 +231,8 @@ SECRET_PERKS = [
 
 # Maximum hearts an NPC can have
 MAX_HEARTS = 10
+REL_QUEST_THRESHOLD = 5
+MARRIAGE_THRESHOLD = MAX_HEARTS
 
 
 
@@ -1326,9 +1329,25 @@ def main():
                         player.relationships[near_npc.name] = hearts
                         player.last_talk[near_npc.name] = player.day
                         text = f"+1 heart ({hearts}/{MAX_HEARTS})"
+                        if (
+                            hearts >= REL_QUEST_THRESHOLD
+                            and player.relationship_stage.get(near_npc.name, 0) < 1
+                        ):
+                            quest = RELATIONSHIP_QUESTS.get(near_npc.name)
+                            if quest and player.side_quest is None:
+                                player.side_quest = quest.name
+                                player.relationship_stage[near_npc.name] = 1
+                                text = quest.description
                     if hearts >= 8 and near_npc.name not in player.romanced:
                         player.romanced.append(near_npc.name)
                         text = f"You are now dating {near_npc.name}!"
+                    if (
+                        hearts >= MARRIAGE_THRESHOLD
+                        and near_npc.name in player.romanced
+                        and player.married_to is None
+                    ):
+                        player.married_to = near_npc.name
+                        text = f"You married {near_npc.name}!"
                 elif near_npc.quest is None:
                     text = "Good to see you."
                 near_npc.bubble_message = text
@@ -1342,9 +1361,25 @@ def main():
                 player.relationships[near_npc.name] = hearts
                 player.last_talk[near_npc.name] = player.day
                 text = f"Gave {item.name}! ({hearts}/{MAX_HEARTS})"
+                if (
+                    hearts >= REL_QUEST_THRESHOLD
+                    and player.relationship_stage.get(near_npc.name, 0) < 1
+                ):
+                    quest = RELATIONSHIP_QUESTS.get(near_npc.name)
+                    if quest and player.side_quest is None:
+                        player.side_quest = quest.name
+                        player.relationship_stage[near_npc.name] = 1
+                        text = quest.description
                 if hearts >= 8 and near_npc.name not in player.romanced:
                     player.romanced.append(near_npc.name)
                     text = f"{near_npc.name} is now your partner!"
+                if (
+                    hearts >= MARRIAGE_THRESHOLD
+                    and near_npc.name in player.romanced
+                    and player.married_to is None
+                ):
+                    player.married_to = near_npc.name
+                    text = f"You married {near_npc.name}!"
                 near_npc.bubble_message = text
                 near_npc.bubble_timer = 90
                 shop_message = f"{near_npc.name}: {text}"

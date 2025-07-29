@@ -423,6 +423,8 @@ def save_game(player: Player) -> None:
         "relationships": player.relationships,
         "last_talk": player.last_talk,
         "romanced": player.romanced,
+        "relationship_stage": player.relationship_stage,
+        "married_to": player.married_to,
         "reputation": player.reputation,
         "x": player.rect.x,
         "y": player.rect.y,
@@ -536,6 +538,8 @@ def load_game() -> Optional[Player]:
     player.relationships = data.get("relationships", {})
     player.last_talk = data.get("last_talk", {})
     player.romanced = data.get("romanced", [])
+    player.relationship_stage = data.get("relationship_stage", {})
+    player.married_to = data.get("married_to")
     player.reputation = data.get(
         "reputation", {"mayor": 0, "business": 0, "gang": 0}
     )
