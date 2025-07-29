@@ -3,4 +3,7 @@
     {"name": "Courier Errand", "description": "Deliver a package from Sam to the Gym", "target": "gym", "reward": 30},
     {"name": "Beach Delivery", "description": "Pick up sunglasses from the Mall and bring them to the Beach", "target": "beach", "reward": 40},
     {"name": "Mayor Letter", "description": "Take a letter from the Mayor to the Library", "target": "library", "reward": 60}
+    ,{"name": "Alice's Concert", "description": "Attend a show with Alice at the Theater", "target": "theater", "reward": 100}
+    ,{"name": "Bella's Necklace", "description": "Find Bella's lost necklace near the Forest", "target": "forest", "reward": 80}
+    ,{"name": "Chris's Training", "description": "Spar with Chris at the Gym", "target": "gym", "reward": 70}
 ]

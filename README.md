@@ -179,8 +179,9 @@ to complete your collection!
 
 A simple social system lets you befriend townsfolk. Talk to residents each day
 to earn hearts and give them items from your inventory for an extra boost. Reach
-eight hearts with someone to start dating them. Three characters can be
-romanced: **Alice**, **Bella**, and **Chris**.
+eight hearts with someone to start dating them. Building deeper friendships can
+uncover personal side quests and even lead to marriage once you hit ten hearts.
+Three characters can be romanced: **Alice**, **Bella**, and **Chris**.
 
 You can save your progress with **F5** and load it back with **F9**. If a
 `savegame.json` file exists, it will automatically be loaded when the game

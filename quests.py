@@ -59,6 +59,14 @@ SIDE_QUEST = SIDE_QUESTS.get("Bank Delivery")
 NPC_QUEST = SIDE_QUESTS.get("Courier Errand")
 MALL_QUEST = SIDE_QUESTS.get("Beach Delivery")
 MAYOR_QUEST = SIDE_QUESTS.get("Mayor Letter")
+ALICE_REL_QUEST = SIDE_QUESTS.get("Alice's Concert")
+BELLA_REL_QUEST = SIDE_QUESTS.get("Bella's Necklace")
+CHRIS_REL_QUEST = SIDE_QUESTS.get("Chris's Training")
+RELATIONSHIP_QUESTS = {
+    "Alice": ALICE_REL_QUEST,
+    "Bella": BELLA_REL_QUEST,
+    "Chris": CHRIS_REL_QUEST,
+}
 
 # Friendly townsfolk found around the city
 NPCS = [

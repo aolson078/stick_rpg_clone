@@ -147,6 +147,9 @@ class Player:
     relationships: Dict[str, int] = field(default_factory=dict)
     last_talk: Dict[str, int] = field(default_factory=dict)
     romanced: List[str] = field(default_factory=list)
+    # Additional relationship milestones and marriage state
+    relationship_stage: Dict[str, int] = field(default_factory=dict)
+    married_to: Optional[str] = None
 
     # Reputation with various city factions
     reputation: Dict[str, int] = field(
