@@ -62,10 +62,45 @@ MAYOR_QUEST = SIDE_QUESTS.get("Mayor Letter")
 
 # Friendly townsfolk found around the city
 NPCS = [
-    NPC(pygame.Rect(500, 500, 40, 40), "Sam", NPC_QUEST),
-    NPC(pygame.Rect(600, 400, 40, 40), "Alice", None, True, "F"),
-    NPC(pygame.Rect(700, 600, 40, 40), "Bella", None, True, "F"),
-    NPC(pygame.Rect(400, 700, 40, 40), "Chris", None, True, "M"),
+    NPC(
+        pygame.Rect(500, 500, 40, 40),
+        "Sam",
+        quest=NPC_QUEST,
+        home="suburbs",
+        work="townhall",
+        work_start=9,
+        work_end=17,
+    ),
+    NPC(
+        pygame.Rect(600, 400, 40, 40),
+        "Alice",
+        romanceable=True,
+        gender="F",
+        home="suburbs",
+        work="shop",
+        work_start=10,
+        work_end=18,
+    ),
+    NPC(
+        pygame.Rect(700, 600, 40, 40),
+        "Bella",
+        romanceable=True,
+        gender="F",
+        home="suburbs",
+        work="clinic",
+        work_start=8,
+        work_end=16,
+    ),
+    NPC(
+        pygame.Rect(400, 700, 40, 40),
+        "Chris",
+        romanceable=True,
+        gender="M",
+        home="suburbs",
+        work="gym",
+        work_start=6,
+        work_end=14,
+    ),
 ]
 
 # Main storyline quests progressed via story_stage
@@ -287,14 +322,40 @@ def random_event(player: Player, location: str | None = None) -> str | None:
     return None
 
 
-def update_npcs():
-    """Move NPCs randomly around the city map."""
+def _in_schedule(hour: int, start: int, end: int) -> bool:
+    """Return True if the hour falls within the time window."""
+    if start <= end:
+        return start <= hour < end
+    return hour >= start or hour < end
+
+
+def update_npcs(player: Player, buildings: List[Building]) -> None:
+    """Move NPCs toward their scheduled locations."""
+    hour = int(player.time) // 60
     for npc in NPCS:
-        if random.random() < 0.05:
-            dx, dy = random.choice([(1, 0), (-1, 0), (0, 1), (0, -1)])
-            rect = npc.rect.move(dx * 4, dy * 4)
-            if 0 <= rect.x <= 1600 - 40 and 0 <= rect.y <= 1200 - 40:
-                npc.rect = rect
+        target = npc.home
+        if npc.work and _in_schedule(hour, npc.work_start, npc.work_end):
+            target = npc.work
+        building = next((b for b in buildings if b.btype == target), None)
+        if not building:
+            continue
+        dest_x = building.rect.centerx - npc.rect.width // 2
+        dest_y = building.rect.centery - npc.rect.height // 2
+
+        dx = 0
+        dy = 0
+        if npc.rect.x < dest_x:
+            dx = min(4, dest_x - npc.rect.x)
+        elif npc.rect.x > dest_x:
+            dx = -min(4, npc.rect.x - dest_x)
+        if npc.rect.y < dest_y:
+            dy = min(4, dest_y - npc.rect.y)
+        elif npc.rect.y > dest_y:
+            dy = -min(4, npc.rect.y - dest_y)
+
+        rect = npc.rect.move(dx, dy)
+        if 0 <= rect.x <= 1600 - 40 and 0 <= rect.y <= 1200 - 40:
+            npc.rect = rect
 
 
 def choose_story_branch(player: Player, branch: str) -> None:
