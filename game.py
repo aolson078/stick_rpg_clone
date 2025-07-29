@@ -45,6 +45,7 @@ from inventory import (
     harvest_crops,
     sell_produce,
     gain_crafting_exp,
+    repair_equipment,
 )
 from businesses import BUSINESSES, buy_business, manage_business
 from loaders import load_buildings
@@ -1032,6 +1033,8 @@ def main():
                                     shop_message += f"  {lvl_msg}"
                             else:
                                 shop_message = "Need 2 produce"
+                        elif event.key == pygame.K_9:
+                            shop_message = repair_equipment(player)
                         else:
                             continue
                         shop_message_timer = 60
@@ -1663,7 +1666,7 @@ def main():
                     txt += "  T:Train"
                 txt += "  [Q] Leave"
             elif in_building == "workshop":
-                txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm  [Q] Leave"
+                txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm 9 Repair  [Q] Leave"
             elif in_building == "farm":
                 txt = "[P] Plant seed  [H] Harvest  S:Sell  [Q] Leave"
             elif in_building == "business":
@@ -1716,6 +1719,7 @@ def main():
                     ("6:Energy Potion (3 herbs)", 2),
                     ("7:Flaming Sword (5 metal,2 herbs)", 3),
                     ("8:Fruit Pie (2 produce)", 3),
+                    ("9:Repair Gear (1 metal)", 1),
                 ]
                 for i, (txt_opt, req) in enumerate(opts):
                     if player.crafting_level < req:

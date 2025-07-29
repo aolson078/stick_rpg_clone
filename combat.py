@@ -30,6 +30,17 @@ BLEED_TURNS = 3
 BLEED_DAMAGE = 1
 
 
+def _damage_equipment(player: Player, amount: int = 1) -> List[str]:
+    """Reduce durability on all equipped items and return any that broke."""
+    broken: List[str] = []
+    for slot, item in player.equipment.items():
+        if item:
+            item.durability = max(0, item.durability - amount)
+            if item.durability == 0:
+                broken.append(item.name)
+    return broken
+
+
 def energy_cost(player: Player, base: float) -> float:
     """Return energy cost adjusted by Iron Will and secret perks."""
     level = player.perk_levels.get("Iron Will", 0)
@@ -61,7 +72,7 @@ def _combat_stats(player: Player) -> Tuple[int, int, int, int]:
     elif player.companion == "Rhino":
         atk += 1
     for item in player.equipment.values():
-        if item:
+        if item and item.durability > 0:
             atk += item.attack
             df += item.defense
             spd += item.speed
@@ -113,6 +124,7 @@ def fight_brawler(player: Player) -> str:
             bleed_turns -= 1
     player.health = max(p_hp, 0)
     if p_hp <= 0:
+        _damage_equipment(player)
         return "You lost the fight!"
     reward = 20 + stage * 10
     player.money += reward
@@ -120,6 +132,9 @@ def fight_brawler(player: Player) -> str:
     msg = f"You won the fight {stage}! +${reward}"
     if player.brawls_won == BRAWLER_COUNT:
         msg += " All brawlers defeated!"
+    broken = _damage_equipment(player)
+    if broken:
+        msg += " (" + ", ".join(broken) + " broke)"
     return msg
 
 
@@ -163,6 +178,7 @@ def fight_enemy(player: Player) -> str:
             bleed_turns -= 1
     player.health = max(p_hp, 0)
     if p_hp <= 0:
+        _damage_equipment(player)
         return "You lost the fight!"
 
     cash = random.randint(5, 25)
@@ -181,7 +197,11 @@ def fight_enemy(player: Player) -> str:
             player.tokens += 1
             loot += " (parrot found another)"
     player.enemies_defeated += 1
-    return f"Enemy defeated! +${cash}{loot}"
+    broken = _damage_equipment(player)
+    msg = f"Enemy defeated! +${cash}{loot}"
+    if broken:
+        msg += " (" + ", ".join(broken) + " broke)"
+    return msg
 
 
 def fight_forest_enemy(player: Player, index: int) -> str:
@@ -229,7 +249,11 @@ def fight_forest_enemy(player: Player, index: int) -> str:
         player.resources[res] = player.resources.get(res, 0) + 1
         loot = f" +1 {res}"
     player.enemies_defeated += 1
-    return f"Enemy defeated! +${enemy['reward']}{loot}"
+    broken = _damage_equipment(player)
+    msg = f"Enemy defeated! +${enemy['reward']}{loot}"
+    if broken:
+        msg += " (" + ", ".join(broken) + " broke)"
+    return msg
 
 
 def fight_final_boss(player: Player) -> str:
@@ -269,6 +293,7 @@ def fight_final_boss(player: Player) -> str:
 
     player.health = max(p_hp, 0)
     if p_hp <= 0:
+        _damage_equipment(player)
         return "You were defeated by the boss!"
 
     player.money += enemy["reward"]
@@ -277,4 +302,8 @@ def fight_final_boss(player: Player) -> str:
     player.inventory.append(
         InventoryItem("Legendary Sword", "weapon", attack=8, speed=1, combo=2)
     )
-    return "Boss defeated! You earned the Legendary Sword"
+    broken = _damage_equipment(player)
+    msg = "Boss defeated! You earned the Legendary Sword"
+    if broken:
+        msg += " (" + ", ".join(broken) + " broke)"
+    return msg
