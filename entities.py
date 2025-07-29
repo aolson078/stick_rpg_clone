@@ -192,6 +192,11 @@ class NPC:
     gender: str = ""
     bubble_message: str = ""
     bubble_timer: int = 0
+    # daily schedule details
+    home: str = "suburbs"
+    work: Optional[str] = None
+    work_start: int = 9
+    work_end: int = 17
 
 
 @dataclass

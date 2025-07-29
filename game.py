@@ -307,7 +307,7 @@ def main():
         if player.time >= 1440:
             player.time -= 1440
             advance_day(player)
-        update_npcs()
+        update_npcs(player, BUILDINGS)
         for ab, cd in player.ability_cooldowns.items():
             if cd > 0:
                 player.ability_cooldowns[ab] -= 1
