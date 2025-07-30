@@ -18,6 +18,7 @@ from quests import (
     NPC_QUEST,
     STORY_TARGETS,
     QUEST_TARGETS,
+    SEASONAL_QUESTS,
 )
 from combat import energy_cost
 from businesses import collect_profits
@@ -199,9 +200,18 @@ def building_open(btype: str, minutes: float, player: Player) -> bool:
 
 
 def update_weather(player: Player) -> None:
-    """Randomly set the current season and weather."""
+    """Randomly set the current season and weather.
+
+    When a new season begins, award the matching seasonal quest if the
+    player doesn't already have a side quest.
+    """
+    old_season = player.season
     season_index = ((player.day - 1) // 30) % len(SEASONS)
     player.season = SEASONS[season_index]
+    if player.season != old_season and player.side_quest is None:
+        quest = SEASONAL_QUESTS.get(player.season)
+        if quest:
+            player.side_quest = quest.name
     if player.season == "Winter":
         choices = ["Snow", "Snow", "Clear", "Rain"]
     elif player.season == "Summer":

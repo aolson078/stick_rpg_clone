@@ -140,6 +140,11 @@ through Spring, Summer, Fall, and Winter, each lasting about a month.
 Bad weather closes the park and deal spots, and special seasonal encounters
 offer small bonuses or penalties.
 
+Each season now begins with its own Festival side quest. Completing these
+limited-time quests or participating in seasonal events can earn unique
+rewards like extra tokens or produce. Keep an eye on the calendar so you
+don't miss out!
+
 Your apartment can also be improved. While inside the Home you can buy a Comfy
 Bed, Decorations, or a Study Desk. These upgrades boost your energy recovery
 and may grant daily bonuses when you sleep. Crafted furniture items can be

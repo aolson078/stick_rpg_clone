@@ -11,7 +11,11 @@ from loaders import load_quests, load_sidequests
 import pygame
 
 from entities import Player, Quest, Event, SideQuest, NPC
-from inventory import HOME_UPGRADES
+from inventory import (
+    HOME_UPGRADES,
+    plant_seed,
+    harvest_crops,
+)
 from combat import BRAWLER_COUNT
 
 # Epithets awarded for certain achievements
@@ -66,6 +70,14 @@ RELATIONSHIP_QUESTS = {
     "Alice": ALICE_REL_QUEST,
     "Bella": BELLA_REL_QUEST,
     "Chris": CHRIS_REL_QUEST,
+}
+
+# Seasonal side quests triggered at the start of each season
+SEASONAL_QUESTS = {
+    "Spring": SIDE_QUESTS.get("Spring Festival"),
+    "Summer": SIDE_QUESTS.get("Summer Festival"),
+    "Fall": SIDE_QUESTS.get("Fall Festival"),
+    "Winter": SIDE_QUESTS.get("Winter Festival"),
 }
 
 # Friendly townsfolk found around the city
@@ -226,11 +238,19 @@ SEASON_EVENTS = {
             "Flowers bloom brightly. +1 CHA",
             lambda p: setattr(p, "charisma", p.charisma + 1),
         ),
+        Event(
+            "Spring Planting Festival! You plant a seed",
+            lambda p: plant_seed(p),
+        ),
     ],
     "Summer": [
         Event(
             "Heat wave tires you out. -5 energy",
             lambda p: setattr(p, "energy", max(p.energy - 5, 0)),
+        ),
+        Event(
+            "Beach party games award you a token",
+            lambda p: setattr(p, "tokens", p.tokens + 1),
         ),
     ],
     "Fall": [
@@ -238,11 +258,19 @@ SEASON_EVENTS = {
             "Found $5 under fallen leaves",
             lambda p: setattr(p, "money", p.money + 5),
         ),
+        Event(
+            "Harvest Festival rewards extra crops",
+            lambda p: harvest_crops(p),
+        ),
     ],
     "Winter": [
         Event(
             "Cold wind toughens you. +1 DEF",
             lambda p: setattr(p, "defense", p.defense + 1),
+        ),
+        Event(
+            "Ice Fishing Derby time! You caught a fish",
+            lambda p: setattr(p, "money", p.money + 10),
         ),
     ],
 }
