@@ -1,9 +1,10 @@
 """Item and inventory handling extracted from game.py."""
 
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from entities import Player, InventoryItem
 from combat import energy_cost
 import factions
+from constants import PERK_MAX_LEVEL
 
 # Items sold at the shop: name, cost, and effect
 SHOP_ITEMS: List[Tuple[str, int, any]] = [
@@ -107,6 +108,40 @@ COMPANIONS = [
     ("Rhino", 200, "STR +1, boosts attack"),
 ]
 
+# Ability trees for each companion
+COMPANION_ABILITIES: Dict[str, List[Tuple[str, str, str]]] = {
+    "Dog": [
+        ("Fetch", "Chance to bring money when sleeping", "money"),
+        ("Guard", "+1 DEF per level", "defense"),
+        ("Bite", "+1 STR per level", "strength"),
+    ],
+    "Cat": [
+        ("Sneak", "Reduced travel energy cost", "speed"),
+        ("Inspire", "+1 CHA per level", "charisma"),
+        ("Pounce", "+1 STR per level", "strength"),
+    ],
+    "Parrot": [
+        ("Mimic", "+1 INT per level", "intelligence"),
+        ("Scout", "Chance for extra tokens", "tokens"),
+        ("Squawk", "Small enemy stun chance", "strength"),
+    ],
+    "Llama": [
+        ("Sprint", "+1 SPD per level", "speed"),
+        ("Graze", "Crops sell for more", "money"),
+        ("Kick", "+1 STR per level", "strength"),
+    ],
+    "Peacock": [
+        ("Strut", "Extra CHA from chatting", "charisma"),
+        ("Dazzle", "Chance to charm enemies", "charisma"),
+        ("Display", "+1 CHA per level", "charisma"),
+    ],
+    "Rhino": [
+        ("Charge", "+1 STR per level", "strength"),
+        ("Thick Hide", "+1 DEF per level", "defense"),
+        ("Trample", "Boost attack damage", "strength"),
+    ],
+}
+
 
 def buy_shop_item(player: Player, index: int) -> str:
     """Purchase an item from the shop list by index."""
@@ -176,6 +211,9 @@ def adopt_companion(player: Player, index: int) -> str:
     player.money -= cost
     player.companion = name
     player.companion_level = 1
+    player.companion_abilities[name] = {
+        abil[0]: 0 for abil in COMPANION_ABILITIES.get(name, [])
+    }
     if name == "Dog":
         player.defense += 1
     elif name == "Cat":
@@ -255,6 +293,46 @@ def train_companion(player: Player) -> str:
 
 
 CRAFT_EXP_BASE = 50
+
+# Base cost for companion ability training
+COMPANION_TRAIN_COST = 30
+
+
+def upgrade_companion_ability(player: Player, index: int) -> str:
+    """Upgrade one of the current companion's abilities."""
+    if not player.companion:
+        return "No pet to train"
+    abilities = COMPANION_ABILITIES.get(player.companion)
+    if not abilities or index < 0 or index >= len(abilities):
+        return "Invalid choice"
+    name, _desc, stat = abilities[index]
+    levels = player.companion_abilities.setdefault(player.companion, {})
+    level = levels.get(name, 0)
+    if level >= PERK_MAX_LEVEL:
+        return "Ability at max level"
+    cost = COMPANION_TRAIN_COST * (level + 1)
+    if player.money < cost:
+        return f"Need ${cost}"
+    if player.energy < 5:
+        return "Too tired"
+    player.money -= cost
+    player.energy -= energy_cost(player, 5)
+    levels[name] = level + 1
+    if stat == "defense":
+        player.defense += 1
+    elif stat == "charisma":
+        player.charisma += 1
+    elif stat == "intelligence":
+        player.intelligence += 1
+    elif stat == "speed":
+        player.speed += 1
+    elif stat == "strength":
+        player.strength += 1
+    elif stat == "tokens":
+        player.tokens += 1
+    elif stat == "money":
+        player.money += 5
+    return f"{name} Lv{level + 1} learned!"
 
 
 def crafting_exp_needed(player: Player) -> int:

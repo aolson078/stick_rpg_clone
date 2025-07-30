@@ -30,6 +30,7 @@ from rendering import (
     draw_hotkey_bar,
     draw_help_screen,
     draw_quest_marker,
+    draw_companion_menu,
 )
 from inventory import (
     SHOP_ITEMS,
@@ -41,6 +42,8 @@ from inventory import (
     bank_withdraw,
     adopt_companion,
     train_companion,
+    upgrade_companion_ability,
+    COMPANION_ABILITIES,
     plant_seed,
     harvest_crops,
     sell_produce,
@@ -264,6 +267,18 @@ def main():
 
     if loaded:
         player = loaded
+        show_inventory = False
+        show_perk_menu = False
+        show_companion_menu = False
+        show_log = False
+        show_help = False
+        dragging_item = None
+        shop_message = ""
+        shop_message_timer = 0
+        fullscreen = False
+        muted = False
+        slot_rects = compute_slot_rects()
+        hotkey_rects = compute_hotkey_rects()
     else:
         name, color, head_color = character_creation(screen, font)
         player = Player(
@@ -272,6 +287,18 @@ def main():
             color=color,
             head_color=head_color,
         )
+        show_inventory = False
+        show_perk_menu = False
+        show_companion_menu = False
+        show_log = False
+        show_help = False
+        dragging_item = None
+        shop_message = ""
+        shop_message_timer = 0
+        fullscreen = False
+        muted = False
+        slot_rects = compute_slot_rects()
+        hotkey_rects = compute_hotkey_rects()
         pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 28)
@@ -597,6 +624,16 @@ def main():
                         show_perk_menu = False
                     elif event.key in (pygame.K_q, pygame.K_p):
                         show_perk_menu = False
+                if show_companion_menu and event.type == pygame.KEYDOWN:
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        idx = event.key - pygame.K_1
+                        abilities = COMPANION_ABILITIES.get(player.companion, [])
+                        if idx < len(abilities):
+                            shop_message = upgrade_companion_ability(player, idx)
+                            shop_message_timer = 90
+                        show_companion_menu = False
+                    elif event.key in (pygame.K_q, pygame.K_t):
+                        show_companion_menu = False
                 if show_log and event.type == pygame.KEYDOWN:
                     if event.key in (pygame.K_l, pygame.K_q):
                         show_log = False
@@ -881,8 +918,11 @@ def main():
                     shop_message = adopt_companion(player, idx)
                     shop_message_timer = 60
                 elif in_building == "petshop" and event.key == pygame.K_t:
-                    shop_message = train_companion(player)
-                    shop_message_timer = 60
+                    if player.companion:
+                        show_companion_menu = not show_companion_menu
+                    else:
+                        shop_message = "Adopt a pet first"
+                        shop_message_timer = 60
                 elif in_building == "bank":
                     if event.key == pygame.K_e:
                         if not player.side_quest:
@@ -907,8 +947,11 @@ def main():
                         shop_message = adopt_companion(player, idx)
                         shop_message_timer = 60
                     elif in_building == "petshop" and event.key == pygame.K_t:
-                        shop_message = train_companion(player)
-                        shop_message_timer = 60
+                        if player.companion:
+                            show_companion_menu = not show_companion_menu
+                        else:
+                            shop_message = "Adopt a pet first"
+                            shop_message_timer = 60
                     elif in_building == "bank":
                         if event.key == pygame.K_e:
                             if not player.side_quest:
@@ -1544,6 +1587,9 @@ def main():
             )
         if show_perk_menu:
             draw_perk_menu(screen, font, player, PERKS)
+        if show_companion_menu:
+            abilities = COMPANION_ABILITIES.get(player.companion, [])
+            draw_companion_menu(screen, font, player, abilities)
         if show_log:
             draw_quest_log(screen, font, QUESTS, STORY_QUESTS)
         if show_help:
@@ -1592,6 +1638,8 @@ def main():
                 msg = "[E] to explore the woods"
             elif near_building.btype == "petshop":
                 msg = "[E] to adopt a pet"
+                if player.companion:
+                    msg += "  T:Train"
             elif near_building.btype == "bank":
                 msg = "[E] to visit the bank"
             elif near_building.btype == "townhall":

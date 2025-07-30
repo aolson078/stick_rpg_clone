@@ -609,6 +609,31 @@ def draw_perk_menu(surface, font, player, perks):
     surface.blit(info, (100, 120 + len(perks) * 40 + 20))
 
 
+def draw_companion_menu(surface, font, player, abilities):
+    """Render the companion training menu."""
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    surface.blit(overlay, (0, 0))
+
+    panel = pygame.Surface((settings.SCREEN_WIDTH - 120, settings.SCREEN_HEIGHT - 120))
+    panel.fill((240, 240, 220))
+    surface.blit(panel, (60, 60))
+
+    title = font.render("Train Companion", True, FONT_COLOR)
+    surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+
+    levels = player.companion_abilities.get(player.companion, {})
+    for i, (name, desc, _stat) in enumerate(abilities):
+        lvl = levels.get(name, 0)
+        txt = font.render(
+            f"{i+1}: {name} Lv{lvl}/{PERK_MAX_LEVEL} - {desc}", True, FONT_COLOR
+        )
+        surface.blit(txt, (100, 120 + i * 40))
+
+    info = font.render("[Q] Exit", True, FONT_COLOR)
+    surface.blit(info, (100, 120 + len(abilities) * 40 + 20))
+
+
 def draw_quest_log(surface, font, quests, story_quests=None):
     """Show completed and active quests."""
     overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
