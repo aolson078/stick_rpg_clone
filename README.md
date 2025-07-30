@@ -104,7 +104,8 @@ The city also has a **Pet Shop** where you can adopt an animal companion.
 Available pets include a dog, cat, parrot, llama, peacock, and rhino. Pets
 grant small bonuses like extra defense or charisma and may help you find money
 or tokens. Companions can be trained at the Pet Shop to improve these bonuses
-and unlock stronger abilities.
+and unlock stronger abilities. Press **T** inside the shop to open the
+training menu and spend cash on unique pet abilities.
 
 A new **Workshop** lets you craft, upgrade, and now repair your gear. Fights and events can
 yield metal, cloth, and herbs. Spend these resources to brew Health Potions,

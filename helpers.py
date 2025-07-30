@@ -399,6 +399,7 @@ def save_game(player: Player) -> None:
         "boss_defeated": player.boss_defeated,
         "companion": player.companion,
         "companion_level": player.companion_level,
+        "companion_abilities": player.companion_abilities,
         "has_skateboard": player.has_skateboard,
         "home_upgrades": player.home_upgrades,
         "home_level": player.home_level,
@@ -502,6 +503,7 @@ def load_game() -> Optional[Player]:
     player.enemies_defeated = data.get("enemies_defeated", 0)
     player.companion = data.get("companion")
     player.companion_level = data.get("companion_level", 0)
+    player.companion_abilities = data.get("companion_abilities", {})
     player.npc_progress = data.get("npc_progress", {})
     player.story_stage = data.get("story_stage", 0)
     player.story_branch = data.get("story_branch")
