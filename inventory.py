@@ -5,6 +5,7 @@ from entities import Player, InventoryItem
 from combat import energy_cost
 import factions
 from constants import PERK_MAX_LEVEL
+import random
 
 # Items sold at the shop: name, cost, and effect
 SHOP_ITEMS: List[Tuple[str, int, any]] = [
@@ -85,6 +86,31 @@ SHOP_ITEMS: List[Tuple[str, int, any]] = [
     ),
 ]
 
+# Seasonal price modifiers applied to shop items
+SEASON_PRICE_MODIFIERS = {
+    "Spring": 1.0,
+    "Summer": 0.9,
+    "Fall": 1.1,
+    "Winter": 1.2,
+}
+
+
+def _daily_price_multiplier(day: int) -> float:
+    """Return a deterministic daily multiplier based on the day number."""
+    if day == 1:
+        return 1.0
+    rnd = random.Random(day).random()
+    return 0.8 + rnd * 0.4  # range 0.8 - 1.2
+
+
+def get_shop_price(player: Player, index: int) -> int:
+    """Return the current price for a shop item considering season and day."""
+    base_cost = SHOP_ITEMS[index][1]
+    season_mult = SEASON_PRICE_MODIFIERS.get(player.season, 1.0)
+    day_mult = _daily_price_multiplier(player.day)
+    cost = int(round(base_cost * season_mult * day_mult))
+    return factions.business_price(player, cost)
+
 # Upgrades available for purchase inside the home
 HOME_UPGRADES: List[Tuple[str, int, str, int]] = [
     ("Comfy Bed", 150, "Recover +20 energy when sleeping", 1),
@@ -147,10 +173,10 @@ def buy_shop_item(player: Player, index: int) -> str:
     """Purchase an item from the shop list by index."""
     if index < 0 or index >= len(SHOP_ITEMS):
         return "Invalid item"
-    name, cost, effect = SHOP_ITEMS[index]
+    name, _base_cost, effect = SHOP_ITEMS[index]
     if name == "Skateboard" and player.has_skateboard:
         return "Already have skateboard"
-    cost = factions.business_price(player, cost)
+    cost = get_shop_price(player, index)
     if player.money < cost:
         return "Not enough money!"
     player.money -= cost

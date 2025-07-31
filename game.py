@@ -38,6 +38,7 @@ from inventory import (
     COMPANIONS,
     buy_shop_item,
     buy_home_upgrade,
+    get_shop_price,
     bank_deposit,
     bank_withdraw,
     adopt_companion,
@@ -1731,9 +1732,10 @@ def main():
                 txt = "[E] Help locals  [Q] Leave"
             draw_tip_panel(screen, font, f"Inside: {in_building.upper()}   {txt}")
             if in_building == "shop":
-                for i, (name, cost, _func) in enumerate(SHOP_ITEMS):
+                for i, (name, _cost, _func) in enumerate(SHOP_ITEMS):
+                    price = get_shop_price(player, i)
                     item_surf = font.render(
-                        f"{(i + 1) % 10}:{name} ${cost}", True, (80, 40, 40)
+                        f"{(i + 1) % 10}:{name} ${price}", True, (80, 40, 40)
                     )
                     row = i // 5
                     col = i % 5
