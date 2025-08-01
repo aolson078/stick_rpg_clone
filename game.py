@@ -274,6 +274,7 @@ def main():
         show_log = False
         show_help = False
         dragging_item = None
+        drag_rotation = 0
         shop_message = ""
         shop_message_timer = 0
         fullscreen = False
@@ -294,6 +295,7 @@ def main():
         show_log = False
         show_help = False
         dragging_item = None
+        drag_rotation = 0
         shop_message = ""
         shop_message_timer = 0
         fullscreen = False
@@ -504,7 +506,14 @@ def main():
                     shop_message_timer = 60
             if show_inventory:
                 furn_rects = compute_furniture_rects(player)
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if (
+                    event.type == pygame.KEYDOWN
+                    and event.key == pygame.K_r
+                    and dragging_item
+                    and dragging_item.slot == "furniture"
+                ):
+                    drag_rotation = (drag_rotation + 90) % 360
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = event.pos
                     handled = False
                     for i, (rect, item) in enumerate(item_rects):
@@ -512,6 +521,7 @@ def main():
                             dragging_item = item
                             drag_origin = ("inventory", i)
                             drag_pos = pos
+                            drag_rotation = getattr(item, "rotation", 0)
                             player.inventory.pop(i)
                             handled = True
                             break
@@ -546,6 +556,7 @@ def main():
                                     dragging_item = player.furniture[slot]
                                     drag_origin = ("furn", slot)
                                     drag_pos = pos
+                                    drag_rotation = player.furniture_rot.pop(slot, 0)
                                     player.furniture[slot] = None
                                     handled = True
                                     break
@@ -577,37 +588,28 @@ def main():
                                 player.hotkeys[i] = dragging_item
                                 placed = True
                                 break
+                    if not placed and dragging_item.slot == "furniture" and inside_home:
+                        if drag_origin and drag_origin[0] == "furn":
+                            slot = drag_origin[1]
+                        else:
+                            slot = next(
+                                (f"slot{i}" for i in range(1, 10) if player.furniture.get(f"slot{i}") is None),
+                                None,
+                            )
+                        if slot:
+                            base = FURNITURE_RECTS[0]
+                            player.furniture[slot] = dragging_item
+                            player.furniture_pos[slot] = (
+                                pos[0] - base.width // 2,
+                                pos[1] - base.height // 2,
+                            )
+                            dragging_item.rotation = drag_rotation
+                            player.furniture_rot[slot] = drag_rotation
+                            placed = True
                     if not placed:
-                        for idx, rect in enumerate(furn_rects):
-                            if (
-                                rect.collidepoint(pos)
-                                and dragging_item.slot == "furniture"
-                                and player.furniture.get(f"slot{idx+1}") is None
-                            ):
-                                player.furniture[f"slot{idx+1}"] = dragging_item
-                                player.furniture_pos[f"slot{idx+1}"] = (rect.x, rect.y)
-                                placed = True
-                                break
-                        if not placed:
-                            for i, rect in enumerate(hotkey_rects):
-                                if rect.collidepoint(pos) and dragging_item.slot == 'consumable' and player.hotkeys[i] is None:
-                                    player.hotkeys[i] = dragging_item
-                                    placed = True
-                                    break
-                        if not placed:
-                            for idx, rect in enumerate(furn_rects):
-                                if (
-                                    rect.collidepoint(pos)
-                                    and dragging_item.slot == 'furniture'
-                                    and player.furniture.get(f'slot{idx+1}') is None
-                                ):
-                                    player.furniture[f'slot{idx+1}'] = dragging_item
-                                    player.furniture_pos[f'slot{idx+1}'] = (rect.x, rect.y)
-                                    placed = True
-                                    break
-                        if not placed:
-                            player.inventory.append(dragging_item)
-                        dragging_item = None
+                        dragging_item.rotation = drag_rotation
+                        player.inventory.append(dragging_item)
+                    dragging_item = None
                 if show_perk_menu and event.type == pygame.KEYDOWN:
                     if pygame.K_1 <= event.key <= pygame.K_9:
                         idx = event.key - pygame.K_1
