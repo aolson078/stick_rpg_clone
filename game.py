@@ -470,6 +470,33 @@ def main():
                         shop_message = "Guard Stance cooling"
                     shop_message_timer = 60
                 elif (
+                    event.key == pygame.K_c
+                    and not show_inventory
+                    and not show_log
+                    and not in_building
+                ):
+                    wpn = player.equipment.get("weapon")
+                    wtype = getattr(wpn, "weapon_type", "melee") if wpn else "melee"
+                    req_met = (
+                        (wtype == "melee" and player.strength >= 5)
+                        or (wtype == "ranged" and player.speed >= 5)
+                        or (wtype == "magic" and player.intelligence >= 5)
+                    )
+                    if player.ability_cooldowns["special"] == 0 and req_met:
+                        player.active_ability = "special"
+                        player.ability_cooldowns["special"] = 600
+                        if wtype == "melee":
+                            shop_message = "Whirlwind ready!"
+                        elif wtype == "ranged":
+                            shop_message = "Rapid Shot ready!"
+                        else:
+                            shop_message = "Arcane Burst ready!"
+                    elif player.ability_cooldowns["special"] > 0:
+                        shop_message = "Special cooling"
+                    else:
+                        shop_message = "Not skilled enough"
+                    shop_message_timer = 60
+                elif (
                     pygame.K_1 <= event.key <= pygame.K_5
                     and not show_inventory
                     and not show_log

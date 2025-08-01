@@ -129,7 +129,7 @@ class Player:
     active_ability: Optional[str] = None
     # Cooldown timers for abilities (in frames)
     ability_cooldowns: Dict[str, int] = field(
-        default_factory=lambda: {"heavy": 0, "guard": 0}
+        default_factory=lambda: {"heavy": 0, "guard": 0, "special": 0}
     )
 
     # Quick item hotkey slots

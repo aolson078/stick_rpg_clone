@@ -474,7 +474,14 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         if player.ability_cooldowns["guard"]
         else "R"
     )
-    cd_txt = font.render(f"Z:{heavy_cd} X:{guard_cd}", True, FONT_COLOR)
+    special_cd = (
+        player.ability_cooldowns["special"] // 60
+        if player.ability_cooldowns["special"]
+        else "R"
+    )
+    cd_txt = font.render(
+        f"Z:{heavy_cd} X:{guard_cd} C:{special_cd}", True, FONT_COLOR
+    )
     bar.blit(cd_txt, (settings.SCREEN_WIDTH - cd_txt.get_width() - 20, 32))
     surface.blit(bar, (0, 0))
 
@@ -690,7 +697,7 @@ def draw_help_screen(surface, font):
         "Inventory: I    Perks: P    Quest Log: L",
         "Save: F5    Load: F9    Toggle Help: F1",
         "Fullscreen: F11    Mute Audio: M",
-        "Abilities: Z Heavy  X Guard",
+        "Abilities: Z Heavy  X Guard  C Special",
     ]
     y = 160
     for line in lines:
