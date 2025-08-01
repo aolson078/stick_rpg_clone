@@ -68,7 +68,9 @@ Your apartment can also be improved. While inside the Home you can buy a Comfy
 Bed, Decorations, or a Study Desk. These upgrades cost quite a bit but boost
 your energy recovery and may grant daily bonuses when you sleep. You can also
 craft furniture pieces and freely place them around the interior for purely
-cosmetic flair. The Home is now a separate screen you can walk around in—
+cosmetic flair. Decorative items placed in your apartment now provide small
+bonuses each morning. Pieces can be rotated with **R** while dragging and there
+are more slots to fill. The Home is now a separate screen you can walk around in—
 approach the bed and press **E** to sleep, or step to the door and hit **E** to
 leave.
 
@@ -148,7 +150,8 @@ don't miss out!
 Your apartment can also be improved. While inside the Home you can buy a Comfy
 Bed, Decorations, or a Study Desk. These upgrades boost your energy recovery
 and may grant daily bonuses when you sleep. Crafted furniture items can be
-dragged to any open spot in the room for decoration.
+dragged to any open spot in the room for decoration. Decorations now grant
+minor stat boosts when you wake up and you can rotate them while placing.
 
 As your stats reach new milestones you earn perk points. Press **P** to open the
 Perk menu and spend these points to unlock or upgrade perks (up to level 3).

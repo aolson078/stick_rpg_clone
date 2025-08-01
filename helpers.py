@@ -32,10 +32,15 @@ HOME_HEIGHT = settings.SCREEN_HEIGHT
 BED_RECT = pygame.Rect(120, 160, 220, 120)
 DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
 FURNITURE_RECTS = [
-    pygame.Rect(400 + col * 160, HOME_HEIGHT // 2 + row * 100, 120, 80)
-    for row in range(2)
+    pygame.Rect(360 + col * 150, HOME_HEIGHT // 2 - 80 + row * 100, 120, 80)
+    for row in range(3)
     for col in range(3)
 ]
+
+# Bonuses granted when sleeping with certain furniture placed
+FURNITURE_BONUSES: Dict[str, Dict[str, int]] = {
+    "Decor Chair": {"charisma": 1},
+}
 
 BAR_WIDTH = settings.SCREEN_WIDTH
 BAR_HEIGHT = settings.SCREEN_HEIGHT
@@ -79,8 +84,8 @@ def recalc_layouts() -> None:
     )
 
     FURNITURE_RECTS = [
-        pygame.Rect(400 + col * 160, HOME_HEIGHT // 2 + row * 100, 120, 80)
-        for row in range(2)
+        pygame.Rect(360 + col * 150, HOME_HEIGHT // 2 - 80 + row * 100, 120, 80)
+        for row in range(3)
         for col in range(3)
     ]
 
@@ -251,6 +256,11 @@ def sleep(player: Player) -> Optional[str]:
         player.intelligence += 2
     if player.perk_levels.get("Home Owner"):
         player.health = min(player.health + 10, 100)
+
+    for item in player.furniture.values():
+        if item and item.name in FURNITURE_BONUSES:
+            for stat, val in FURNITURE_BONUSES[item.name].items():
+                setattr(player, stat, getattr(player, stat) + val)
     messages: List[str] = []
     if player.companion == "Dog":
         chance = 0.2 + 0.2 * (player.companion_level - 1)
@@ -431,6 +441,7 @@ def save_game(player: Player) -> None:
             slot: (it.__dict__ if it else None) for slot, it in player.furniture.items()
         },
         "furniture_pos": player.furniture_pos,
+        "furniture_rot": player.furniture_rot,
         "relationships": player.relationships,
         "last_talk": player.last_talk,
         "romanced": player.romanced,
@@ -538,13 +549,19 @@ def load_game() -> Optional[Player]:
     player.furniture = {
         slot: (InventoryItem(**it) if it else None)
         for slot, it in data.get(
-            "furniture", {f"slot{i}": None for i in range(1, 7)}
+            "furniture", {f"slot{i}": None for i in range(1, 10)}
         ).items()
     }
     player.furniture_pos = {
         slot: tuple(pos)
         for slot, pos in data.get(
-            "furniture_pos", {f"slot{i}": (0, 0) for i in range(1, 7)}
+            "furniture_pos", {f"slot{i}": (0, 0) for i in range(1, 10)}
+        ).items()
+    }
+    player.furniture_rot = {
+        slot: int(rot)
+        for slot, rot in data.get(
+            "furniture_rot", {f"slot{i}": 0 for i in range(1, 10)}
         ).items()
     }
     player.relationships = data.get("relationships", {})

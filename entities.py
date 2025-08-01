@@ -137,12 +137,17 @@ class Player:
 
     # Furniture placed inside the home
     furniture: Dict[str, Optional["InventoryItem"]] = field(
-        default_factory=lambda: {f"slot{i}": None for i in range(1, 7)}
+        default_factory=lambda: {f"slot{i}": None for i in range(1, 10)}
     )
 
     # Saved positions for furniture pieces
     furniture_pos: Dict[str, Tuple[int, int]] = field(
-        default_factory=lambda: {f"slot{i}": (0, 0) for i in range(1, 7)}
+        default_factory=lambda: {f"slot{i}": (0, 0) for i in range(1, 10)}
+    )
+
+    # Rotation angles for furniture pieces
+    furniture_rot: Dict[str, int] = field(
+        default_factory=lambda: {f"slot{i}": 0 for i in range(1, 10)}
     )
 
     # Relationship data with NPCs
@@ -217,3 +222,5 @@ class InventoryItem:
     weapon_type: str = "melee"
     max_durability: int = 100
     durability: int = 100
+    # rotation angle for furniture pieces
+    rotation: int = 0
