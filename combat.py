@@ -1,7 +1,7 @@
 """Combat-related helper functions and constants."""
 
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from entities import Player, InventoryItem
 
 # Number of bar challengers
@@ -98,15 +98,38 @@ def fight_brawler(player: Player) -> str:
         "health": 20 + stage * 10,
     }
     p_atk, p_def, p_spd, p_combo = _combat_stats(player)
+    weapon = player.equipment.get("weapon")
+    wtype = getattr(weapon, "weapon_type", "melee") if weapon else "melee"
+    guard_active = False
+    special_move: Optional[str] = None
+    if player.active_ability == "heavy":
+        p_atk += 3
+    elif player.active_ability == "guard":
+        guard_active = True
+    elif player.active_ability == "special":
+        special_move = wtype
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
     special_used = False
+    advanced_used = False
     bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
-            for _ in range(p_combo):
-                dmg = max(1, p_atk - enemy["defense"])
+            hits = p_combo
+            ignore_def = False
+            bonus = 0
+            if special_move and not advanced_used:
+                if special_move == "melee":
+                    hits += 2
+                elif special_move == "ranged":
+                    hits += 1
+                    ignore_def = True
+                else:
+                    bonus = 2
+                advanced_used = True
+            for _ in range(hits):
+                dmg = max(1, p_atk - (0 if ignore_def else enemy["defense"])) + bonus
                 if not special_used and random.random() < POWER_STRIKE_CHANCE:
                     dmg *= 2
                     bleed_turns = BLEED_TURNS
@@ -117,6 +140,9 @@ def fight_brawler(player: Player) -> str:
                 pass
             else:
                 dmg = max(1, enemy["attack"] - p_def)
+                if guard_active:
+                    dmg //= 2
+                    guard_active = False
                 p_hp -= dmg
         turn_player = not turn_player
         if bleed_turns > 0:
@@ -125,6 +151,7 @@ def fight_brawler(player: Player) -> str:
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         _damage_equipment(player)
+        player.active_ability = None
         return "You lost the fight!"
     reward = 20 + stage * 10
     player.money += reward
@@ -135,6 +162,7 @@ def fight_brawler(player: Player) -> str:
     broken = _damage_equipment(player)
     if broken:
         msg += " (" + ", ".join(broken) + " broke)"
+    player.active_ability = None
     return msg
 
 
@@ -152,15 +180,38 @@ def fight_enemy(player: Player) -> str:
         "health": 15 + 5 * scale,
     }
     p_atk, p_def, p_spd, p_combo = _combat_stats(player)
+    weapon = player.equipment.get("weapon")
+    wtype = getattr(weapon, "weapon_type", "melee") if weapon else "melee"
+    guard_active = False
+    special_move: Optional[str] = None
+    if player.active_ability == "heavy":
+        p_atk += 3
+    elif player.active_ability == "guard":
+        guard_active = True
+    elif player.active_ability == "special":
+        special_move = wtype
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
     special_used = False
+    advanced_used = False
     bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
-            for _ in range(p_combo):
-                dmg = max(1, p_atk - enemy["defense"])
+            hits = p_combo
+            ignore_def = False
+            bonus = 0
+            if special_move and not advanced_used:
+                if special_move == "melee":
+                    hits += 2
+                elif special_move == "ranged":
+                    hits += 1
+                    ignore_def = True
+                else:
+                    bonus = 2
+                advanced_used = True
+            for _ in range(hits):
+                dmg = max(1, p_atk - (0 if ignore_def else enemy["defense"])) + bonus
                 if not special_used and random.random() < POWER_STRIKE_CHANCE:
                     dmg *= 2
                     bleed_turns = BLEED_TURNS
@@ -171,6 +222,9 @@ def fight_enemy(player: Player) -> str:
                 pass
             else:
                 dmg = max(1, enemy["attack"] - p_def)
+                if guard_active:
+                    dmg //= 2
+                    guard_active = False
                 p_hp -= dmg
         turn_player = not turn_player
         if bleed_turns > 0:
@@ -179,6 +233,7 @@ def fight_enemy(player: Player) -> str:
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         _damage_equipment(player)
+        player.active_ability = None
         return "You lost the fight!"
 
     cash = random.randint(5, 25)
@@ -201,6 +256,7 @@ def fight_enemy(player: Player) -> str:
     msg = f"Enemy defeated! +${cash}{loot}"
     if broken:
         msg += " (" + ", ".join(broken) + " broke)"
+    player.active_ability = None
     return msg
 
 
@@ -214,15 +270,38 @@ def fight_forest_enemy(player: Player, index: int) -> str:
 
     enemy = FOREST_ENEMIES[index]
     p_atk, p_def, p_spd, p_combo = _combat_stats(player)
+    weapon = player.equipment.get("weapon")
+    wtype = getattr(weapon, "weapon_type", "melee") if weapon else "melee"
+    guard_active = False
+    special_move: Optional[str] = None
+    if player.active_ability == "heavy":
+        p_atk += 3
+    elif player.active_ability == "guard":
+        guard_active = True
+    elif player.active_ability == "special":
+        special_move = wtype
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
     special_used = False
+    advanced_used = False
     bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
-            for _ in range(p_combo):
-                dmg = max(1, p_atk - enemy["defense"])
+            hits = p_combo
+            ignore_def = False
+            bonus = 0
+            if special_move and not advanced_used:
+                if special_move == "melee":
+                    hits += 2
+                elif special_move == "ranged":
+                    hits += 1
+                    ignore_def = True
+                else:
+                    bonus = 2
+                advanced_used = True
+            for _ in range(hits):
+                dmg = max(1, p_atk - (0 if ignore_def else enemy["defense"])) + bonus
                 if not special_used and random.random() < POWER_STRIKE_CHANCE:
                     dmg *= 2
                     bleed_turns = BLEED_TURNS
@@ -233,6 +312,9 @@ def fight_forest_enemy(player: Player, index: int) -> str:
                 pass
             else:
                 dmg = max(1, enemy["attack"] - p_def)
+                if guard_active:
+                    dmg //= 2
+                    guard_active = False
                 p_hp -= dmg
         turn_player = not turn_player
         if bleed_turns > 0:
@@ -240,6 +322,7 @@ def fight_forest_enemy(player: Player, index: int) -> str:
             bleed_turns -= 1
     player.health = max(p_hp, 0)
     if p_hp <= 0:
+        player.active_ability = None
         return "You lost the fight!"
 
     player.money += enemy["reward"]
@@ -253,6 +336,7 @@ def fight_forest_enemy(player: Player, index: int) -> str:
     msg = f"Enemy defeated! +${enemy['reward']}{loot}"
     if broken:
         msg += " (" + ", ".join(broken) + " broke)"
+    player.active_ability = None
     return msg
 
 
@@ -266,15 +350,38 @@ def fight_final_boss(player: Player) -> str:
 
     enemy = FINAL_BOSS
     p_atk, p_def, p_spd, p_combo = _combat_stats(player)
+    weapon = player.equipment.get("weapon")
+    wtype = getattr(weapon, "weapon_type", "melee") if weapon else "melee"
+    guard_active = False
+    special_move: Optional[str] = None
+    if player.active_ability == "heavy":
+        p_atk += 3
+    elif player.active_ability == "guard":
+        guard_active = True
+    elif player.active_ability == "special":
+        special_move = wtype
     p_hp = player.health
     e_hp = enemy["health"]
     turn_player = p_spd >= enemy["speed"]
     special_used = False
+    advanced_used = False
     bleed_turns = 0
     while p_hp > 0 and e_hp > 0:
         if turn_player:
-            for _ in range(p_combo):
-                dmg = max(1, p_atk - enemy["defense"])
+            hits = p_combo
+            ignore_def = False
+            bonus = 0
+            if special_move and not advanced_used:
+                if special_move == "melee":
+                    hits += 2
+                elif special_move == "ranged":
+                    hits += 1
+                    ignore_def = True
+                else:
+                    bonus = 2
+                advanced_used = True
+            for _ in range(hits):
+                dmg = max(1, p_atk - (0 if ignore_def else enemy["defense"])) + bonus
                 if not special_used and random.random() < POWER_STRIKE_CHANCE:
                     dmg *= 2
                     bleed_turns = BLEED_TURNS
@@ -285,6 +392,9 @@ def fight_final_boss(player: Player) -> str:
                 pass
             else:
                 dmg = max(1, enemy["attack"] - p_def)
+                if guard_active:
+                    dmg //= 2
+                    guard_active = False
                 p_hp -= dmg
         turn_player = not turn_player
         if bleed_turns > 0:
@@ -294,6 +404,7 @@ def fight_final_boss(player: Player) -> str:
     player.health = max(p_hp, 0)
     if p_hp <= 0:
         _damage_equipment(player)
+        player.active_ability = None
         return "You were defeated by the boss!"
 
     player.money += enemy["reward"]
@@ -306,4 +417,5 @@ def fight_final_boss(player: Player) -> str:
     msg = "Boss defeated! You earned the Legendary Sword"
     if broken:
         msg += " (" + ", ".join(broken) + " broke)"
+    player.active_ability = None
     return msg

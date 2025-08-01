@@ -51,6 +51,9 @@ opponent to bleed for a few turns.
 Two active abilities further spice up battles. Hit **Z** to ready a Heavy
 Strike that deals extra damage in your next fight, or **X** to assume a
 Guard Stance that halves incoming damage. Each ability has a short cooldown.
+A third **C** key ability unleashes a weapon-specific combo once you've
+trained the related stat to 5, letting melee fighters whirl, archers rapid
+fire, or mages cast a powerful burst.
 
 The shop now stocks a few useful items: a cola to restore a little energy, a
 protein bar for health, a book that teaches you intelligence, a gym pass that
@@ -229,6 +232,7 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 - **H**: Drink a potion
 - **Z**: Heavy Strike ability
 - **X**: Guard Stance ability
+- **C**: Special weapon ability
 - **D** at the bar: Play darts
 - **F** at the park: Go fishing
 - **P** at the library: Solve puzzle
