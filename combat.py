@@ -340,6 +340,78 @@ def fight_forest_enemy(player: Player, index: int) -> str:
     return msg
 
 
+def fight_custom_enemy(player: Player, enemy: dict) -> str:
+    """Fight a specific enemy dictionary."""
+    if player.energy < 10:
+        return "Too tired to fight!"
+    player.energy -= energy_cost(player, 10)
+
+    p_atk, p_def, p_spd, p_combo = _combat_stats(player)
+    weapon = player.equipment.get("weapon")
+    wtype = getattr(weapon, "weapon_type", "melee") if weapon else "melee"
+    guard_active = False
+    special_move: Optional[str] = None
+    if player.active_ability == "heavy":
+        p_atk += 3
+    elif player.active_ability == "guard":
+        guard_active = True
+    elif player.active_ability == "special":
+        special_move = wtype
+    p_hp = player.health
+    e_hp = enemy["health"]
+    turn_player = p_spd >= enemy["speed"]
+    special_used = False
+    advanced_used = False
+    bleed_turns = 0
+    while p_hp > 0 and e_hp > 0:
+        if turn_player:
+            hits = p_combo
+            ignore_def = False
+            bonus = 0
+            if special_move and not advanced_used:
+                if special_move == "melee":
+                    hits += 2
+                elif special_move == "ranged":
+                    hits += 1
+                    ignore_def = True
+                else:
+                    bonus = 2
+                advanced_used = True
+            for _ in range(hits):
+                dmg = max(1, p_atk - (0 if ignore_def else enemy["defense"])) + bonus
+                if not special_used and random.random() < POWER_STRIKE_CHANCE:
+                    dmg *= 2
+                    bleed_turns = BLEED_TURNS
+                    special_used = True
+                e_hp -= dmg
+        else:
+            if random.random() < (DODGE_BASE + player.speed * 0.02):
+                pass
+            else:
+                dmg = max(1, enemy["attack"] - p_def)
+                if guard_active:
+                    dmg //= 2
+                    guard_active = False
+                p_hp -= dmg
+        turn_player = not turn_player
+        if bleed_turns > 0:
+            e_hp -= BLEED_DAMAGE
+            bleed_turns -= 1
+    player.health = max(p_hp, 0)
+    if p_hp <= 0:
+        player.active_ability = None
+        return "You lost the fight!"
+
+    player.money += enemy.get("reward", 0)
+    player.enemies_defeated += 1
+    broken = _damage_equipment(player)
+    msg = "Enemy defeated!"
+    if broken:
+        msg += " (" + ", ".join(broken) + " broke)"
+    player.active_ability = None
+    return msg
+
+
 def fight_final_boss(player: Player) -> str:
     """Battle the ultimate boss. Returns the fight result message."""
     if player.boss_defeated:
