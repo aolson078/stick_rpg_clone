@@ -138,11 +138,13 @@ contain friendly neighbors who sometimes need a hand, the bustling **Mall**
 offers a short delivery side quest, and a sunny **Beach** lets you relax. You
 can also dig for treasure there, sometimes uncovering valuable seashells.
 
-The bar, park, library, and beach each feature a simple minigame. Throw darts in
-the bar to win extra tokens, fish at the park for cash or herbs, solve a daily
-puzzle at the library for a small money reward, or dig for buried treasure on
-the beach. Lucky diggers might uncover a **Golden Seashell** decoration or a
-stylish **Pearl Necklace**.
+The bar, park, library, and beach each feature upgradeable minigames. Throw
+darts in the bar, play blackjack, or fish at the park with adjustable
+difficulty. Mastering hard mode can award extra tokens, achievements, and even
+exclusive trading cards like **Dart Master** or **Fishing Legend**. The library
+still offers a daily puzzle for a small money reward, and you can dig for
+buried treasure on the beach. Lucky diggers might uncover a **Golden Seashell**
+decoration or a stylish **Pearl Necklace**.
 
 Weather now changes each day with rain or snow possible. The world cycles
 through Spring, Summer, Fall, and Winter, each lasting about a month.

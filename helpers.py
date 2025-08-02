@@ -285,18 +285,45 @@ def sleep(player: Player) -> Optional[str]:
 # --- Mini activities -----------------------------------------------------
 
 
-def play_blackjack(player: Player) -> str:
-    """Play a simple blackjack game using one token."""
+def play_blackjack(player: Player, difficulty: str = "normal") -> str:
+    """Play a simple blackjack game using one token.
+
+    Difficulty adjusts dealer skill and rewards. Achieving a perfect
+    score on hard mode grants a unique card and achievement.
+    """
     if player.tokens < 1:
         return "No tokens left!"
+
+    if difficulty not in {"easy", "normal", "hard"}:
+        raise ValueError("Invalid difficulty")
+
     player.tokens -= 1
     player_score = random.randint(16, 23)
-    dealer_score = random.randint(16, 23)
+
+    # Dealer skill varies with difficulty
+    dealer_low = 15 if difficulty == "easy" else 16
+    if difficulty == "hard":
+        dealer_low = 18
+    dealer_score = random.randint(dealer_low, 23)
+
+    win_reward = 2
+    if difficulty == "hard":
+        win_reward = 3
+
     if player_score > 21:
         return "Bust!"
     if dealer_score > 21 or player_score > dealer_score:
-        player.tokens += 2
-        return "You win! +2 tokens"
+        player.tokens += win_reward
+        # Perfect score on hard unlocks rewards
+        if (
+            difficulty == "hard"
+            and player_score == 21
+            and "Blackjack Champion" not in player.achievements
+        ):
+            player.achievements.append("Blackjack Champion")
+            if "Blackjack Shark" not in player.cards:
+                player.cards.append("Blackjack Shark")
+        return f"You win! +{win_reward} tokens"
     if player_score == dealer_score:
         player.tokens += 1
         return "Push. Token returned"
@@ -318,33 +345,79 @@ def play_slots(player: Player) -> str:
     return "No win"
 
 
-def play_darts(player: Player) -> str:
-    """Throw darts to win tokens based on your score."""
+def play_darts(player: Player, difficulty: str = "normal") -> str:
+    """Throw darts to win tokens based on your score.
+
+    Higher difficulties reduce your score but award more tokens.
+    Landing a bullseye on hard grants a collectible card and achievement.
+    """
     if player.tokens < 1:
         return "No tokens left!"
+    if difficulty not in {"easy", "normal", "hard"}:
+        raise ValueError("Invalid difficulty")
     player.tokens -= 1
     score = random.randint(1, 20) + player.speed // 2
+    if difficulty == "easy":
+        score += 2
+    elif difficulty == "hard":
+        score -= 2
+
     if score >= 20:
-        player.tokens += 2
-        return "Bullseye! +2 tokens"
+        reward = 2
+        if difficulty == "hard":
+            reward = 3
+            if "Darts Champion" not in player.achievements:
+                player.achievements.append("Darts Champion")
+                if "Dart Master" not in player.cards:
+                    player.cards.append("Dart Master")
+        player.tokens += reward
+        return f"Bullseye! +{reward} tokens"
     if score >= 15:
-        player.tokens += 1
-        return "Nice shot! +1 token"
+        reward = 1
+        if difficulty == "hard":
+            reward = 2
+        player.tokens += reward
+        return f"Nice shot! +{reward} token" + ("s" if reward > 1 else "")
     return "Missed the board"
 
 
-def go_fishing(player: Player) -> str:
-    """Fish at the park and possibly earn money or herbs."""
+def go_fishing(player: Player, difficulty: str = "normal") -> str:
+    """Fish at the park and possibly earn money or herbs.
+
+    Hard difficulty yields higher potential rewards but more failures.
+    Reeling in a big catch on hard unlocks a special card and achievement.
+    """
     if player.energy < 5:
         return "Too tired to fish!"
+    if difficulty not in {"easy", "normal", "hard"}:
+        raise ValueError("Invalid difficulty")
     player.energy -= energy_cost(player, 5)
-    if random.random() < 0.3:
+
+    no_bite_chance = 0.3
+    herb_chance = 0.2
+    min_reward, max_reward = 5, 20
+    if difficulty == "easy":
+        no_bite_chance = 0.2
+    elif difficulty == "hard":
+        no_bite_chance = 0.5
+        min_reward, max_reward = 10, 30
+
+    if random.random() < no_bite_chance:
         return "Nothing was biting"
-    if random.random() < 0.2:
+    if random.random() < herb_chance:
         player.resources["herbs"] = player.resources.get("herbs", 0) + 1
         return "Found some herbs by the water"
-    reward = random.randint(5, 20)
+
+    reward = random.randint(min_reward, max_reward)
     player.money += reward
+    if (
+        difficulty == "hard"
+        and reward >= 25
+        and "Master Angler" not in player.achievements
+    ):
+        player.achievements.append("Master Angler")
+        if "Fishing Legend" not in player.cards:
+            player.cards.append("Fishing Legend")
     return f"Caught a fish! +${reward}"
 
 
