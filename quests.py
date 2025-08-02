@@ -41,6 +41,10 @@ CARD_NAMES = [
     "Pirate",
     "Robot",
     "Alien",
+    # Special cards earned from minigame achievements
+    "Dart Master",
+    "Blackjack Shark",
+    "Fishing Legend",
 ]
 
 # Storyline quests completed in order
