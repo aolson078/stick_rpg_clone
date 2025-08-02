@@ -60,6 +60,7 @@ from combat import (
     fight_forest_enemy,
     fight_final_boss,
 )
+from dungeons import explore_dungeon
 from quests import (
     QUESTS,
     SIDE_QUEST,
@@ -934,7 +935,7 @@ def main():
                         continue
                     shop_message_timer = 60
                 elif in_building == "dungeon" and event.key == pygame.K_e:
-                    shop_message = fight_enemy(player)
+                    shop_message = explore_dungeon(player)
                     shop_message_timer = 60
                 elif in_building == "boss" and event.key == pygame.K_e:
                     shop_message = fight_final_boss(player)
@@ -963,7 +964,7 @@ def main():
                             continue
                         shop_message_timer = 60
                     elif in_building == "dungeon" and event.key == pygame.K_e:
-                        shop_message = fight_enemy(player)
+                        shop_message = explore_dungeon(player)
                         shop_message_timer = 60
                     elif in_building == "boss" and event.key == pygame.K_e:
                         shop_message = fight_final_boss(player)
@@ -1663,7 +1664,7 @@ def main():
                 msg = "[E] to gamble and fight"
                 msg += "  [D] darts"
             elif near_building.btype == "dungeon":
-                msg = "[E] to fight an enemy"
+                msg = "[E] to explore the sewers"
             elif near_building.btype == "forest":
                 msg = "[E] to explore the woods"
             elif near_building.btype == "petshop":
@@ -1733,7 +1734,7 @@ def main():
                     "[F] Fight  [Q] Leave"
                 )
             elif in_building == "dungeon":
-                txt = "[E] Fight  [Q] Leave"
+                txt = "[E] Explore  [Q] Leave"
             elif in_building == "forest":
                 txt = "[E] Fight  [Q] Leave"
             elif in_building == "boss":

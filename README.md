@@ -105,6 +105,10 @@ Outside the city gates lies a small **Woods** area. Three stationary foes wait
 here, each tougher than the last. Approach an enemy and press **E** to engage
 in battle for a cash reward.
 
+Hidden entrances now lead to procedural **Sewers** beneath the city. Each run
+randomly selects a few enemies based on those in the woods. Clear every room to
+earn a piece of unique loot like a Sewer Dagger, encouraging repeat dives.
+
 The city also has a **Pet Shop** where you can adopt an animal companion.
 Available pets include a dog, cat, parrot, llama, peacock, and rhino. Pets
 grant small bonuses like extra defense or charisma and may help you find money
