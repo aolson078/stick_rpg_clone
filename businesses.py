@@ -1,35 +1,59 @@
-"""Business purchasing and profit calculations."""
+"""Business purchasing, upgrades, staffing, and profit calculations."""
 from __future__ import annotations
-from typing import List, Tuple
+
 import random
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional
 
 from entities import Player
 from combat import energy_cost
 
-# (name, cost, base daily profit)
+
+@dataclass
+class BusinessType:
+    """Definition for a type of business."""
+    cost: int
+    base_profit: int
+    upgrade_to: Optional[str] = None
+    upgrade_cost: int = 0
+    staff_cost: int = 0
+
+
+# Information about each business type and upgrade path
+BUSINESS_DATA: Dict[str, BusinessType] = {
+    "Stall": BusinessType(cost=500, base_profit=25, upgrade_to="Store", upgrade_cost=1500, staff_cost=5),
+    "Store": BusinessType(cost=2000, base_profit=80, upgrade_to="Restaurant", upgrade_cost=5000, staff_cost=20),
+    "Restaurant": BusinessType(cost=8000, base_profit=200, upgrade_to=None, upgrade_cost=0, staff_cost=35),
+}
+
+# Ordered list of business names for menu display
+BUSINESS_CATALOG: List[str] = ["Stall", "Store", "Restaurant"]
+
+# Backwards compatible list of tuples for legacy code (name, cost, base profit)
 BUSINESSES: List[Tuple[str, int, int]] = [
-    ("Stall", 500, 25),
-    ("Store", 2000, 80),
+    (name, BUSINESS_DATA[name].cost, BUSINESS_DATA[name].base_profit) for name in BUSINESS_CATALOG
 ]
 
 
 def buy_business(player: Player, index: int) -> str:
-    """Purchase a new business by index."""
-    if index < 0 or index >= len(BUSINESSES):
+    """Purchase a new business by catalog index."""
+    if index < 0 or index >= len(BUSINESS_CATALOG):
         return "Invalid choice"
-    name, cost, profit = BUSINESSES[index]
+    name = BUSINESS_CATALOG[index]
+    data = BUSINESS_DATA[name]
     if name in player.businesses:
         return "Already owned"
-    if player.money < cost:
+    if player.money < data.cost:
         return "Not enough money!"
-    player.money -= cost
-    player.businesses[name] = profit
+    player.money -= data.cost
+    player.businesses[name] = data.base_profit
     player.business_bonus[name] = 0
+    player.business_staff[name] = 0
     return f"Bought {name}"
 
 
 def manage_business(player: Player, name: str) -> str:
-    """Simple management minigame to boost profits."""
+    """Simple management minigame to boost profits via charisma."""
     if name not in player.businesses:
         return "No such business"
     if player.energy < 5:
@@ -43,13 +67,56 @@ def manage_business(player: Player, name: str) -> str:
     return "Slow day at the shop"
 
 
+def upgrade_business(player: Player, name: str) -> str:
+    """Upgrade a business to its next tier if possible."""
+    if name not in player.businesses:
+        return "No such business"
+    current = BUSINESS_DATA.get(name)
+    if not current or not current.upgrade_to:
+        return "No upgrade available"
+    if player.money < current.upgrade_cost:
+        return "Not enough money!"
+    next_name = current.upgrade_to
+    next_data = BUSINESS_DATA[next_name]
+    player.money -= current.upgrade_cost
+    bonus = player.business_bonus.pop(name, 0)
+    staff = player.business_staff.pop(name, 0)
+    del player.businesses[name]
+    player.businesses[next_name] = next_data.base_profit
+    player.business_bonus[next_name] = bonus
+    player.business_staff[next_name] = staff
+    return f"Upgraded {name} to {next_name}"
+
+
+def hire_staff(player: Player, name: str, count: int = 1) -> str:
+    """Hire staff to work at a business."""
+    if name not in player.businesses:
+        return "No such business"
+    player.business_staff[name] = player.business_staff.get(name, 0) + max(0, count)
+    return f"Hired {count} staff for {name}"
+
+
 def collect_profits(player: Player) -> int:
-    """Return and add profits from all owned businesses."""
+    """Return and add profits from all owned businesses.
+
+    Profits are influenced by charisma and staff. Each staff member adds
+    a small profit boost but also incurs wages. There is also a chance of a
+    robbery which results in no profit for that business on that day.
+    """
     total = 0
     for name, base in player.businesses.items():
+        data = BUSINESS_DATA.get(name)
         bonus = player.business_bonus.get(name, 0)
-        profit = base + player.charisma * 2 + bonus
+        staff = player.business_staff.get(name, 0)
+        staff_profit = staff * 10
+        wages = staff * (data.staff_cost if data else 0)
+        profit = base + player.charisma * 2 + bonus + staff_profit - wages
+        # Risk of robbery mitigated by staff presence
+        risk = max(0.1 - 0.02 * staff, 0.02)
+        if random.random() < risk:
+            profit = 0
         total += profit
         player.business_bonus[name] = 0
     player.money += total
     return total
+
