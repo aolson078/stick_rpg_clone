@@ -126,7 +126,8 @@ advanced recipes like Energy Potions and the Flaming Sword.
 
 A small **Farm** south of town lets you grow crops. Buy seeds in the shop, plant
 them at the farm, harvest them three days later, then sell the produce or use it
-in crafting recipes.
+in crafting recipes. You can also keep chickens and cows there. Feeding them
+provides fresh eggs or milk that can be sold for profit or used in recipes.
 
 Entrepreneurs can now purchase their own **Stall** or **Store** in the market.
 Press **1** or **2** inside the Stall to buy a business. Each day your

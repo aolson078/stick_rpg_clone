@@ -108,7 +108,14 @@ class Player:
             "herbs": 0,
             "seeds": 0,
             "produce": 0,
+            "eggs": 0,
+            "milk": 0,
         }
+    )
+
+    # Farm animals owned by the player
+    animals: Dict[str, int] = field(
+        default_factory=lambda: {"chicken": 0, "cow": 0}
     )
 
     # Days when seeds were planted on the farm
