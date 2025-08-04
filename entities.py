@@ -10,6 +10,7 @@ class Building:
     rect: pygame.Rect
     name: str
     btype: str
+    image: Optional[pygame.Surface] = None
 
 
 @dataclass

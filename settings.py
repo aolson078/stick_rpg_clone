@@ -35,6 +35,33 @@ FLOWER_COLORS = [(255, 100, 100), (255, 255, 120), (200, 100, 200)]
 ASSETS_DIR = "assets"
 IMAGE_DIR = os.path.join(ASSETS_DIR, "images")
 SOUND_DIR = os.path.join(ASSETS_DIR, "sounds")
+BUILDING_IMAGE_DIR = os.path.join(IMAGE_DIR, "buildings")
+
+# Mapping of building types to sprite filenames
+BUILDING_SPRITES = {
+    "default": "default.png",
+    "home": "home.png",
+    "job": "job.png",
+    "shop": "shop.png",
+    "park": "park.png",
+    "dealer": "dealer.png",
+    "gym": "gym.png",
+    "library": "library.png",
+    "clinic": "clinic.png",
+    "bar": "bar.png",
+    "dungeon": "dungeon.png",
+    "petshop": "petshop.png",
+    "bank": "bank.png",
+    "townhall": "townhall.png",
+    "workshop": "workshop.png",
+    "farm": "farm.png",
+    "forest": "forest.png",
+    "mall": "mall.png",
+    "suburbs": "suburbs.png",
+    "beach": "beach.png",
+    "business": "business.png",
+    "boss": "boss.png",
+}
 
 FONT_COLOR = (30, 30, 30)
 UI_BG = (255, 255, 255, 230)

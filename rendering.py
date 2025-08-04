@@ -189,33 +189,41 @@ def building_color(btype):
 def draw_building(surface, building, highlight=False):
     """Draw a city building, optionally highlighted."""
     b = building.rect
-    color = building_color(building.btype)
-    if highlight:
-        color = tuple(min(255, c + 40) for c in color)
-    # Draw a subtle drop shadow for depth
-    shadow = pygame.Surface((b.width, b.height), pygame.SRCALPHA)
-    pygame.draw.rect(shadow, SHADOW_COLOR, shadow.get_rect(), border_radius=9)
-    surface.blit(shadow, (b.x + 4, b.y + 4))
-    pygame.draw.rect(surface, color, b, border_radius=9)
-    if highlight:
-        pygame.draw.rect(surface, (255, 255, 0), b, 2, border_radius=9)
-    roof = pygame.Rect(b.x, b.y - 14, b.width, 18)
-    pygame.draw.rect(
-        surface,
-        (150, 140, 100),
-        roof,
-        border_top_left_radius=9,
-        border_top_right_radius=9,
-    )
-    if building.btype != "park":
-        for i in range(2, b.width // 50):
-            wx = b.x + 18 + i * 50
-            wy = b.y + 28
-            pygame.draw.rect(surface, WINDOW_COLOR, (wx, wy, 22, 22), border_radius=4)
-        dx = b.x + b.width // 2 - 18
-        dy = b.y + b.height - 38
-        pygame.draw.rect(surface, DOOR_COLOR, (dx, dy, 36, 38), border_radius=5)
-        pygame.draw.circle(surface, (220, 210, 120), (dx + 32, dy + 19), 3)
+    if building.image:
+        shadow = pygame.Surface((b.width, b.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow, SHADOW_COLOR, shadow.get_rect(), border_radius=9)
+        surface.blit(shadow, (b.x + 4, b.y + 4))
+        sprite = pygame.transform.smoothscale(building.image, (b.width, b.height))
+        surface.blit(sprite, (b.x, b.y))
+        if highlight:
+            pygame.draw.rect(surface, (255, 255, 0), b, 2, border_radius=9)
+    else:
+        color = building_color(building.btype)
+        if highlight:
+            color = tuple(min(255, c + 40) for c in color)
+        shadow = pygame.Surface((b.width, b.height), pygame.SRCALPHA)
+        pygame.draw.rect(shadow, SHADOW_COLOR, shadow.get_rect(), border_radius=9)
+        surface.blit(shadow, (b.x + 4, b.y + 4))
+        pygame.draw.rect(surface, color, b, border_radius=9)
+        if highlight:
+            pygame.draw.rect(surface, (255, 255, 0), b, 2, border_radius=9)
+        roof = pygame.Rect(b.x, b.y - 14, b.width, 18)
+        pygame.draw.rect(
+            surface,
+            (150, 140, 100),
+            roof,
+            border_top_left_radius=9,
+            border_top_right_radius=9,
+        )
+        if building.btype != "park":
+            for i in range(2, b.width // 50):
+                wx = b.x + 18 + i * 50
+                wy = b.y + 28
+                pygame.draw.rect(surface, WINDOW_COLOR, (wx, wy, 22, 22), border_radius=4)
+            dx = b.x + b.width // 2 - 18
+            dy = b.y + b.height - 38
+            pygame.draw.rect(surface, DOOR_COLOR, (dx, dy, 36, 38), border_radius=5)
+            pygame.draw.circle(surface, (220, 210, 120), (dx + 32, dy + 19), 3)
     font = pygame.font.SysFont(None, 28)
     label = font.render(building.name, True, FONT_COLOR)
     label_bg = pygame.Surface(
