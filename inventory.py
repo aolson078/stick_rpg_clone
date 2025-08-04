@@ -289,6 +289,54 @@ def sell_produce(player: Player) -> str:
     return f"Sold {count} produce"
 
 
+def buy_animal(player: Player, animal: str) -> str:
+    """Purchase a farm animal if affordable."""
+    costs = {"chicken": 20, "cow": 100}
+    if animal not in costs:
+        return "Invalid animal"
+    cost = costs[animal]
+    if player.money < cost:
+        return f"Need ${cost}"
+    player.money -= cost
+    player.animals[animal] = player.animals.get(animal, 0) + 1
+    return f"Bought a {animal}"
+
+
+def feed_animals(player: Player, animal: str) -> str:
+    """Feed animals of the given type to collect their products."""
+    count = player.animals.get(animal, 0)
+    if count <= 0:
+        return f"No {animal}s"
+    feed_costs = {"chicken": 1, "cow": 3}
+    cost = feed_costs[animal] * count
+    if player.money < cost:
+        return f"Need ${cost}"
+    player.money -= cost
+    products = {"chicken": "eggs", "cow": "milk"}
+    product = products[animal]
+    player.resources[product] = player.resources.get(product, 0) + count
+    return f"Collected {count} {product}"
+
+
+def _sell_resource(player: Player, resource: str, price: int, label: str) -> str:
+    count = player.resources.get(resource, 0)
+    if count <= 0:
+        return f"No {label}"
+    player.money += price * count
+    player.resources[resource] = 0
+    return f"Sold {count} {label}"
+
+
+def sell_eggs(player: Player) -> str:
+    """Sell all collected eggs for cash."""
+    return _sell_resource(player, "eggs", 5, "eggs")
+
+
+def sell_milk(player: Player) -> str:
+    """Sell all collected milk for cash."""
+    return _sell_resource(player, "milk", 15, "milk")
+
+
 def train_companion(player: Player) -> str:
     """Spend money and energy to level up a pet companion."""
     if not player.companion:

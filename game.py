@@ -48,6 +48,10 @@ from inventory import (
     plant_seed,
     harvest_crops,
     sell_produce,
+    buy_animal,
+    feed_animals,
+    sell_eggs,
+    sell_milk,
     gain_crafting_exp,
     repair_equipment,
 )
@@ -1119,9 +1123,21 @@ def main():
                             shop_message = harvest_crops(player)
                         elif event.key == pygame.K_s:
                             shop_message = sell_produce(player)
+                        elif event.key == pygame.K_1:
+                            shop_message = buy_animal(player, "chicken")
+                        elif event.key == pygame.K_2:
+                            shop_message = buy_animal(player, "cow")
+                        elif event.key == pygame.K_f:
+                            shop_message = feed_animals(player, "chicken")
+                        elif event.key == pygame.K_m:
+                            shop_message = feed_animals(player, "cow")
+                        elif event.key == pygame.K_e:
+                            shop_message = sell_eggs(player)
+                        elif event.key == pygame.K_l:
+                            shop_message = sell_milk(player)
                         else:
-
-                            shop_message = "Need armor & 2 cloth"
+                            continue
+                        shop_message_timer = 60
                     elif event.key == pygame.K_5:
                         if player.crafting_level < 2:
                             shop_message = "Need Craft Lv2"
@@ -1678,7 +1694,7 @@ def main():
             elif near_building.btype == "workshop":
                 msg = "[E] to craft gear"
             elif near_building.btype == "farm":
-                msg = "[E] to manage crops"
+                msg = "[E] to manage farm"
             elif near_building.btype == "business":
                 msg = "[E] manage or 1-2 buy"
             elif near_building.btype == "mall":
@@ -1747,7 +1763,10 @@ def main():
             elif in_building == "workshop":
                 txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm 9 Repair  [Q] Leave"
             elif in_building == "farm":
-                txt = "[P] Plant seed  [H] Harvest  S:Sell  [Q] Leave"
+                txt = (
+                    "[P] Plant seed  [H] Harvest  S:Sell  1:Chick 2:Cow "
+                    "F:Feed chickens  M:Milk cows  E:Sell eggs  L:Sell milk  [Q] Leave"
+                )
             elif in_building == "business":
                 opts = []
                 for i, (name, cost, _p) in enumerate(BUSINESSES):
