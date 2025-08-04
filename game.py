@@ -1595,7 +1595,7 @@ def main():
             draw_rect = b.rect.move(-cam_x, -cam_y)
             draw_building(
                 screen,
-                Building(draw_rect, b.name, b.btype),
+                Building(draw_rect, b.name, b.btype, b.image),
                 highlight=(b == near_building),
             )
 

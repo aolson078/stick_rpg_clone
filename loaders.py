@@ -1,18 +1,31 @@
 import json
+import os
 import pygame
 from typing import List, Dict
 
 from entities import Building, Quest, SideQuest
 from inventory import HOME_UPGRADES
+import settings
 
 
 def load_buildings(path: str = "data/buildings.json") -> List[Building]:
     """Load building definitions from a JSON file."""
     with open(path) as f:
         data = json.load(f)
-    buildings = [
-        Building(pygame.Rect(*b["rect"]), b["name"], b["type"]) for b in data
-    ]
+    buildings: List[Building] = []
+    for b in data:
+        rect = pygame.Rect(*b["rect"])
+        name = b["name"]
+        btype = b["type"]
+        filename = settings.BUILDING_SPRITES.get(
+            btype, settings.BUILDING_SPRITES["default"]
+        )
+        img_path = os.path.join(settings.BUILDING_IMAGE_DIR, filename)
+        try:
+            image = pygame.image.load(img_path).convert_alpha()
+        except pygame.error:
+            image = None
+        buildings.append(Building(rect, name, btype, image))
     return buildings
 
 
