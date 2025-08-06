@@ -18,8 +18,6 @@ from settings import (
     LIBRARY_COLOR,
     CLINIC_COLOR,
     BAR_COLOR,
-    ROAD_COLOR,
-    SIDEWALK_COLOR,
     CITY_WALL_COLOR,
     UI_BG,
     FONT_COLOR,
@@ -33,6 +31,7 @@ from settings import (
     FLOWER_COLORS,
     SHADOW_COLOR,
 )
+from tilemap import TileMap
 from careers import get_job_title, job_progress
 from inventory import crafting_exp_needed
 from constants import PERK_MAX_LEVEL
@@ -44,6 +43,7 @@ STARS = []
 CLOUDS = []
 RAINDROPS = []
 SNOWFLAKES = []
+CITY_MAP = None
 
 
 def load_player_sprites(color=None):
@@ -235,15 +235,12 @@ def draw_building(surface, building, highlight=False):
 
 
 def draw_road_and_sidewalks(surface, cam_x, cam_y):
-    """Draw the road and sidewalk tiles of the city."""
-    road_rect = pygame.Rect(0 - cam_x, 470 - cam_y, MAP_WIDTH, 60)
-    pygame.draw.rect(surface, ROAD_COLOR, road_rect)
-    pygame.draw.rect(surface, SIDEWALK_COLOR, (0 - cam_x, 460 - cam_y, MAP_WIDTH, 10))
-    pygame.draw.rect(surface, SIDEWALK_COLOR, (0 - cam_x, 530 - cam_y, MAP_WIDTH, 10))
-    for x in range(0, MAP_WIDTH, 80):
-        pygame.draw.rect(
-            surface, (230, 220, 100), (x - cam_x, 498 - cam_y, 36, 6), border_radius=3
-        )
+    """Render the city ground using a tile map."""
+    global CITY_MAP
+    if CITY_MAP is None:
+        map_path = os.path.join(settings.IMAGE_DIR, "tiles", "city.tmx")
+        CITY_MAP = TileMap(map_path)
+    CITY_MAP.render(surface, cam_x, cam_y)
 
 
 def draw_city_walls(surface, cam_x, cam_y):

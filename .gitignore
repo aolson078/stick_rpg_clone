@@ -1,3 +1,3 @@
 # Ignore asset files
-assets/images/*.png
-assets/sounds/*.wav
+assets/images/**/*.png
+assets/sounds/**/*.wav
