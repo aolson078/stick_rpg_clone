@@ -35,6 +35,7 @@ from tilemap import TileMap
 from careers import get_job_title, job_progress
 from inventory import crafting_exp_needed
 from constants import PERK_MAX_LEVEL
+from helpers import scaled_font
 
 PLAYER_SPRITES = []
 PLAYER_SPRITE_COLOR = None
@@ -224,7 +225,7 @@ def draw_building(surface, building, highlight=False):
             dy = b.y + b.height - 38
             pygame.draw.rect(surface, DOOR_COLOR, (dx, dy, 36, 38), border_radius=5)
             pygame.draw.circle(surface, (220, 210, 120), (dx + 32, dy + 19), 3)
-    font = pygame.font.SysFont(None, 28)
+    font = scaled_font(28)
     label = font.render(building.name, True, FONT_COLOR)
     label_bg = pygame.Surface(
         (label.get_width() + 12, label.get_height() + 4), pygame.SRCALPHA
@@ -716,12 +717,18 @@ def draw_help_screen(surface, font):
 
 def draw_tip_panel(surface, font, text):
     """Display an instruction panel at the bottom of the screen."""
-    panel_height = 100
+    panel_height = int(settings.SCREEN_HEIGHT * 0.0833)
     panel = pygame.Surface((settings.SCREEN_WIDTH, panel_height))
     panel.fill((245, 245, 200))
     surface.blit(panel, (0, settings.SCREEN_HEIGHT - panel_height))
     tip_surf = font.render(text, True, (80, 40, 40))
-    surface.blit(tip_surf, (20, settings.SCREEN_HEIGHT - 80))
+    surface.blit(
+        tip_surf,
+        (
+            int(settings.SCREEN_WIDTH * 0.0125),
+            settings.SCREEN_HEIGHT - panel_height + int(panel_height * 0.2),
+        ),
+    )
 
 
 def draw_hotkey_bar(surface, font, player, rects):
@@ -729,39 +736,52 @@ def draw_hotkey_bar(surface, font, player, rects):
     for i, rect in enumerate(rects):
         pygame.draw.rect(surface, (210, 210, 210), rect)
         label = font.render(str(i + 1), True, FONT_COLOR)
-        surface.blit(label, (rect.x + 2, rect.y - 18))
+        surface.blit(
+            label,
+            (rect.x + int(rect.width * 0.033), rect.y - int(rect.height * 0.45)),
+        )
         item = player.hotkeys[i]
         if item:
             txt = font.render(item.name, True, FONT_COLOR)
-            surface.blit(txt, (rect.x + 4, rect.y + 10))
+            surface.blit(
+                txt,
+                (rect.x + int(rect.width * 0.067), rect.y + int(rect.height * 0.25)),
+            )
 
 
 def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_rects):
     """Draw a simple interior of the player's home."""
     surface.fill((235, 225, 200))
     # walls
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, 40))
+    wall = int(settings.SCREEN_WIDTH * 0.025)
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, wall))
     pygame.draw.rect(
         surface,
         (160, 140, 110),
-        (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40),
+        (0, settings.SCREEN_HEIGHT - wall, settings.SCREEN_WIDTH, wall),
     )
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, settings.SCREEN_HEIGHT))
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, wall, settings.SCREEN_HEIGHT))
     pygame.draw.rect(
         surface,
         (160, 140, 110),
-        (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT),
+        (settings.SCREEN_WIDTH - wall, 0, wall, settings.SCREEN_HEIGHT),
     )
 
     # bed
     pygame.draw.rect(surface, (200, 70, 70), bed_rect)
-    pygame.draw.rect(surface, (255, 255, 255), bed_rect.inflate(-20, -20))
+    pygame.draw.rect(
+        surface,
+        (255, 255, 255),
+        bed_rect.inflate(
+            -int(bed_rect.width * 0.09), -int(bed_rect.height * 0.167)
+        ),
+    )
 
     # door
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
-    pygame.draw.circle(
-        surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6
-    )
+    knob_x = door_rect.right - int(door_rect.width * 0.167)
+    knob_r = max(1, int(door_rect.width * 0.05))
+    pygame.draw.circle(surface, (220, 210, 120), (knob_x, door_rect.centery), knob_r)
 
     for idx, rect in enumerate(furn_rects):
         pygame.draw.rect(surface, (200, 190, 150), rect)
@@ -769,7 +789,10 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_r
         item = player.furniture.get(slot)
         if item:
             txt = font.render(item.name, True, FONT_COLOR)
-            surface.blit(txt, (rect.x + 4, rect.y + 20))
+            surface.blit(
+                txt,
+                (rect.x + int(rect.width * 0.033), rect.y + int(rect.height * 0.25)),
+            )
 
     draw_player_sprite(
         surface, player.rect, frame, player.facing_left, player.color, player.head_color
@@ -796,9 +819,9 @@ def draw_forest_area(surface, font, player, frame, enemy_rects, door_rect):
     surface.fill((50, 140, 70))
 
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
-    pygame.draw.circle(
-        surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6
-    )
+    knob_x = door_rect.right - int(door_rect.width * 0.167)
+    knob_r = max(1, int(door_rect.width * 0.05))
+    pygame.draw.circle(surface, (220, 210, 120), (knob_x, door_rect.centery), knob_r)
 
     images = load_forest_enemy_images()
     for rect, img in zip(enemy_rects, images):
@@ -824,51 +847,86 @@ def draw_bar_interior(
     """Draw the interior of the bar with simple interaction spots."""
     surface.fill((225, 205, 170))
 
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, 40))
+    wall = int(settings.SCREEN_WIDTH * 0.025)
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, settings.SCREEN_WIDTH, wall))
     pygame.draw.rect(
         surface,
         (160, 140, 110),
-        (0, settings.SCREEN_HEIGHT - 40, settings.SCREEN_WIDTH, 40),
+        (0, settings.SCREEN_HEIGHT - wall, settings.SCREEN_WIDTH, wall),
     )
-    pygame.draw.rect(surface, (160, 140, 110), (0, 0, 40, settings.SCREEN_HEIGHT))
+    pygame.draw.rect(surface, (160, 140, 110), (0, 0, wall, settings.SCREEN_HEIGHT))
     pygame.draw.rect(
         surface,
         (160, 140, 110),
-        (settings.SCREEN_WIDTH - 40, 0, 40, settings.SCREEN_HEIGHT),
+        (settings.SCREEN_WIDTH - wall, 0, wall, settings.SCREEN_HEIGHT),
     )
 
     # counter for buying tokens
     pygame.draw.rect(surface, (120, 80, 60), counter_rect)
-    pygame.draw.rect(surface, (180, 140, 100), counter_rect.inflate(-20, -20))
+    pygame.draw.rect(
+        surface,
+        (180, 140, 100),
+        counter_rect.inflate(
+            -int(counter_rect.width * 0.111), -int(counter_rect.height * 0.167)
+        ),
+    )
     ct = font.render("Tokens", True, FONT_COLOR)
     surface.blit(
-        ct, (counter_rect.x + 20, counter_rect.y + counter_rect.height // 2 - 10)
+        ct,
+        (
+            counter_rect.x + int(counter_rect.width * 0.111),
+            counter_rect.y + counter_rect.height // 2 - ct.get_height() // 2,
+        ),
     )
 
     # blackjack table
     pygame.draw.rect(surface, (60, 120, 60), bj_rect)
     bj = font.render("Blackjack", True, (250, 250, 250))
-    surface.blit(bj, (bj_rect.x + 20, bj_rect.y + bj_rect.height // 2 - 10))
+    surface.blit(
+        bj,
+        (
+            bj_rect.x + int(bj_rect.width * 0.1),
+            bj_rect.y + bj_rect.height // 2 - bj.get_height() // 2,
+        ),
+    )
 
     # slots
     pygame.draw.rect(surface, (90, 90, 150), slot_rect)
     sl = font.render("Slots", True, (250, 250, 250))
-    surface.blit(sl, (slot_rect.x + 20, slot_rect.y + slot_rect.height // 2 - 10))
+    surface.blit(
+        sl,
+        (
+            slot_rect.x + int(slot_rect.width * 0.111),
+            slot_rect.y + slot_rect.height // 2 - sl.get_height() // 2,
+        ),
+    )
 
     # darts board
     pygame.draw.rect(surface, (120, 70, 120), dart_rect)
     dr = font.render("Darts", True, (250, 250, 250))
-    surface.blit(dr, (dart_rect.x + 20, dart_rect.y + dart_rect.height // 2 - 10))
+    surface.blit(
+        dr,
+        (
+            dart_rect.x + int(dart_rect.width * 0.1),
+            dart_rect.y + dart_rect.height // 2 - dr.get_height() // 2,
+        ),
+    )
 
     # fighting ring
     pygame.draw.rect(surface, (180, 70, 70), brawl_rect)
     fb = font.render("Fight", True, (250, 250, 250))
-    surface.blit(fb, (brawl_rect.x + 20, brawl_rect.y + brawl_rect.height // 2 - 10))
+    surface.blit(
+        fb,
+        (
+            brawl_rect.x + int(brawl_rect.width * 0.125),
+            brawl_rect.y + brawl_rect.height // 2 - fb.get_height() // 2,
+        ),
+    )
 
     pygame.draw.rect(surface, (100, 80, 60), door_rect)
-    pygame.draw.circle(
-        surface, (220, 210, 120), (door_rect.right - 20, door_rect.centery), 6
-    )
+    knob_x = door_rect.right - int(door_rect.width * 0.167)
+    knob_r = max(1, int(door_rect.width * 0.05))
+    pygame.draw.circle(surface, (220, 210, 120), (knob_x, door_rect.centery), knob_r)
 
     draw_player_sprite(
         surface, player.rect, frame, player.facing_left, player.color, player.head_color

@@ -25,17 +25,16 @@ from businesses import collect_profits
 import settings
 
 
+BASE_SCREEN_W, BASE_SCREEN_H = 1600, 1200
+
+
 # --- Layout helpers -------------------------------------------------------
 
 HOME_WIDTH = settings.SCREEN_WIDTH
 HOME_HEIGHT = settings.SCREEN_HEIGHT
-BED_RECT = pygame.Rect(120, 160, 220, 120)
-DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
-FURNITURE_RECTS = [
-    pygame.Rect(360 + col * 150, HOME_HEIGHT // 2 - 80 + row * 100, 120, 80)
-    for row in range(3)
-    for col in range(3)
-]
+BED_RECT = pygame.Rect(0, 0, 0, 0)
+DOOR_RECT = pygame.Rect(0, 0, 0, 0)
+FURNITURE_RECTS: List[pygame.Rect] = []
 
 # Bonuses granted when sleeping with certain furniture placed
 FURNITURE_BONUSES: Dict[str, Dict[str, int]] = {
@@ -44,21 +43,27 @@ FURNITURE_BONUSES: Dict[str, Dict[str, int]] = {
 
 BAR_WIDTH = settings.SCREEN_WIDTH
 BAR_HEIGHT = settings.SCREEN_HEIGHT
-BAR_DOOR_RECT = pygame.Rect(BAR_WIDTH // 2 - 60, BAR_HEIGHT - 180, 120, 160)
-COUNTER_RECT = pygame.Rect(60, BAR_HEIGHT // 2 - 60, 180, 120)
-BJ_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 - 150, 200, 100)
-SLOT_RECT = pygame.Rect(BAR_WIDTH - 240, BAR_HEIGHT // 2 - 60, 180, 120)
-BRAWL_RECT = pygame.Rect(BAR_WIDTH // 2 - 80, 80, 160, 120)
-DART_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 + 60, 200, 100)
+BAR_DOOR_RECT = pygame.Rect(0, 0, 0, 0)
+COUNTER_RECT = pygame.Rect(0, 0, 0, 0)
+BJ_RECT = pygame.Rect(0, 0, 0, 0)
+SLOT_RECT = pygame.Rect(0, 0, 0, 0)
+BRAWL_RECT = pygame.Rect(0, 0, 0, 0)
+DART_RECT = pygame.Rect(0, 0, 0, 0)
 
 FOREST_WIDTH = settings.SCREEN_WIDTH
 FOREST_HEIGHT = settings.SCREEN_HEIGHT
-FOREST_DOOR_RECT = pygame.Rect(FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160)
+FOREST_DOOR_RECT = pygame.Rect(0, 0, 0, 0)
+
+
+def scaled_font(base_size: int) -> pygame.font.Font:
+    """Return a font scaled relative to the window height."""
+    scale = settings.SCREEN_HEIGHT / BASE_SCREEN_H
+    return pygame.font.SysFont(None, int(base_size * scale))
 
 
 def recalc_layouts() -> None:
     """Update layout rects when the window size changes."""
-    global HOME_WIDTH, HOME_HEIGHT, DOOR_RECT
+    global HOME_WIDTH, HOME_HEIGHT, BED_RECT, DOOR_RECT
     global BAR_WIDTH, BAR_HEIGHT, BAR_DOOR_RECT, COUNTER_RECT
     global BJ_RECT, SLOT_RECT, BRAWL_RECT, DART_RECT
     global FOREST_WIDTH, FOREST_HEIGHT, FOREST_DOOR_RECT
@@ -66,29 +71,87 @@ def recalc_layouts() -> None:
 
     HOME_WIDTH = settings.SCREEN_WIDTH
     HOME_HEIGHT = settings.SCREEN_HEIGHT
-    DOOR_RECT = pygame.Rect(HOME_WIDTH // 2 - 60, HOME_HEIGHT - 180, 120, 160)
 
-    BAR_WIDTH = settings.SCREEN_WIDTH
-    BAR_HEIGHT = settings.SCREEN_HEIGHT
-    BAR_DOOR_RECT = pygame.Rect(BAR_WIDTH // 2 - 60, BAR_HEIGHT - 180, 120, 160)
-    COUNTER_RECT = pygame.Rect(60, BAR_HEIGHT // 2 - 60, 180, 120)
-    BJ_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 - 150, 200, 100)
-    SLOT_RECT = pygame.Rect(BAR_WIDTH - 240, BAR_HEIGHT // 2 - 60, 180, 120)
-    BRAWL_RECT = pygame.Rect(BAR_WIDTH // 2 - 80, 80, 160, 120)
-    DART_RECT = pygame.Rect(BAR_WIDTH // 2 - 100, BAR_HEIGHT // 2 + 60, 200, 100)
-
-    FOREST_WIDTH = settings.SCREEN_WIDTH
-    FOREST_HEIGHT = settings.SCREEN_HEIGHT
-    FOREST_DOOR_RECT = pygame.Rect(
-        FOREST_WIDTH // 2 - 60, FOREST_HEIGHT - 180, 120, 160
+    # Home layout ratios based on the original 1600x1200 resolution
+    bed = (
+        int(HOME_WIDTH * 0.075),
+        int(HOME_HEIGHT * 0.1333),
+        int(HOME_WIDTH * 0.1375),
+        int(HOME_HEIGHT * 0.1),
+    )
+    BED_RECT = pygame.Rect(*bed)
+    door_w = int(HOME_WIDTH * 0.075)
+    door_h = int(HOME_HEIGHT * 0.1333)
+    DOOR_RECT = pygame.Rect(
+        int(HOME_WIDTH * 0.5 - HOME_WIDTH * 0.0375),
+        int(HOME_HEIGHT * 0.85),
+        door_w,
+        door_h,
     )
 
+    col_spacing = int(HOME_WIDTH * 0.09375)
+    row_spacing = int(HOME_HEIGHT * 0.0833)
+    base_x = int(HOME_WIDTH * 0.225)
+    base_y = int(HOME_HEIGHT * 0.4333)
+    furn_w = int(HOME_WIDTH * 0.075)
+    furn_h = int(HOME_HEIGHT * 0.0667)
     FURNITURE_RECTS = [
-        pygame.Rect(360 + col * 150, HOME_HEIGHT // 2 - 80 + row * 100, 120, 80)
+        pygame.Rect(base_x + col * col_spacing, base_y + row * row_spacing, furn_w, furn_h)
         for row in range(3)
         for col in range(3)
     ]
 
+    BAR_WIDTH = settings.SCREEN_WIDTH
+    BAR_HEIGHT = settings.SCREEN_HEIGHT
+    BAR_DOOR_RECT = pygame.Rect(
+        int(BAR_WIDTH * 0.5 - BAR_WIDTH * 0.0375),
+        int(BAR_HEIGHT * 0.85),
+        door_w,
+        door_h,
+    )
+    COUNTER_RECT = pygame.Rect(
+        int(BAR_WIDTH * 0.0375),
+        int(BAR_HEIGHT * 0.45),
+        int(BAR_WIDTH * 0.1125),
+        int(BAR_HEIGHT * 0.1),
+    )
+    BJ_RECT = pygame.Rect(
+        int(BAR_WIDTH * 0.4375),
+        int(BAR_HEIGHT * 0.375),
+        int(BAR_WIDTH * 0.125),
+        int(BAR_HEIGHT * 0.0833),
+    )
+    SLOT_RECT = pygame.Rect(
+        int(BAR_WIDTH * 0.85),
+        int(BAR_HEIGHT * 0.45),
+        int(BAR_WIDTH * 0.1125),
+        int(BAR_HEIGHT * 0.1),
+    )
+    BRAWL_RECT = pygame.Rect(
+        int(BAR_WIDTH * 0.45),
+        int(BAR_HEIGHT * 0.0667),
+        int(BAR_WIDTH * 0.1),
+        int(BAR_HEIGHT * 0.1),
+    )
+    DART_RECT = pygame.Rect(
+        int(BAR_WIDTH * 0.4375),
+        int(BAR_HEIGHT * 0.55),
+        int(BAR_WIDTH * 0.125),
+        int(BAR_HEIGHT * 0.0833),
+    )
+
+    FOREST_WIDTH = settings.SCREEN_WIDTH
+    FOREST_HEIGHT = settings.SCREEN_HEIGHT
+    FOREST_DOOR_RECT = pygame.Rect(
+        int(FOREST_WIDTH * 0.5 - FOREST_WIDTH * 0.0375),
+        int(FOREST_HEIGHT * 0.85),
+        door_w,
+        door_h,
+    )
+
+
+# Initialize rects using current screen size
+recalc_layouts()
 
 # --- Inventory UI helpers -------------------------------------------------
 
@@ -97,8 +160,9 @@ def compute_slot_rects() -> Dict[str, pygame.Rect]:
     """Return rects for each equipment slot."""
     left = settings.SCREEN_WIDTH // 10
     top = settings.SCREEN_HEIGHT // 6
-    w, h = 100, 60
-    spacing = 70
+    w = int(settings.SCREEN_WIDTH * 0.0625)
+    h = int(settings.SCREEN_HEIGHT * 0.05)
+    spacing = int(settings.SCREEN_HEIGHT * 0.0583)
     return {
         "head": pygame.Rect(left, top, w, h),
         "chest": pygame.Rect(left, top + spacing, w, h),
@@ -110,10 +174,13 @@ def compute_slot_rects() -> Dict[str, pygame.Rect]:
 
 def compute_hotkey_rects() -> List[pygame.Rect]:
     """Return rects for quick item hotkey slots."""
-    base = settings.SCREEN_WIDTH // 2 - 170
-    y = settings.SCREEN_HEIGHT - 80
-    w, h = 60, 40
-    return [pygame.Rect(base + i * 70, y, w, h) for i in range(5)]
+    w = int(settings.SCREEN_WIDTH * 0.0375)
+    h = int(settings.SCREEN_HEIGHT * 0.0333)
+    spacing = int(settings.SCREEN_WIDTH * 0.04375)
+    total_width = w + spacing * 4
+    base = settings.SCREEN_WIDTH // 2 - total_width // 2
+    y = settings.SCREEN_HEIGHT - int(settings.SCREEN_HEIGHT * 0.0667)
+    return [pygame.Rect(base + i * spacing, y, w, h) for i in range(5)]
 
 
 def compute_furniture_rects(player: Player) -> List[pygame.Rect]:
@@ -452,6 +519,7 @@ def dig_for_treasure(player: Player) -> str:
     player.inventory.append(
         InventoryItem("Pearl Necklace", "chest", defense=1, speed=1)
     )
+
     return "You dug up a Pearl Necklace!"
 
 

@@ -139,6 +139,7 @@ from helpers import (
     FOREST_WIDTH,
     FOREST_HEIGHT,
     FOREST_DOOR_RECT,
+    scaled_font,
 )
 from menus import start_menu, character_creation
 
@@ -252,7 +253,7 @@ def main():
     )
     pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
     clock = pygame.time.Clock()
-    font = pygame.font.SysFont(None, 28)
+    font = scaled_font(28)
 
     if start_menu(screen, font):
         loaded = load_game()
@@ -309,7 +310,7 @@ def main():
         hotkey_rects = compute_hotkey_rects()
         pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont(None, 28)
+        self.font = scaled_font(28)
 
         if start_menu(self.screen, self.font):
             loaded = load_game()
@@ -416,6 +417,7 @@ def main():
                     recalc_layouts()
                     slot_rects = compute_slot_rects()
                     hotkey_rects = compute_hotkey_rects()
+                    font = scaled_font(28)
                 elif event.key == pygame.K_m and SOUND_ENABLED:
                     muted = not muted
                     vol = 0 if muted else SFX_VOLUME
