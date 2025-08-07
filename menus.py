@@ -7,7 +7,7 @@ import os
 import sys
 import pygame
 
-from helpers import recalc_layouts, compute_slot_rects
+from helpers import recalc_layouts, compute_slot_rects, scaled_font
 from quests import LEADERBOARD_FILE
 import settings
 
@@ -31,6 +31,7 @@ def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
                 screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
                 recalc_layouts()
                 slot_rects = compute_slot_rects()
+                font = scaled_font(28)
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     return False
