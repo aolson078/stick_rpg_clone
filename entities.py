@@ -42,6 +42,8 @@ class Player:
     tokens: int = 0
     crafting_level: int = 1
     crafting_exp: int = 0
+    # Names of crafting recipes the player has discovered
+    known_recipes: List[str] = field(default_factory=list)
     has_skateboard: bool = False
     facing_left: bool = False
     inventory: List["InventoryItem"] = field(default_factory=list)

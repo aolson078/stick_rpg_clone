@@ -1,5 +1,7 @@
 """Item and inventory handling extracted from game.py."""
 
+import json
+from pathlib import Path
 from typing import Dict, List, Tuple
 from entities import Player, InventoryItem
 from combat import energy_cost
@@ -85,6 +87,15 @@ SHOP_ITEMS: List[Tuple[str, int, any]] = [
         lambda p: p.resources.__setitem__("seeds", p.resources.get("seeds", 0) + 3),
     ),
 ]
+
+# Loaded crafting recipes
+RECIPES_PATH = Path(__file__).parent / "data" / "recipes.json"
+if RECIPES_PATH.exists():
+    with open(RECIPES_PATH) as f:
+        _recipes = json.load(f)
+    RECIPES: Dict[str, Dict] = {r["name"]: r for r in _recipes}
+else:
+    RECIPES = {}
 
 # Seasonal price modifiers applied to shop items
 SEASON_PRICE_MODIFIERS = {
@@ -423,6 +434,36 @@ def gain_crafting_exp(player: Player, amount: int = 5) -> str:
         player.crafting_level += 1
         msg = f"Crafting leveled to {player.crafting_level}!"
     return msg
+
+
+def learn_recipe(player: Player, name: str) -> bool:
+    """Add a recipe to the player's known list if valid."""
+    if name in RECIPES and name not in player.known_recipes:
+        player.known_recipes.append(name)
+        return True
+    return False
+
+
+def craft_recipe(player: Player, name: str) -> str:
+    """Craft an item using a known recipe."""
+    recipe = RECIPES.get(name)
+    if not recipe:
+        return "Unknown recipe"
+    if name not in player.known_recipes:
+        return "Recipe not known"
+    if recipe.get("level", 1) > player.crafting_level:
+        return f"Need Craft Lv{recipe['level']}"
+    reqs = recipe.get("requires", {})
+    for res, amt in reqs.items():
+        if player.resources.get(res, 0) < amt:
+            return f"Need {amt} {res}"
+    for res, amt in reqs.items():
+        player.resources[res] -= amt
+    prod = recipe.get("produces", {})
+    item = InventoryItem(**prod)
+    player.inventory.append(item)
+    lvl_msg = gain_crafting_exp(player)
+    return f"Crafted {prod['name']}" + (f"  {lvl_msg}" if lvl_msg else "")
 
 
 def repair_equipment(player: Player) -> str:
