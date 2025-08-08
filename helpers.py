@@ -602,6 +602,7 @@ def save_game(player: Player) -> None:
         "weather": player.weather,
         "achievements": player.achievements,
         "cards": player.cards,
+        "known_recipes": player.known_recipes,
         "epithet": player.epithet,
     }
     with open(SAVE_FILE, "w") as f:
@@ -678,6 +679,7 @@ def load_game() -> Optional[Player]:
     player.weather = data.get("weather", "Clear")
     player.achievements = data.get("achievements", [])
     player.cards = data.get("cards", [])
+    player.known_recipes = data.get("known_recipes", [])
     player.epithet = data.get("epithet", "")
     for item in data.get("inventory", []):
         player.inventory.append(InventoryItem(**item))

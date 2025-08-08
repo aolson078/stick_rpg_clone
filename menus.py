@@ -65,6 +65,33 @@ def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
         pygame.time.wait(20)
 
 
+def draw_workshop_menu(surface: pygame.Surface, font: pygame.font.Font, player, recipes):
+    """Render the crafting recipe list inside the workshop."""
+    overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    surface.blit(overlay, (0, 0))
+
+    panel = pygame.Surface((settings.SCREEN_WIDTH - 120, settings.SCREEN_HEIGHT - 120))
+    panel.fill((240, 240, 220))
+    surface.blit(panel, (60, 60))
+
+    title = font.render("Workshop", True, settings.FONT_COLOR)
+    surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+
+    if not player.known_recipes:
+        txt = font.render("No recipes known", True, settings.FONT_COLOR)
+        surface.blit(txt, (100, 120))
+    else:
+        for i, name in enumerate(player.known_recipes):
+            recipe = recipes.get(name, {})
+            reqs = ", ".join(f"{amt} {res}" for res, amt in recipe.get("requires", {}).items())
+            line = font.render(f"{i+1}: {name} - {reqs}", True, settings.FONT_COLOR)
+            surface.blit(line, (100, 120 + i * 40))
+
+    info = font.render("[Q] Exit  [R] Repair", True, settings.FONT_COLOR)
+    surface.blit(info, (100, 120 + len(player.known_recipes) * 40 + 20))
+
+
 def character_creation(screen: pygame.Surface, font: pygame.font.Font):
     """Prompt for name and colors."""
     name = ""

@@ -54,6 +54,8 @@ from inventory import (
     sell_milk,
     gain_crafting_exp,
     repair_equipment,
+    craft_recipe,
+    RECIPES,
 )
 from businesses import BUSINESSES, buy_business, manage_business
 from loaders import load_buildings
@@ -141,7 +143,7 @@ from helpers import (
     FOREST_DOOR_RECT,
     scaled_font,
 )
-from menus import start_menu, character_creation
+from menus import start_menu, character_creation, draw_workshop_menu
 
 recalc_layouts()
 
@@ -277,6 +279,7 @@ def main():
         show_inventory = False
         show_perk_menu = False
         show_companion_menu = False
+        show_craft_menu = False
         show_log = False
         show_help = False
         dragging_item = None
@@ -298,6 +301,7 @@ def main():
         show_inventory = False
         show_perk_menu = False
         show_companion_menu = False
+        show_craft_menu = False
         show_log = False
         show_help = False
         dragging_item = None
@@ -671,6 +675,16 @@ def main():
                         show_companion_menu = False
                     elif event.key in (pygame.K_q, pygame.K_t):
                         show_companion_menu = False
+                if show_craft_menu and event.type == pygame.KEYDOWN:
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        idx = event.key - pygame.K_1
+                        if idx < len(player.known_recipes):
+                            name = player.known_recipes[idx]
+                            shop_message = craft_recipe(player, name)
+                            shop_message_timer = 90
+                        show_craft_menu = False
+                    elif event.key in (pygame.K_q, pygame.K_c):
+                        show_craft_menu = False
                 if show_log and event.type == pygame.KEYDOWN:
                     if event.key in (pygame.K_l, pygame.K_q):
                         show_log = False
@@ -1007,118 +1021,14 @@ def main():
                     shop_message = card_duel(player)
                     shop_message_timer = 60
                 elif in_building == "workshop":
-                        if event.key == pygame.K_1:
-                            if player.resources.get("herbs", 0) >= 2:
-                                player.resources["herbs"] -= 2
-                                player.inventory.append(
-                                    InventoryItem("Health Potion", "consumable")
-                                )
-                                shop_message = "Crafted Health Potion"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need 2 herbs"
-                        elif event.key == pygame.K_2:
-                            if player.resources.get("metal", 0) >= 3:
-                                player.resources["metal"] -= 3
-                                player.inventory.append(
-                                    InventoryItem(
-                                        "Iron Sword",
-                                        "weapon",
-                                        attack=4,
-                                    )
-                                )
-                                shop_message = "Forged Iron Sword"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need 3 metal"
-                        elif event.key == pygame.K_3:
-                            weapon = player.equipment.get("weapon")
-                            if weapon and player.resources.get("metal", 0) >= 2:
-                                player.resources["metal"] -= 2
-                                weapon.attack += 1
-                                weapon.level += 1
-                                shop_message = "Upgraded weapon"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need weapon & 2 metal"
-                        elif event.key == pygame.K_4:
-                            armor = player.equipment.get("chest")
-                            if armor and player.resources.get("cloth", 0) >= 2:
-                                player.resources["cloth"] -= 2
-                                armor.defense += 1
-                                armor.level += 1
-                                shop_message = "Upgraded armor"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need armor & 2 cloth"
-                        elif event.key == pygame.K_5:
-                            if player.crafting_level < 2:
-                                shop_message = "Need Craft Lv2"
-                            elif player.resources.get("metal", 0) >= 1 and player.resources.get("cloth", 0) >= 2:
-                                player.resources["metal"] -= 1
-                                player.resources["cloth"] -= 2
-                                if "Decorations" not in player.home_upgrades:
-                                    player.home_upgrades.append("Decorations")
-                                    shop_message = "Built home decorations"
-                                else:
-                                    player.inventory.append(InventoryItem("Decor Chair", "furniture"))
-                                    shop_message = "Crafted Decor Chair"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need 1 metal & 2 cloth"
-                        elif event.key == pygame.K_6:
-                            if player.crafting_level < 2:
-                                shop_message = "Need Craft Lv2"
-                            elif player.resources.get("herbs", 0) >= 3:
-                                player.resources["herbs"] -= 3
-                                player.inventory.append(InventoryItem("Energy Potion", "consumable"))
-                                shop_message = "Brewed Energy Potion"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need 3 herbs"
-                        elif event.key == pygame.K_7:
-                            if player.crafting_level < 3:
-                                shop_message = "Need Craft Lv3"
-                            elif player.resources.get("metal", 0) >= 5 and player.resources.get("herbs", 0) >= 2:
-                                player.resources["metal"] -= 5
-                                player.resources["herbs"] -= 2
-                                player.inventory.append(InventoryItem("Flaming Sword", "weapon", attack=6))
-                                shop_message = "Forged Flaming Sword"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need 5 metal & 2 herbs"
-                        elif event.key == pygame.K_8:
-                            if player.crafting_level < 3:
-                                shop_message = "Need Craft Lv3"
-                            elif player.resources.get("produce", 0) >= 2:
-                                player.resources["produce"] -= 2
-                                player.inventory.append(InventoryItem("Fruit Pie", "consumable"))
-                                shop_message = "Baked Fruit Pie"
-                                lvl_msg = gain_crafting_exp(player)
-                                if lvl_msg:
-                                    shop_message += f"  {lvl_msg}"
-                            else:
-                                shop_message = "Need 2 produce"
-                        elif event.key == pygame.K_9:
-                            shop_message = repair_equipment(player)
-                        else:
-                            continue
+                    if event.key == pygame.K_c:
+                        show_craft_menu = not show_craft_menu
+                    elif event.key == pygame.K_r:
+                        shop_message = repair_equipment(player)
                         shop_message_timer = 60
-                    elif in_building == "farm":
+                    else:
+                        continue
+                elif in_building == "farm":
                         if event.key == pygame.K_p:
                             shop_message = plant_seed(player)
                         elif event.key == pygame.K_h:
@@ -1639,6 +1549,8 @@ def main():
         if show_companion_menu:
             abilities = COMPANION_ABILITIES.get(player.companion, [])
             draw_companion_menu(screen, font, player, abilities)
+        if show_craft_menu:
+            draw_workshop_menu(screen, font, player, RECIPES)
         if show_log:
             draw_quest_log(screen, font, QUESTS, STORY_QUESTS)
         if show_help:
@@ -1763,7 +1675,7 @@ def main():
                     txt += "  T:Train"
                 txt += "  [Q] Leave"
             elif in_building == "workshop":
-                txt = "1 Potion 2 Sword 3 Up Wpn 4 Up Arm 9 Repair  [Q] Leave"
+                txt = "[C] Craft  [R] Repair  [Q] Leave"
             elif in_building == "farm":
                 txt = (
                     "[P] Plant seed  [H] Harvest  S:Sell  1:Chick 2:Cow "
