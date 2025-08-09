@@ -247,6 +247,50 @@ def draw_building(surface, building, highlight=False):
     surface.blit(label, (b.x + b.width // 2 - label.get_width() // 2, b.y - 30))
 
 
+def draw_minimap(surface, player_rect, buildings, npcs=None, target=None, scale=0.1):
+    """Render a simple minimap showing buildings, NPCs and the player."""
+    width = int(MAP_WIDTH * scale)
+    height = int(MAP_HEIGHT * scale)
+    minimap = pygame.Surface((width, height), pygame.SRCALPHA)
+    minimap.fill(UI_BG)
+    minimap.set_alpha(200)
+
+    # draw buildings
+    for b in buildings:
+        rect = pygame.Rect(
+            int(b.rect.x * scale),
+            int(b.rect.y * scale),
+            max(2, int(b.rect.width * scale)),
+            max(2, int(b.rect.height * scale)),
+        )
+        pygame.draw.rect(minimap, building_color(b.btype), rect)
+
+    # quest target highlight
+    if target:
+        rect = pygame.Rect(
+            int(target.rect.x * scale),
+            int(target.rect.y * scale),
+            max(2, int(target.rect.width * scale)),
+            max(2, int(target.rect.height * scale)),
+        )
+        pygame.draw.rect(minimap, (255, 0, 0), rect, 2)
+
+    # draw NPCs
+    if npcs:
+        for n in npcs:
+            x = int(n.rect.centerx * scale)
+            y = int(n.rect.centery * scale)
+            pygame.draw.circle(minimap, (0, 0, 255), (x, y), 3)
+
+    # draw player
+    px = int(player_rect.centerx * scale)
+    py = int(player_rect.centery * scale)
+    pygame.draw.circle(minimap, (255, 255, 255), (px, py), 4)
+
+    pygame.draw.rect(minimap, (255, 255, 255), minimap.get_rect(), 1)
+    surface.blit(minimap, (SCREEN_WIDTH - width - 10, 10))
+
+
 def draw_road_and_sidewalks(surface, cam_x, cam_y):
     """Render the city ground using a tile map."""
     global CITY_MAP
