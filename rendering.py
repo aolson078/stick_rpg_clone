@@ -205,7 +205,19 @@ def draw_building(surface, building, highlight=False):
         shadow = pygame.Surface((b.width, b.height), pygame.SRCALPHA)
         pygame.draw.rect(shadow, SHADOW_COLOR, shadow.get_rect(), border_radius=9)
         surface.blit(shadow, (b.x + 4, b.y + 4))
+        # base rectangle for the building
         pygame.draw.rect(surface, color, b, border_radius=9)
+
+        # subtle vertical gradient to give the building more depth
+        grad = pygame.Surface((b.width, b.height), pygame.SRCALPHA)
+        for y in range(b.height):
+            alpha = int(90 * (y / b.height))
+            pygame.draw.line(grad, (0, 0, 0, alpha), (0, y), (b.width, y))
+        mask = pygame.Surface((b.width, b.height), pygame.SRCALPHA)
+        pygame.draw.rect(mask, (255, 255, 255), mask.get_rect(), border_radius=9)
+        grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        surface.blit(grad, (b.x, b.y))
+
         if highlight:
             pygame.draw.rect(surface, (255, 255, 0), b, 2, border_radius=9)
         roof = pygame.Rect(b.x, b.y - 14, b.width, 18)
@@ -257,9 +269,14 @@ def draw_city_walls(surface, cam_x, cam_y):
 
 
 def _draw_tree(surface, x, y):
-    "Draw a simple tree."
+    "Draw a simple tree with layered foliage for a fuller look."
     pygame.draw.rect(surface, TRUNK_COLOR, (x + 10, y + 24, 12, 20))
-    pygame.draw.circle(surface, TREE_COLOR, (x + 16, y + 16), 20)
+    base = (x + 16, y + 16)
+    pygame.draw.circle(surface, TREE_COLOR, base, 20)
+    light = tuple(min(255, c + 40) for c in TREE_COLOR)
+    dark = tuple(max(0, c - 40) for c in TREE_COLOR)
+    pygame.draw.circle(surface, light, (x + 10, y + 12), 16)
+    pygame.draw.circle(surface, dark, (x + 22, y + 14), 16)
 
 
 def _draw_flower_patch(surface, x, y):
@@ -268,6 +285,7 @@ def _draw_flower_patch(surface, x, y):
         ox = (i % 2) * 6
         oy = (i // 2) * 6
         pygame.draw.circle(surface, color, (x + ox, y + oy), 3)
+        pygame.draw.circle(surface, (255, 255, 255), (x + ox, y + oy), 1)
 
 
 def draw_decorations(surface, cam_x, cam_y):
