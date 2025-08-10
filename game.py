@@ -31,6 +31,7 @@ from rendering import (
     draw_help_screen,
     draw_quest_marker,
     draw_companion_menu,
+    draw_minimap,
 )
 from inventory import (
     SHOP_ITEMS,
@@ -282,6 +283,7 @@ def main():
         show_craft_menu = False
         show_log = False
         show_help = False
+        show_minimap = False
         dragging_item = None
         drag_rotation = 0
         shop_message = ""
@@ -304,6 +306,7 @@ def main():
         show_craft_menu = False
         show_log = False
         show_help = False
+        show_minimap = False
         dragging_item = None
         drag_rotation = 0
         shop_message = ""
@@ -431,6 +434,8 @@ def main():
                         pygame.mixer.music.set_volume(0 if muted else MUSIC_VOLUME)
                     shop_message = "Sound muted" if muted else "Sound on"
                     shop_message_timer = 60
+                elif event.key == pygame.K_TAB:
+                    show_minimap = not show_minimap
                 elif (
                     event.key == pygame.K_h
                     and not show_inventory
@@ -1530,6 +1535,9 @@ def main():
 
         draw_day_night(screen, player.time)
         draw_weather(screen, player.weather)
+
+        if show_minimap:
+            draw_minimap(screen, player.rect, BUILDINGS, NPCS, target_building)
 
         draw_ui(screen, font, player, QUESTS, STORY_QUESTS)
         draw_hotkey_bar(screen, font, player, hotkey_rects)
