@@ -1,5 +1,7 @@
 """Configuration constants and asset paths."""
 import os
+import json
+import pygame
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1600, 1200
 MAP_WIDTH, MAP_HEIGHT = 3200, 1200
@@ -74,3 +76,25 @@ ENTER_SOUND_FILE = os.path.join(SOUND_DIR, "enter.wav")
 QUEST_SOUND_FILE = os.path.join(SOUND_DIR, "quest.wav")
 MUSIC_VOLUME = 0.3
 SFX_VOLUME = 0.5
+
+
+# Default control scheme. Values are pygame key constants; joystick buttons
+# are stored as negative numbers (-(button+1)).
+KEY_BINDINGS_FILE = os.path.join("data", "keybindings.json")
+KEY_BINDINGS = {
+    "move_up": [pygame.K_w, pygame.K_UP],
+    "move_down": [pygame.K_s, pygame.K_DOWN],
+    "move_left": [pygame.K_a, pygame.K_LEFT],
+    "move_right": [pygame.K_d, pygame.K_RIGHT],
+    "interact": [pygame.K_e],
+    "run": [pygame.K_LSHIFT, pygame.K_RSHIFT],
+}
+
+
+if os.path.exists(KEY_BINDINGS_FILE):
+    try:
+        with open(KEY_BINDINGS_FILE) as f:
+            loaded = json.load(f)
+        KEY_BINDINGS.update({k: [int(vv) for vv in v] for k, v in loaded.items()})
+    except Exception:
+        pass
