@@ -157,6 +157,30 @@ except pygame.error:
     SOUND_ENABLED = False
     print("Audio disabled: mixer could not initialize")
 
+pygame.joystick.init()
+JOYSTICK = None
+if pygame.joystick.get_count() > 0:
+    JOYSTICK = pygame.joystick.Joystick(0)
+    JOYSTICK.init()
+
+
+def _action_pressed(action: str, keys, joystick) -> bool:
+    for code in settings.KEY_BINDINGS.get(action, []):
+        if code >= 0 and keys[code]:
+            return True
+        if code < 0 and joystick and joystick.get_button(-code - 1):
+            return True
+    return False
+
+
+def _event_matches(action: str, event) -> bool:
+    codes = settings.KEY_BINDINGS.get(action, [])
+    if event.type == pygame.KEYDOWN and event.key in codes:
+        return True
+    if event.type == pygame.JOYBUTTONDOWN and -(event.button + 1) in codes:
+        return True
+    return False
+
 BUILDINGS = load_buildings()
 
 FOREST_ENEMY_RECTS = [
@@ -694,7 +718,7 @@ def main():
                     if event.key in (pygame.K_l, pygame.K_q):
                         show_log = False
                 if event.type == pygame.KEYDOWN and inside_home:
-                    if event.key == pygame.K_e:
+                    if _event_matches("interact", event):
                         if player.rect.colliderect(BED_RECT):
                             extra = sleep(player)
                             shop_message = "You slept. New day!"
@@ -715,7 +739,7 @@ def main():
                         shop_message_timer = 60
     
                 if event.type == pygame.KEYDOWN and inside_bar:
-                    if event.key == pygame.K_e:
+                    if _event_matches("interact", event):
                         if (
                             player.story_branch == "gang"
                             and player.side_quest == "Gang Package"
@@ -758,7 +782,7 @@ def main():
                         shop_message_timer = 60
     
                 if event.type == pygame.KEYDOWN and inside_forest:
-                    if event.key == pygame.K_e:
+                    if _event_matches("interact", event):
                         for i, rect in enumerate(FOREST_ENEMY_RECTS):
                             if player.rect.colliderect(rect):
                                 shop_message = fight_forest_enemy(player, i)
@@ -770,7 +794,7 @@ def main():
                         shop_message_timer = 60
     
                 if event.type == pygame.KEYDOWN and in_building:
-                    if in_building == "job" and event.key == pygame.K_e:
+                    if in_building == "job" and _event_matches("interact", event):
                         shop_message = work_job(player, "office")
                         shop_message_timer = 60
                     elif in_building == "home":
@@ -779,7 +803,7 @@ def main():
                         player.day += 1
                         shop_message = "You slept. New day!"
                         shop_message_timer = 60
-                        if event.key == pygame.K_e:
+                        if _event_matches("interact", event):
                             extra = sleep(player)
                             shop_message = "You slept. New day!"
                             if extra:
@@ -799,12 +823,12 @@ def main():
                         elif event.key == pygame.K_0:
                             shop_message = buy_shop_item(player, 9)
                             shop_message_timer = 60
-                        elif event.key == pygame.K_e:
+                        elif _event_matches("interact", event):
                             shop_message = "Press number keys to buy"
                             shop_message_timer = 60
                         else:
                             continue
-                    elif in_building == "gym" and event.key == pygame.K_e:
+                    elif in_building == "gym" and _event_matches("interact", event):
                         if player.side_quest == NPC_QUEST.name:
                             NPC_QUEST.reward(player)
                             player.side_quest = None
@@ -826,7 +850,7 @@ def main():
                         else:
                             shop_message = "Too tired to train!"
                         shop_message_timer = 60
-                    elif in_building == "library" and event.key == pygame.K_e:
+                    elif in_building == "library" and _event_matches("interact", event):
                         if player.money >= 5 and player.energy >= 5:
                             player.money -= 5
                             player.energy -= 5
@@ -850,7 +874,7 @@ def main():
                     elif in_building == "library" and event.key == pygame.K_p:
                         shop_message = solve_puzzle(player)
                         shop_message_timer = 60
-                    elif in_building == "park" and event.key == pygame.K_e:
+                    elif in_building == "park" and _event_matches("interact", event):
                         if player.energy >= 5:
                             player.energy -= 5
                             player.charisma += 1
@@ -872,7 +896,7 @@ def main():
 
                     else:
                         continue
-                elif in_building == "gym" and event.key == pygame.K_e:
+                elif in_building == "gym" and _event_matches("interact", event):
                     if player.side_quest == NPC_QUEST.name:
                         NPC_QUEST.reward(player)
                         player.side_quest = None
@@ -894,7 +918,7 @@ def main():
                     else:
                         shop_message = "Too tired to train!"
                     shop_message_timer = 60
-                elif in_building == "library" and event.key == pygame.K_e:
+                elif in_building == "library" and _event_matches("interact", event):
                     if player.money >= 5 and player.energy >= 5:
                         player.money -= 5
                         player.energy -= 5
@@ -918,7 +942,7 @@ def main():
                 elif in_building == "library" and event.key == pygame.K_p:
                     shop_message = solve_puzzle(player)
                     shop_message_timer = 60
-                elif in_building == "park" and event.key == pygame.K_e:
+                elif in_building == "park" and _event_matches("interact", event):
                     if player.energy >= 5:
                         player.energy -= 5
                         player.charisma += 1
@@ -954,18 +978,18 @@ def main():
                         shop_message = play_darts(player)
                     elif event.key == pygame.K_f:
                         shop_message = fight_brawler(player)
-                    elif event.key == pygame.K_e:
+                    elif _event_matches("interact", event):
                         shop_message = "Buy tokens with B"  # hint when pressing E
                     else:
                         continue
                     shop_message_timer = 60
-                elif in_building == "dungeon" and event.key == pygame.K_e:
+                elif in_building == "dungeon" and _event_matches("interact", event):
                     shop_message = explore_dungeon(player)
                     shop_message_timer = 60
-                elif in_building == "boss" and event.key == pygame.K_e:
+                elif in_building == "boss" and _event_matches("interact", event):
                     shop_message = fight_final_boss(player)
                     shop_message_timer = 60
-                elif in_building == "forest" and event.key == pygame.K_e:
+                elif in_building == "forest" and _event_matches("interact", event):
                     # fallback if player enters the woods via in_building
                     shop_message = fight_forest_enemy(player, random.randrange(3))
                     shop_message_timer = 60
@@ -980,7 +1004,7 @@ def main():
                         shop_message = "Adopt a pet first"
                         shop_message_timer = 60
                 elif in_building == "bank":
-                    if event.key == pygame.K_e:
+                    if _event_matches("interact", event):
                         if not player.side_quest:
                             player.side_quest = SIDE_QUEST.name
                             shop_message = "Accepted delivery job!"
@@ -988,13 +1012,13 @@ def main():
                         else:
                             continue
                         shop_message_timer = 60
-                    elif in_building == "dungeon" and event.key == pygame.K_e:
+                    elif in_building == "dungeon" and _event_matches("interact", event):
                         shop_message = explore_dungeon(player)
                         shop_message_timer = 60
-                    elif in_building == "boss" and event.key == pygame.K_e:
+                    elif in_building == "boss" and _event_matches("interact", event):
                         shop_message = fight_final_boss(player)
                         shop_message_timer = 60
-                    elif in_building == "forest" and event.key == pygame.K_e:
+                    elif in_building == "forest" and _event_matches("interact", event):
                         # fallback if player enters the woods via in_building
                         shop_message = fight_forest_enemy(player, random.randrange(3))
                         shop_message_timer = 60
@@ -1009,7 +1033,7 @@ def main():
                             shop_message = "Adopt a pet first"
                             shop_message_timer = 60
                     elif in_building == "bank":
-                        if event.key == pygame.K_e:
+                        if _event_matches("interact", event):
                             if not player.side_quest:
                                 player.side_quest = SIDE_QUEST.name
                                 shop_message = "Accepted delivery job!"
@@ -1048,7 +1072,7 @@ def main():
                             shop_message = feed_animals(player, "chicken")
                         elif event.key == pygame.K_m:
                             shop_message = feed_animals(player, "cow")
-                        elif event.key == pygame.K_e:
+                        elif _event_matches("interact", event):
                             shop_message = sell_eggs(player)
                         elif event.key == pygame.K_l:
                             shop_message = sell_milk(player)
@@ -1126,7 +1150,7 @@ def main():
                             shop_message = "Too tired to help"
                         shop_message_timer = 60
                     elif in_building == "townhall":
-                        if player.story_stage == 0 and event.key == pygame.K_e:
+                        if player.story_stage == 0 and _event_matches("interact", event):
                             player.story_stage = 1
                             shop_message = "Mayor: Help clean up the city? Y/N"
                         elif player.story_stage == 1 and event.key == pygame.K_y:
@@ -1138,17 +1162,17 @@ def main():
                         elif (
                             player.story_branch == "mayor"
                             and player.story_stage == 3
-                            and event.key == pygame.K_e
+                            and _event_matches("interact", event)
                         ):
                             player.story_stage = 4
                             shop_message = "Mayor: Thank you for your help!"
                         else:
                             continue
                         shop_message_timer = 90
-                    elif in_building == "dealer" and event.key == pygame.K_e:
+                    elif in_building == "dealer" and _event_matches("interact", event):
                         shop_message = work_job(player, "dealer")
                         shop_message_timer = 60
-                    elif in_building == "clinic" and event.key == pygame.K_e:
+                    elif in_building == "clinic" and _event_matches("interact", event):
                         shop_message = work_job(player, "clinic")
                         shop_message_timer = 60
                     elif in_building == "clinic" and event.key == pygame.K_h:
@@ -1168,17 +1192,28 @@ def main():
         dx = dy = 0
         keys = pygame.key.get_pressed()
         speed = PLAYER_SPEED
-        if player.has_skateboard and (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
+        if player.has_skateboard and _action_pressed("run", keys, JOYSTICK):
             speed = int(PLAYER_SPEED * SKATEBOARD_SPEED_MULT)
         if inside_home and not show_inventory and not show_log:
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
+            if _action_pressed("move_up", keys, JOYSTICK):
                 dy -= speed
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            if _action_pressed("move_down", keys, JOYSTICK):
                 dy += speed
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            if _action_pressed("move_left", keys, JOYSTICK):
                 dx -= speed
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            if _action_pressed("move_right", keys, JOYSTICK):
                 dx += speed
+            if JOYSTICK:
+                x_axis = JOYSTICK.get_axis(0)
+                y_axis = JOYSTICK.get_axis(1)
+                if y_axis < -0.5:
+                    dy -= speed
+                if y_axis > 0.5:
+                    dy += speed
+                if x_axis < -0.5:
+                    dx -= speed
+                if x_axis > 0.5:
+                    dx += speed
             if dx < 0:
                 player.facing_left = True
             elif dx > 0:
@@ -1195,14 +1230,25 @@ def main():
                 player.rect = next_rect
 
         elif inside_bar and not show_inventory and not show_log:
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
+            if _action_pressed("move_up", keys, JOYSTICK):
                 dy -= speed
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            if _action_pressed("move_down", keys, JOYSTICK):
                 dy += speed
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            if _action_pressed("move_left", keys, JOYSTICK):
                 dx -= speed
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            if _action_pressed("move_right", keys, JOYSTICK):
                 dx += speed
+            if JOYSTICK:
+                x_axis = JOYSTICK.get_axis(0)
+                y_axis = JOYSTICK.get_axis(1)
+                if y_axis < -0.5:
+                    dy -= speed
+                if y_axis > 0.5:
+                    dy += speed
+                if x_axis < -0.5:
+                    dx -= speed
+                if x_axis > 0.5:
+                    dx += speed
             if dx < 0:
                 player.facing_left = True
             elif dx > 0:
@@ -1219,14 +1265,25 @@ def main():
                 player.rect = next_rect
 
         elif inside_forest and not show_inventory and not show_log:
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
+            if _action_pressed("move_up", keys, JOYSTICK):
                 dy -= speed
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            if _action_pressed("move_down", keys, JOYSTICK):
                 dy += speed
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            if _action_pressed("move_left", keys, JOYSTICK):
                 dx -= speed
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            if _action_pressed("move_right", keys, JOYSTICK):
                 dx += speed
+            if JOYSTICK:
+                x_axis = JOYSTICK.get_axis(0)
+                y_axis = JOYSTICK.get_axis(1)
+                if y_axis < -0.5:
+                    dy -= speed
+                if y_axis > 0.5:
+                    dy += speed
+                if x_axis < -0.5:
+                    dx -= speed
+                if x_axis > 0.5:
+                    dx += speed
             if dx < 0:
                 player.facing_left = True
             elif dx > 0:
@@ -1243,14 +1300,25 @@ def main():
                 player.rect = next_rect
 
         elif not in_building and not show_inventory and not show_log:
-            if keys[pygame.K_w] or keys[pygame.K_UP]:
+            if _action_pressed("move_up", keys, JOYSTICK):
                 dy -= speed
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            if _action_pressed("move_down", keys, JOYSTICK):
                 dy += speed
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            if _action_pressed("move_left", keys, JOYSTICK):
                 dx -= speed
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            if _action_pressed("move_right", keys, JOYSTICK):
                 dx += speed
+            if JOYSTICK:
+                x_axis = JOYSTICK.get_axis(0)
+                y_axis = JOYSTICK.get_axis(1)
+                if y_axis < -0.5:
+                    dy -= speed
+                if y_axis > 0.5:
+                    dy += speed
+                if x_axis < -0.5:
+                    dx -= speed
+                if x_axis > 0.5:
+                    dx += speed
             if dx < 0:
                 player.facing_left = True
             elif dx > 0:
@@ -1320,7 +1388,7 @@ def main():
             and not show_inventory
             and not show_log
         ):
-            if keys[pygame.K_e]:
+            if _action_pressed("interact", keys, JOYSTICK):
                 text = "Hi there!"
                 if near_npc.quest:
                     state = player.npc_progress.get(near_npc.name)
@@ -1404,7 +1472,7 @@ def main():
             and not show_inventory
             and not show_log
         ):
-            if keys[pygame.K_e]:
+            if _action_pressed("interact", keys, JOYSTICK):
                 if building_open(near_building.btype, player.time, player):
                     in_building = near_building.btype
 

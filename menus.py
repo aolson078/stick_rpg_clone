@@ -12,6 +12,75 @@ from quests import LEADERBOARD_FILE
 import settings
 
 
+def _binding_name(code: int) -> str:
+    return pygame.key.name(code) if code >= 0 else f"Button {-code-1}"
+
+
+def controls_menu(screen: pygame.Surface, font: pygame.font.Font) -> None:
+    """Allow the player to remap key bindings."""
+    actions = list(settings.KEY_BINDINGS.keys())
+    idx = 0
+
+    def save() -> None:
+        os.makedirs(os.path.dirname(settings.KEY_BINDINGS_FILE), exist_ok=True)
+        with open(settings.KEY_BINDINGS_FILE, "w") as f:
+            json.dump(settings.KEY_BINDINGS, f)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    save()
+                    return
+                if event.key == pygame.K_UP:
+                    idx = (idx - 1) % len(actions)
+                elif event.key == pygame.K_DOWN:
+                    idx = (idx + 1) % len(actions)
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    waiting = True
+                    while waiting:
+                        for ev in pygame.event.get():
+                            if ev.type == pygame.QUIT:
+                                pygame.quit()
+                                sys.exit()
+                            if ev.type == pygame.KEYDOWN:
+                                settings.KEY_BINDINGS[actions[idx]] = [ev.key]
+                                save()
+                                waiting = False
+                            elif ev.type == pygame.JOYBUTTONDOWN:
+                                settings.KEY_BINDINGS[actions[idx]] = [-(ev.button + 1)]
+                                save()
+                                waiting = False
+                        screen.fill((0, 0, 0))
+                        prompt = font.render(
+                            "Press a key or button...", True, (255, 255, 255)
+                        )
+                        screen.blit(
+                            prompt,
+                            (
+                                settings.SCREEN_WIDTH // 2 - prompt.get_width() // 2,
+                                settings.SCREEN_HEIGHT // 2 - prompt.get_height() // 2,
+                            ),
+                        )
+                        pygame.display.flip()
+                        pygame.time.wait(20)
+        screen.fill((0, 0, 0))
+        title = font.render("Controls", True, (255, 255, 255))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 60))
+        for i, action in enumerate(actions):
+            binds = ", ".join(_binding_name(b) for b in settings.KEY_BINDINGS[action])
+            color = (255, 255, 0) if i == idx else (200, 200, 200)
+            txt = font.render(f"{action}: {binds}", True, color)
+            screen.blit(txt, (100, 120 + i * 40))
+        info = font.render("Enter to rebind, Esc to exit", True, (200, 200, 200))
+        screen.blit(info, (100, settings.SCREEN_HEIGHT - 80))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
+
 def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
     """Display the start menu. Returns True if load was chosen."""
     board = []
@@ -37,6 +106,8 @@ def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
                     return False
                 if event.key == pygame.K_l:
                     return True
+                if event.key == pygame.K_c:
+                    controls_menu(screen, font)
         screen.fill((0, 0, 0))
         title = font.render("Stick RPG Clone", True, (255, 255, 255))
         start_txt = font.render("Press Enter to Start", True, (230, 230, 230))
@@ -48,10 +119,15 @@ def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
         screen.blit(
             load_txt, (settings.SCREEN_WIDTH // 2 - load_txt.get_width() // 2, 360)
         )
+        controls_txt = font.render("Press C for Controls", True, (230, 230, 230))
+        screen.blit(
+            controls_txt,
+            (settings.SCREEN_WIDTH // 2 - controls_txt.get_width() // 2, 400),
+        )
         if board:
             lb_title = font.render("Top Completions", True, (230, 230, 230))
             screen.blit(
-                lb_title, (settings.SCREEN_WIDTH // 2 - lb_title.get_width() // 2, 400)
+                lb_title, (settings.SCREEN_WIDTH // 2 - lb_title.get_width() // 2, 440)
             )
             for i, rec in enumerate(board):
                 txt = font.render(
@@ -59,7 +135,7 @@ def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
                 )
                 screen.blit(
                     txt,
-                    (settings.SCREEN_WIDTH // 2 - txt.get_width() // 2, 420 + i * 20),
+                    (settings.SCREEN_WIDTH // 2 - txt.get_width() // 2, 460 + i * 20),
                 )
         pygame.display.flip()
         pygame.time.wait(20)
