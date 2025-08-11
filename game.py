@@ -124,9 +124,10 @@ from helpers import (
     solve_puzzle,
     dig_for_treasure,
     card_duel,
-    
+
     save_game,
     load_game,
+    auto_save,
     HOME_WIDTH,
     HOME_HEIGHT,
     BED_RECT,
@@ -372,12 +373,18 @@ def main():
             )
 
 
+    frame = 0
+    last_autosave_hour = player.time // 60
     while True:
         frame += 1
         player.time += MINUTES_PER_FRAME
         if player.time >= 1440:
             player.time -= 1440
             advance_day(player)
+        current_hour = player.time // 60
+        if current_hour != last_autosave_hour:
+            last_autosave_hour = current_hour
+            auto_save(player)
         update_npcs(player, BUILDINGS)
         for ab, cd in player.ability_cooldowns.items():
             if cd > 0:
@@ -734,6 +741,7 @@ def main():
                         if idx < len(avail):
                             full_idx = HOME_UPGRADES.index(avail[idx])
                             shop_message = buy_home_upgrade(player, full_idx)
+                            auto_save(player)
                         else:
                             shop_message = "Invalid choice"
                         shop_message_timer = 60
@@ -813,6 +821,7 @@ def main():
                             idx = event.key - pygame.K_1
                             shop_message = buy_home_upgrade(player, idx)
                             shop_message_timer = 60
+                            auto_save(player)
                         else:
                             continue
                     elif in_building == "shop":
@@ -820,9 +829,11 @@ def main():
                             idx = event.key - pygame.K_1
                             shop_message = buy_shop_item(player, idx)
                             shop_message_timer = 60
+                            auto_save(player)
                         elif event.key == pygame.K_0:
                             shop_message = buy_shop_item(player, 9)
                             shop_message_timer = 60
+                            auto_save(player)
                         elif _event_matches("interact", event):
                             shop_message = "Press number keys to buy"
                             shop_message_timer = 60
@@ -1859,8 +1870,10 @@ def main():
             pygame.time.wait(2500)
             return
 
-        if check_quests(player) and SOUND_ENABLED:
-            quest_sound.play()
+        if check_quests(player):
+            auto_save(player)
+            if SOUND_ENABLED:
+                quest_sound.play()
 
         pygame.display.flip()
         clock.tick(60)
