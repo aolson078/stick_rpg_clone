@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import time
 from typing import Dict, List, Optional
 
 import pygame
@@ -607,6 +608,34 @@ def save_game(player: Player) -> None:
     }
     with open(SAVE_FILE, "w") as f:
         json.dump(data, f)
+
+
+_last_auto_save = 0.0
+
+
+def auto_save(player: Player, cooldown: float = 60.0) -> bool:
+    """Automatically save the game if the cooldown has elapsed.
+
+    Parameters
+    ----------
+    player:
+        The current player instance whose state should be saved.
+    cooldown:
+        Minimum number of real-time seconds between automatic saves.
+
+    Returns
+    -------
+    bool
+        ``True`` if the game was saved, ``False`` otherwise.
+    """
+
+    global _last_auto_save
+    now = time.time()
+    if now - _last_auto_save >= cooldown:
+        save_game(player)
+        _last_auto_save = now
+        return True
+    return False
 
 
 def load_game() -> Optional[Player]:
