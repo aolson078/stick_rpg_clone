@@ -698,15 +698,20 @@ def draw_companion_menu(surface, font, player, abilities):
     surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
     levels = player.companion_abilities.get(player.companion, {})
+    morale_txt = font.render(
+        f"Morale: {player.companion_morale}", True, FONT_COLOR
+    )
+    surface.blit(morale_txt, (100, 100))
+    offset = 20
     for i, (name, desc, _stat) in enumerate(abilities):
         lvl = levels.get(name, 0)
         txt = font.render(
             f"{i+1}: {name} Lv{lvl}/{PERK_MAX_LEVEL} - {desc}", True, FONT_COLOR
         )
-        surface.blit(txt, (100, 120 + i * 40))
+        surface.blit(txt, (100, 120 + i * 40 + offset))
 
     info = font.render("[Q] Exit", True, FONT_COLOR)
-    surface.blit(info, (100, 120 + len(abilities) * 40 + 20))
+    surface.blit(info, (100, 120 + len(abilities) * 40 + offset + 20))
 
 
 def draw_quest_log(surface, font, quests, story_quests=None):

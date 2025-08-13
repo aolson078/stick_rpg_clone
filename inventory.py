@@ -248,6 +248,7 @@ def adopt_companion(player: Player, index: int) -> str:
     player.money -= cost
     player.companion = name
     player.companion_level = 1
+    player.companion_morale = 100
     player.companion_abilities[name] = {
         abil[0]: 0 for abil in COMPANION_ABILITIES.get(name, [])
     }
@@ -326,6 +327,8 @@ def feed_animals(player: Player, animal: str) -> str:
     products = {"chicken": "eggs", "cow": "milk"}
     product = products[animal]
     player.resources[product] = player.resources.get(product, 0) + count
+    if player.companion:
+        player.companion_morale = min(100, player.companion_morale + 5)
     return f"Collected {count} {product}"
 
 
@@ -362,6 +365,7 @@ def train_companion(player: Player) -> str:
     player.money -= cost
     player.energy -= energy_cost(player, 10)
     player.companion_level += 1
+    player.companion_morale = max(0, player.companion_morale - 10)
     if player.companion == "Dog":
         player.defense += 1
     elif player.companion == "Cat":

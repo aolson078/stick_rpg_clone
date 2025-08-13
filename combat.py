@@ -50,7 +50,7 @@ def energy_cost(player: Player, base: float) -> float:
     return cost
 
 
-def _combat_stats(player: Player) -> Tuple[int, int, int, int]:
+def _combat_stats(player: Player) -> Tuple[float, float, float, int]:
     """Return player's attack, defense, speed and combo with equipment."""
     weapon = player.equipment.get("weapon")
     base_atk = player.strength
@@ -67,10 +67,11 @@ def _combat_stats(player: Player) -> Tuple[int, int, int, int]:
     combo = 1
     if player.perk_levels.get("Bar Champion"):
         atk += 2
+    morale = player.companion_morale / 100 if player.companion else 0
     if player.companion == "Dog":
-        df += 1
+        df += 1 * morale
     elif player.companion == "Rhino":
-        atk += 1
+        atk += 1 * morale
     for item in player.equipment.values():
         if item and item.durability > 0:
             atk += item.attack
@@ -247,7 +248,8 @@ def fight_enemy(player: Player) -> str:
         player.resources[res] = player.resources.get(res, 0) + 1
         loot += f" +1 {res}"
     if player.companion == "Parrot":
-        chance = 0.3 + 0.2 * (player.companion_level - 1)
+        morale = player.companion_morale / 100
+        chance = (0.3 + 0.2 * (player.companion_level - 1)) * morale
         if random.random() < chance:
             player.tokens += 1
             loot += " (parrot found another)"

@@ -68,6 +68,7 @@ class Player:
 
     companion: Optional[str] = None
     companion_level: int = 0
+    companion_morale: int = 100
     # Ability levels for each companion ability
     companion_abilities: Dict[str, Dict[str, int]] = field(default_factory=dict)
 
