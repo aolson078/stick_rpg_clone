@@ -106,6 +106,9 @@ from settings import (
     SFX_VOLUME,
 )
 
+BUS_FARE = 5
+BUS_TRAVEL_TIME = 30  # minutes
+
 from helpers import (
     recalc_layouts,
     compute_slot_rects,
@@ -317,6 +320,8 @@ def main():
         muted = False
         slot_rects = compute_slot_rects()
         hotkey_rects = compute_hotkey_rects()
+        show_bus_menu = False
+        bus_options = []
     else:
         name, color, head_color = character_creation(screen, font)
         player = Player(
@@ -338,6 +343,8 @@ def main():
         shop_message_timer = 0
         fullscreen = False
         muted = False
+        show_bus_menu = False
+        bus_options = []
         slot_rects = compute_slot_rects()
         hotkey_rects = compute_hotkey_rects()
         pygame.display.set_caption("Stick RPG Mini (Graphics Upgrade)")
@@ -417,6 +424,29 @@ def main():
                     pygame.K_q,
                 ):
                     show_help = False
+                continue
+            if show_bus_menu:
+                if event.type == pygame.KEYDOWN:
+                    if pygame.K_1 <= event.key <= pygame.K_9:
+                        idx = event.key - pygame.K_1
+                        if idx < len(bus_options):
+                            dest = bus_options[idx]
+                            if player.money >= BUS_FARE:
+                                player.money -= BUS_FARE
+                                player.rect.center = dest.rect.center
+                                player.time += BUS_TRAVEL_TIME
+                                if player.time >= 1440:
+                                    player.time -= 1440
+                                    advance_day(player)
+                                shop_message = f"Bus to {dest.name} (-${BUS_FARE})"
+                            else:
+                                shop_message = "Not enough money"
+                            shop_message_timer = 60
+                        show_bus_menu = False
+                        bus_options = []
+                    elif event.key in (pygame.K_q, pygame.K_ESCAPE):
+                        show_bus_menu = False
+                        bus_options = []
                 continue
             if event.type == pygame.QUIT:
                 save_game(player)
@@ -1484,7 +1514,18 @@ def main():
             and not show_log
         ):
             if _action_pressed("interact", keys, JOYSTICK):
-                if building_open(near_building.btype, player.time, player):
+                if near_building.btype == "bus_stop":
+                    bus_options = [
+                        b
+                        for b in BUILDINGS
+                        if b.btype == "bus_stop" and b != near_building
+                    ]
+                    if bus_options:
+                        show_bus_menu = True
+                    else:
+                        shop_message = "No other stops"
+                        shop_message_timer = 60
+                elif building_open(near_building.btype, player.time, player):
                     in_building = near_building.btype
 
                     enter_sound.play()
@@ -1620,6 +1661,11 @@ def main():
 
         draw_ui(screen, font, player, QUESTS, STORY_QUESTS)
         draw_hotkey_bar(screen, font, player, hotkey_rects)
+        if show_bus_menu:
+            text = "Bus to: " + "  ".join(
+                f"{i+1}:{b.name}" for i, b in enumerate(bus_options)
+            )
+            draw_tip_panel(screen, font, text)
         if show_inventory:
             draw_inventory_screen(
                 screen,
@@ -1707,6 +1753,8 @@ def main():
                 msg = "[E] to visit the suburbs"
             elif near_building.btype == "boss":
                 msg = "[E] to challenge the boss"
+            elif near_building.btype == "bus_stop":
+                msg = f"[E] Ride bus (-${BUS_FARE})"
             if msg:
                 if not building_open(near_building.btype, player.time, player):
                     msg += " (Closed)"

@@ -3,6 +3,12 @@ import os
 import xml.etree.ElementTree as ET
 import pygame
 
+BUS_STOP_BUILDINGS = [
+    {"rect": [260, 180, 40, 40], "name": "Downtown", "type": "bus_stop"},
+    {"rect": [1820, 360, 40, 40], "name": "Mall", "type": "bus_stop"},
+    {"rect": [2420, 920, 40, 40], "name": "Beach", "type": "bus_stop"},
+]
+
 
 class TileMap:
     """Load a TMX tilemap and render it using pygame."""
