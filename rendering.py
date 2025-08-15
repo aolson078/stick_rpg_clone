@@ -18,6 +18,7 @@ from settings import (
     LIBRARY_COLOR,
     CLINIC_COLOR,
     BAR_COLOR,
+    BUS_STOP_COLOR,
     CITY_WALL_COLOR,
     UI_BG,
     FONT_COLOR,
@@ -174,6 +175,8 @@ def building_color(btype):
         return CLINIC_COLOR
     if btype == "bar":
         return BAR_COLOR
+    if btype == "bus_stop":
+        return BUS_STOP_COLOR
     if btype == "bank":
         return BAR_COLOR
     if btype == "farm":

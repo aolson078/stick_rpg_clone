@@ -6,25 +6,29 @@ from typing import List, Dict
 from entities import Building, Quest, SideQuest
 from inventory import HOME_UPGRADES
 import settings
+from tilemap import BUS_STOP_BUILDINGS
 
 
 def load_buildings(path: str = "data/buildings.json") -> List[Building]:
     """Load building definitions from a JSON file."""
     with open(path) as f:
         data = json.load(f)
+    data.extend(BUS_STOP_BUILDINGS)
     buildings: List[Building] = []
     for b in data:
         rect = pygame.Rect(*b["rect"])
         name = b["name"]
         btype = b["type"]
-        filename = settings.BUILDING_SPRITES.get(
-            btype, settings.BUILDING_SPRITES["default"]
-        )
-        img_path = os.path.join(settings.BUILDING_IMAGE_DIR, filename)
-        try:
-            image = pygame.image.load(img_path).convert_alpha()
-        except pygame.error:
-            image = None
+        image = None
+        if btype != "bus_stop":
+            filename = settings.BUILDING_SPRITES.get(
+                btype, settings.BUILDING_SPRITES["default"]
+            )
+            img_path = os.path.join(settings.BUILDING_IMAGE_DIR, filename)
+            try:
+                image = pygame.image.load(img_path).convert_alpha()
+            except pygame.error:
+                image = None
         buildings.append(Building(rect, name, btype, image))
     return buildings
 
