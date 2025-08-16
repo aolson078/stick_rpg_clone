@@ -9,6 +9,8 @@ from businesses import (
     upgrade_business,
     hire_staff,
     collect_profits,
+    run_marketing_campaign,
+    train_staff,
 )
 
 
@@ -60,4 +62,52 @@ def test_robbery_zeroes_profit():
         random.random = orig_random
 
     assert profit == 0
+
+
+def test_marketing_campaign_boosts_profit():
+    p = make_player()
+    p.money = 10000
+    store_index = BUSINESS_CATALOG.index("Store")
+    buy_business(p, store_index)
+    orig_randint = random.randint
+    random.randint = lambda a, b: a
+    try:
+        run_marketing_campaign(p, "Store")
+    finally:
+        random.randint = orig_randint
+    orig_random = random.random
+    random.random = lambda: 1.0
+    try:
+        profit = collect_profits(p)
+    finally:
+        random.random = orig_random
+    data = BUSINESS_DATA["Store"]
+    expected = data.base_profit + p.charisma * 2 + 10
+    assert profit == expected
+
+
+def test_train_staff_reduces_robbery_risk():
+    p = make_player()
+    p.money = 10000
+    stall_index = BUSINESS_CATALOG.index("Stall")
+    buy_business(p, stall_index)
+    orig_random = random.random
+    random.random = lambda: 0.05
+    try:
+        profit = collect_profits(p)
+    finally:
+        random.random = orig_random
+    assert profit == 0
+    orig_randint = random.randint
+    random.randint = lambda a, b: 3
+    try:
+        train_staff(p, "Stall")
+    finally:
+        random.randint = orig_randint
+    random.random = lambda: 0.05
+    try:
+        profit_after = collect_profits(p)
+    finally:
+        random.random = orig_random
+    assert profit_after > 0
 

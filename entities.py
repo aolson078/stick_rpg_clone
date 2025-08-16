@@ -95,6 +95,10 @@ class Player:
     business_bonus: Dict[str, int] = field(default_factory=dict)
     # Number of staff hired for each business
     business_staff: Dict[str, int] = field(default_factory=dict)
+    # Temporary reputation boosts from marketing
+    business_reputation: Dict[str, int] = field(default_factory=dict)
+    # Temporary staff skill training to reduce robberies
+    business_skill: Dict[str, int] = field(default_factory=dict)
 
     # Tracks per-NPC interaction states
     npc_progress: Dict[str, int] = field(default_factory=dict)

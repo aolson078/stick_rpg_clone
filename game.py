@@ -58,7 +58,13 @@ from inventory import (
     craft_recipe,
     RECIPES,
 )
-from businesses import BUSINESSES, buy_business, manage_business
+from businesses import (
+    BUSINESSES,
+    buy_business,
+    manage_business,
+    run_marketing_campaign,
+    train_staff,
+)
 from loaders import load_buildings
 from combat import (
     energy_cost,
@@ -934,7 +940,32 @@ def main():
                     elif in_building == "park" and event.key == pygame.K_f:
                         shop_message = go_fishing(player)
                         shop_message_timer = 60
-
+                    elif in_building == "business":
+                        if pygame.K_1 <= event.key <= pygame.K_9:
+                            idx = event.key - pygame.K_1
+                            shop_message = buy_business(player, idx)
+                        elif event.key == pygame.K_e:
+                            name = next(iter(player.businesses), None)
+                            if name:
+                                shop_message = manage_business(player, name)
+                            else:
+                                shop_message = "No businesses owned"
+                        elif event.key == pygame.K_m:
+                            name = next(iter(player.businesses), None)
+                            if name:
+                                shop_message = run_marketing_campaign(player, name)
+                            else:
+                                shop_message = "No businesses owned"
+                        elif event.key == pygame.K_t:
+                            name = next(iter(player.businesses), None)
+                            if name:
+                                shop_message = train_staff(player, name)
+                            else:
+                                shop_message = "No businesses owned"
+                        else:
+                            continue
+                        shop_message_timer = 60
+                        auto_save(player)
                     else:
                         continue
                 elif in_building == "gym" and _event_matches("interact", event):
@@ -1821,7 +1852,7 @@ def main():
                 for i, (name, cost, _p) in enumerate(BUSINESSES):
                     status = "Owned" if name in player.businesses else f"${cost}"
                     opts.append(f"{i+1}:{name} {status}")
-                txt = " ".join(opts) + "  E:Manage  [Q] Leave"
+                txt = " ".join(opts) + "  E:Manage M:Market T:Train  [Q] Leave"
             elif in_building == "mall":
                 txt = "[E] Pick up order  C:Duel  [Q] Leave"
             elif in_building == "beach":
