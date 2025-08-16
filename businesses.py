@@ -49,6 +49,8 @@ def buy_business(player: Player, index: int) -> str:
     player.businesses[name] = data.base_profit
     player.business_bonus[name] = 0
     player.business_staff[name] = 0
+    player.business_reputation[name] = 0
+    player.business_skill[name] = 0
     return f"Bought {name}"
 
 
@@ -67,6 +69,31 @@ def manage_business(player: Player, name: str) -> str:
     return "Slow day at the shop"
 
 
+def run_marketing_campaign(player: Player, name: str) -> str:
+    """Spend money to temporarily boost a business's reputation."""
+    if name not in player.businesses:
+        return "No such business"
+    cost = 100
+    if player.money < cost:
+        return "Not enough money!"
+    player.money -= cost
+    boost = random.randint(10, 30)
+    player.business_reputation[name] = player.business_reputation.get(name, 0) + boost
+    return f"Campaign raised rep by {boost}"
+
+
+def train_staff(player: Player, name: str) -> str:
+    """Train staff to temporarily lower robbery risk."""
+    if name not in player.businesses:
+        return "No such business"
+    if player.energy < 5:
+        return "Too tired"
+    player.energy -= energy_cost(player, 5)
+    gain = random.randint(1, 3)
+    player.business_skill[name] = player.business_skill.get(name, 0) + gain
+    return f"Staff trained +{gain}"
+
+
 def upgrade_business(player: Player, name: str) -> str:
     """Upgrade a business to its next tier if possible."""
     if name not in player.businesses:
@@ -81,10 +108,14 @@ def upgrade_business(player: Player, name: str) -> str:
     player.money -= current.upgrade_cost
     bonus = player.business_bonus.pop(name, 0)
     staff = player.business_staff.pop(name, 0)
+    reputation = player.business_reputation.pop(name, 0)
+    skill = player.business_skill.pop(name, 0)
     del player.businesses[name]
     player.businesses[next_name] = next_data.base_profit
     player.business_bonus[next_name] = bonus
     player.business_staff[next_name] = staff
+    player.business_reputation[next_name] = reputation
+    player.business_skill[next_name] = skill
     return f"Upgraded {name} to {next_name}"
 
 
@@ -108,15 +139,19 @@ def collect_profits(player: Player) -> int:
         data = BUSINESS_DATA.get(name)
         bonus = player.business_bonus.get(name, 0)
         staff = player.business_staff.get(name, 0)
+        reputation = player.business_reputation.get(name, 0)
+        skill = player.business_skill.get(name, 0)
         staff_profit = staff * 10
         wages = staff * (data.staff_cost if data else 0)
-        profit = base + player.charisma * 2 + bonus + staff_profit - wages
-        # Risk of robbery mitigated by staff presence
-        risk = max(0.1 - 0.02 * staff, 0.02)
+        profit = base + player.charisma * 2 + bonus + staff_profit - wages + reputation
+        # Risk of robbery mitigated by staff presence and skill
+        risk = max(0.1 - 0.02 * staff - 0.02 * skill, 0.02)
         if random.random() < risk:
             profit = 0
         total += profit
         player.business_bonus[name] = 0
+        player.business_reputation[name] = 0
+        player.business_skill[name] = 0
     player.money += total
     return total
 
