@@ -703,7 +703,7 @@ def load_game() -> Optional[Player]:
     player.story_branch = data.get("story_branch")
     player.gang_package_done = data.get("gang_package_done", False)
     player.resources = data.get(
-        "resources", {"metal": 0, "cloth": 0, "herbs": 0, "seeds": 0, "produce": 0}
+        "resources", {"metal": 0, "cloth": 0, "herbs": 0, "eggs": 0, "milk": 0}
     )
     player.crops = data.get("crops", [])
     player.season = data.get("season", "Spring")

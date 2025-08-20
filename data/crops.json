@@ -1,0 +1,5 @@
+[
+  {"name": "Wheat", "season": "Spring", "growth_days": 3, "sell_price": 15},
+  {"name": "Corn", "season": "Summer", "growth_days": 4, "sell_price": 25},
+  {"name": "Pumpkin", "season": "Fall", "growth_days": 5, "sell_price": 40}
+]
