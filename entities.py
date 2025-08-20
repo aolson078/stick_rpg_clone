@@ -40,8 +40,9 @@ class Player:
     dealer_exp: int = 0
     clinic_exp: int = 0
     tokens: int = 0
-    crafting_level: int = 1
-    crafting_exp: int = 0
+    # Crafting skills and experience per skill
+    crafting_skills: Dict[str, int] = field(default_factory=dict)
+    crafting_exp: Dict[str, int] = field(default_factory=dict)
     # Names of crafting recipes the player has discovered
     known_recipes: List[str] = field(default_factory=list)
     has_skateboard: bool = False

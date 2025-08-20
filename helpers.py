@@ -554,7 +554,7 @@ def save_game(player: Player) -> None:
         "dealer_exp": player.dealer_exp,
         "clinic_exp": player.clinic_exp,
         "tokens": player.tokens,
-        "crafting_level": player.crafting_level,
+        "crafting_skills": player.crafting_skills,
         "crafting_exp": player.crafting_exp,
         "brawls_won": player.brawls_won,
         "enemies_defeated": player.enemies_defeated,
@@ -676,8 +676,8 @@ def load_game() -> Optional[Player]:
     player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
     player.clinic_exp = data.get("clinic_exp", 0)
     player.tokens = data.get("tokens", player.tokens)
-    player.crafting_level = data.get("crafting_level", 1)
-    player.crafting_exp = data.get("crafting_exp", 0)
+    player.crafting_skills = data.get("crafting_skills", {})
+    player.crafting_exp = data.get("crafting_exp", {})
     player.brawls_won = data.get("brawls_won", 0)
     player.enemies_defeated = data.get("enemies_defeated", 0)
     player.boss_defeated = data.get("boss_defeated", False)

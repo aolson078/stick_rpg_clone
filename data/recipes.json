@@ -2,28 +2,35 @@
     {
         "name": "Health Potion",
         "requires": {"herbs": 2},
+        "skill": "alchemy",
+        "level": 1,
         "produces": {"name": "Health Potion", "slot": "consumable"}
     },
     {
         "name": "Iron Sword",
         "requires": {"metal": 3},
+        "skill": "smithing",
+        "level": 1,
         "produces": {"name": "Iron Sword", "slot": "weapon", "attack": 4}
     },
     {
         "name": "Energy Potion",
         "requires": {"herbs": 3},
+        "skill": "alchemy",
         "level": 2,
         "produces": {"name": "Energy Potion", "slot": "consumable"}
     },
     {
         "name": "Flaming Sword",
         "requires": {"metal": 5, "herbs": 2},
+        "skill": "smithing",
         "level": 3,
         "produces": {"name": "Flaming Sword", "slot": "weapon", "attack": 6}
     },
     {
         "name": "Fruit Pie",
         "requires": {"produce": 2},
+        "skill": "cooking",
         "level": 3,
         "produces": {"name": "Fruit Pie", "slot": "consumable"}
     }

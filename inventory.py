@@ -424,19 +424,23 @@ def upgrade_companion_ability(player: Player, index: int) -> str:
     return f"{name} Lv{level + 1} learned!"
 
 
-def crafting_exp_needed(player: Player) -> int:
-    """Experience required for next crafting level."""
-    return CRAFT_EXP_BASE * player.crafting_level
+def crafting_exp_needed(player: Player, skill: str) -> int:
+    """Experience required for next level in a crafting skill."""
+    level = player.crafting_skills.get(skill, 1)
+    return CRAFT_EXP_BASE * level
 
 
-def gain_crafting_exp(player: Player, amount: int = 5) -> str:
-    """Add crafting XP and handle level ups."""
-    player.crafting_exp += amount
+def gain_crafting_exp(player: Player, skill: str, amount: int = 5) -> str:
+    """Add crafting XP for a skill and handle level ups."""
+    xp = player.crafting_exp.get(skill, 0) + amount
+    level = player.crafting_skills.get(skill, 1)
     msg = ""
-    while player.crafting_exp >= crafting_exp_needed(player):
-        player.crafting_exp -= crafting_exp_needed(player)
-        player.crafting_level += 1
-        msg = f"Crafting leveled to {player.crafting_level}!"
+    while xp >= crafting_exp_needed(player, skill):
+        xp -= crafting_exp_needed(player, skill)
+        level += 1
+        msg = f"{skill.capitalize()} leveled to {level}!"
+    player.crafting_exp[skill] = xp
+    player.crafting_skills[skill] = level
     return msg
 
 
@@ -455,8 +459,9 @@ def craft_recipe(player: Player, name: str) -> str:
         return "Unknown recipe"
     if name not in player.known_recipes:
         return "Recipe not known"
-    if recipe.get("level", 1) > player.crafting_level:
-        return f"Need Craft Lv{recipe['level']}"
+    skill = recipe.get("skill", "crafting")
+    if recipe.get("level", 1) > player.crafting_skills.get(skill, 1):
+        return f"Need {skill.title()} Lv{recipe['level']}"
     reqs = recipe.get("requires", {})
     for res, amt in reqs.items():
         if player.resources.get(res, 0) < amt:
@@ -466,7 +471,7 @@ def craft_recipe(player: Player, name: str) -> str:
     prod = recipe.get("produces", {})
     item = InventoryItem(**prod)
     player.inventory.append(item)
-    lvl_msg = gain_crafting_exp(player)
+    lvl_msg = gain_crafting_exp(player, skill)
     return f"Crafted {prod['name']}" + (f"  {lvl_msg}" if lvl_msg else "")
 
 
@@ -478,5 +483,5 @@ def repair_equipment(player: Player) -> str:
     for item in player.equipment.values():
         if item:
             item.durability = item.max_durability
-    lvl_msg = gain_crafting_exp(player)
+    lvl_msg = gain_crafting_exp(player, "smithing")
     return "Equipment repaired" + (f"  {lvl_msg}" if lvl_msg else "")
