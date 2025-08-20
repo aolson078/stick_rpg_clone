@@ -1152,8 +1152,8 @@ def main():
                             continue
                         shop_message_timer = 60
                     elif event.key == pygame.K_5:
-                        if player.crafting_level < 2:
-                            shop_message = "Need Craft Lv2"
+                        if player.crafting_skills.get("smithing", 1) < 2:
+                            shop_message = "Need Smithing Lv2"
                         elif (
                             player.resources.get("metal", 0) >= 1
                             and player.resources.get("cloth", 0) >= 2
@@ -1168,28 +1168,28 @@ def main():
                                     InventoryItem("Decor Chair", "furniture")
                                 )
                                 shop_message = "Crafted Decor Chair"
-                            lvl_msg = gain_crafting_exp(player)
+                            lvl_msg = gain_crafting_exp(player, "smithing")
                             if lvl_msg:
                                 shop_message += f"  {lvl_msg}"
                         else:
                             shop_message = "Need 1 metal & 2 cloth"
                     elif event.key == pygame.K_6:
-                        if player.crafting_level < 2:
-                            shop_message = "Need Craft Lv2"
+                        if player.crafting_skills.get("alchemy", 1) < 2:
+                            shop_message = "Need Alchemy Lv2"
                         elif player.resources.get("herbs", 0) >= 3:
                             player.resources["herbs"] -= 3
                             player.inventory.append(
                                 InventoryItem("Energy Potion", "consumable")
                             )
                             shop_message = "Brewed Energy Potion"
-                            lvl_msg = gain_crafting_exp(player)
+                            lvl_msg = gain_crafting_exp(player, "alchemy")
                             if lvl_msg:
                                 shop_message += f"  {lvl_msg}"
                         else:
                             shop_message = "Need 3 herbs"
                     elif event.key == pygame.K_7:
-                        if player.crafting_level < 3:
-                            shop_message = "Need Craft Lv3"
+                        if player.crafting_skills.get("smithing", 1) < 3:
+                            shop_message = "Need Smithing Lv3"
                         elif (
                             player.resources.get("metal", 0) >= 5
                             and player.resources.get("herbs", 0) >= 2
@@ -1200,21 +1200,21 @@ def main():
                                 InventoryItem("Flaming Sword", "weapon", attack=6)
                             )
                             shop_message = "Forged Flaming Sword"
-                            lvl_msg = gain_crafting_exp(player)
+                            lvl_msg = gain_crafting_exp(player, "smithing")
                             if lvl_msg:
                                 shop_message += f"  {lvl_msg}"
                         else:
                             shop_message = "Need 5 metal & 2 herbs"
                     elif event.key == pygame.K_8:
-                        if player.crafting_level < 3:
-                            shop_message = "Need Craft Lv3"
+                        if player.crafting_skills.get("cooking", 1) < 3:
+                            shop_message = "Need Cooking Lv3"
                         elif player.resources.get("produce", 0) >= 2:
                             player.resources["produce"] -= 2
                             player.inventory.append(
                                 InventoryItem("Fruit Pie", "consumable")
                             )
                             shop_message = "Baked Fruit Pie"
-                            lvl_msg = gain_crafting_exp(player)
+                            lvl_msg = gain_crafting_exp(player, "cooking")
                             if lvl_msg:
                                 shop_message += f"  {lvl_msg}"
 
@@ -1890,19 +1890,19 @@ def main():
                     screen.blit(item_surf, (30 + i * 200, settings.SCREEN_HEIGHT - 60))
             elif in_building == "workshop":
                 opts = [
-                    ("1:Health Potion (2 herbs)", 1),
-                    ("2:Iron Sword (3 metal)", 1),
-                    ("3:Upgrade Weapon (2 metal)", 1),
-                    ("4:Upgrade Armor (2 cloth)", 1),
-                    ("5:Decorations (1 metal,2 cloth)", 2),
-                    ("6:Energy Potion (3 herbs)", 2),
-                    ("7:Flaming Sword (5 metal,2 herbs)", 3),
-                    ("8:Fruit Pie (2 produce)", 3),
-                    ("9:Repair Gear (1 metal)", 1),
+                    ("1:Health Potion (2 herbs)", "alchemy", 1),
+                    ("2:Iron Sword (3 metal)", "smithing", 1),
+                    ("3:Upgrade Weapon (2 metal)", "smithing", 1),
+                    ("4:Upgrade Armor (2 cloth)", "smithing", 1),
+                    ("5:Decorations (1 metal,2 cloth)", "smithing", 2),
+                    ("6:Energy Potion (3 herbs)", "alchemy", 2),
+                    ("7:Flaming Sword (5 metal,2 herbs)", "smithing", 3),
+                    ("8:Fruit Pie (2 produce)", "cooking", 3),
+                    ("9:Repair Gear (1 metal)", "smithing", 1),
                 ]
-                for i, (txt_opt, req) in enumerate(opts):
-                    if player.crafting_level < req:
-                        txt_opt += f" [Lv{req}]"
+                for i, (txt_opt, skill, req) in enumerate(opts):
+                    if player.crafting_skills.get(skill, 1) < req:
+                        txt_opt += f" [{skill.title()} Lv{req}]"
                     item_surf = font.render(txt_opt, True, (80, 40, 40))
                     screen.blit(item_surf, (30 + i * 300, settings.SCREEN_HEIGHT - 60))
             elif in_building == "farm":

@@ -504,8 +504,7 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         f"C:{player.resources.get('cloth', 0)} "
         f"H:{player.resources.get('herbs', 0)} "
         f"S:{player.resources.get('seeds', 0)} "
-        f"P:{player.resources.get('produce', 0)} "
-        f"Craft:{player.crafting_level}",
+        f"P:{player.resources.get('produce', 0)}",
         True,
         FONT_COLOR,
     )
@@ -518,7 +517,14 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         FONT_COLOR,
     )
     bar.blit(card_stat, (settings.SCREEN_WIDTH - card_stat.get_width() - 20, 20))
-    craft_prog = f"{player.crafting_exp}/{crafting_exp_needed(player)}"
+    if player.crafting_skills:
+        first = next(iter(player.crafting_skills))
+        level = player.crafting_skills[first]
+        xp = player.crafting_exp.get(first, 0)
+        needed = crafting_exp_needed(player, first)
+        craft_prog = f"{first.title()} {level} {xp}/{needed}"
+    else:
+        craft_prog = "No Crafting"
     craft_txt = font.render(f"Craft XP: {craft_prog}", True, FONT_COLOR)
     bar.blit(craft_txt, (settings.SCREEN_WIDTH - craft_txt.get_width() - 20, 32))
     season_txt = font.render(f"{player.season} - {player.weather}", True, FONT_COLOR)

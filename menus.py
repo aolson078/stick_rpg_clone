@@ -10,6 +10,7 @@ import pygame
 from helpers import recalc_layouts, compute_slot_rects, scaled_font
 from quests import LEADERBOARD_FILE
 import settings
+from inventory import crafting_exp_needed
 
 
 def _binding_name(code: int) -> str:
@@ -154,18 +155,44 @@ def draw_workshop_menu(surface: pygame.Surface, font: pygame.font.Font, player, 
     title = font.render("Workshop", True, settings.FONT_COLOR)
     surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
+    y = 120
+    if player.crafting_skills:
+        for skill, lvl in player.crafting_skills.items():
+            xp = player.crafting_exp.get(skill, 0)
+            needed = crafting_exp_needed(player, skill)
+            prog = font.render(
+                f"{skill.title()} Lv{lvl} {xp}/{needed}",
+                True,
+                settings.FONT_COLOR,
+            )
+            surface.blit(prog, (100, y))
+            y += 40
+    else:
+        txt = font.render("No crafting skills", True, settings.FONT_COLOR)
+        surface.blit(txt, (100, y))
+        y += 40
+
     if not player.known_recipes:
         txt = font.render("No recipes known", True, settings.FONT_COLOR)
-        surface.blit(txt, (100, 120))
+        surface.blit(txt, (100, y))
     else:
         for i, name in enumerate(player.known_recipes):
             recipe = recipes.get(name, {})
-            reqs = ", ".join(f"{amt} {res}" for res, amt in recipe.get("requires", {}).items())
-            line = font.render(f"{i+1}: {name} - {reqs}", True, settings.FONT_COLOR)
-            surface.blit(line, (100, 120 + i * 40))
+            reqs = ", ".join(
+                f"{amt} {res}" for res, amt in recipe.get("requires", {}).items()
+            )
+            skill = recipe.get("skill", "crafting").title()
+            lvl = recipe.get("level", 1)
+            line = font.render(
+                f"{i+1}: {name} ({skill} Lv{lvl}) - {reqs}",
+                True,
+                settings.FONT_COLOR,
+            )
+            surface.blit(line, (100, y + i * 40))
 
+    info_y = y + len(player.known_recipes) * 40 + 20
     info = font.render("[Q] Exit  [R] Repair", True, settings.FONT_COLOR)
-    surface.blit(info, (100, 120 + len(player.known_recipes) * 40 + 20))
+    surface.blit(info, (100, info_y))
 
 
 def character_creation(screen: pygame.Surface, font: pygame.font.Font):
