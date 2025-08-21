@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from entities import Player, InventoryItem
 from combat import energy_cost
 import factions
@@ -81,12 +81,29 @@ SHOP_ITEMS: List[Tuple[str, int, any]] = [
             InventoryItem("Crossbow", "weapon", attack=4, combo=2, weapon_type="ranged")
         ),
     ),
-    (
-        "Seeds x3",
-        15,
-        lambda p: p.resources.__setitem__("seeds", p.resources.get("seeds", 0) + 3),
-    ),
 ]
+
+# Loaded crop data
+CROPS_PATH = Path(__file__).parent / "data" / "crops.json"
+if CROPS_PATH.exists():
+    with open(CROPS_PATH) as f:
+        _crops = json.load(f)
+    CROPS: Dict[str, Dict] = {c["name"]: c for c in _crops}
+else:
+    CROPS = {}
+
+# Add seed options for each crop
+for _name, _data in CROPS.items():
+    cost = _data.get("sell_price", 10)
+    SHOP_ITEMS.append(
+        (
+            f"{_name} Seeds x3",
+            cost,
+            lambda p, n=_name: p.resources.__setitem__(
+                f"{n}_seeds", p.resources.get(f"{n}_seeds", 0) + 3
+            ),
+        )
+    )
 
 # Loaded crafting recipes
 RECIPES_PATH = Path(__file__).parent / "data" / "recipes.json"
@@ -267,38 +284,62 @@ def adopt_companion(player: Player, index: int) -> str:
     return f"Adopted {name}!"
 
 
-def plant_seed(player: Player) -> str:
-    """Plant a seed on the farm if one is available."""
-    if player.resources.get("seeds", 0) <= 0:
-        return "No seeds"
-    player.resources["seeds"] -= 1
-    player.crops.append(player.day)
-    return "Seed planted"
+def plant_seed(player: Player, crop_type: Optional[str] = None) -> str:
+    """Plant a seed of the given crop type if available."""
+    # Determine crop if not specified: pick first seed available
+    if crop_type is None:
+        for name in CROPS:
+            if player.resources.get(f"{name}_seeds", 0) > 0:
+                crop_type = name
+                break
+        if crop_type is None:
+            return "No seeds"
+    if crop_type not in CROPS:
+        return "Unknown crop"
+    seed_key = f"{crop_type}_seeds"
+    if player.resources.get(seed_key, 0) <= 0:
+        return f"No {crop_type} seeds"
+    player.resources[seed_key] -= 1
+    player.crops.append({"type": crop_type, "planted_day": player.day})
+    return f"Planted {crop_type}"
 
 
-def harvest_crops(player: Player) -> str:
-    """Harvest crops that have grown for three days."""
-    ready = [d for d in player.crops if player.day - d >= 3]
-    if not ready:
+def harvest_crops(player: Player, crop_type: Optional[str] = None) -> str:
+    """Harvest crops that have finished growing."""
+    harvested = 0
+    for crop in list(player.crops):
+        if crop_type and crop["type"] != crop_type:
+            continue
+        data = CROPS.get(crop["type"])
+        if not data:
+            continue
+        if player.day - crop["planted_day"] >= data.get("growth_days", 0):
+            player.crops.remove(crop)
+            key = crop["type"]
+            player.resources[key] = player.resources.get(key, 0) + 1
+            player.resources["produce"] = player.resources.get("produce", 0) + 1
+            harvested += 1
+    if harvested == 0:
         return "Nothing ready"
-    for d in ready:
-        player.crops.remove(d)
-        player.resources["produce"] = player.resources.get("produce", 0) + 1
-    return f"Harvested {len(ready)} produce"
+    return f"Harvested {harvested} produce"
 
 
 def sell_produce(player: Player) -> str:
-    """Sell all harvested produce for cash."""
-    count = player.resources.get("produce", 0)
-    if count <= 0:
+    """Sell all harvested produce for cash using crop-specific prices."""
+    total_gain = 0
+    sold_any = False
+    bonus = 5 * player.companion_level if player.companion == "Llama" else 0
+    for name, data in CROPS.items():
+        count = player.resources.get(name, 0)
+        if count > 0:
+            price = data.get("sell_price", 0) + bonus
+            total_gain += price * count
+            player.resources[name] = 0
+            sold_any = True
+    if not sold_any:
         return "No produce"
-    bonus = 0
-    if player.companion == "Llama":
-        bonus = 5 * player.companion_level
-    gain = (15 + bonus) * count
-    player.money += gain
-    player.resources["produce"] = 0
-    return f"Sold {count} produce"
+    player.money += total_gain
+    return f"Sold produce for ${total_gain}"
 
 
 def buy_animal(player: Player, animal: str) -> str:

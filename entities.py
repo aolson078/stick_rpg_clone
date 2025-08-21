@@ -1,6 +1,6 @@
 """Data classes for players, items, and NPC entities."""
 from dataclasses import dataclass, field
-from typing import Callable, List, Dict, Optional, Tuple
+from typing import Callable, List, Dict, Optional, Tuple, Any
 import pygame
 import settings
 
@@ -115,8 +115,6 @@ class Player:
             "metal": 0,
             "cloth": 0,
             "herbs": 0,
-            "seeds": 0,
-            "produce": 0,
             "eggs": 0,
             "milk": 0,
         }
@@ -127,8 +125,8 @@ class Player:
         default_factory=lambda: {"chicken": 0, "cow": 0}
     )
 
-    # Days when seeds were planted on the farm
-    crops: List[int] = field(default_factory=list)
+    # Planted crops with type and day planted
+    crops: List[Dict[str, Any]] = field(default_factory=list)
 
     # Seasonal state
     season: str = "Spring"

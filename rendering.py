@@ -34,7 +34,7 @@ from settings import (
 )
 from tilemap import TileMap
 from careers import get_job_title, job_progress
-from inventory import crafting_exp_needed
+from inventory import crafting_exp_needed, CROPS
 from constants import PERK_MAX_LEVEL
 from helpers import scaled_font
 
@@ -499,18 +499,24 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     if player.epithet:
         ep_txt = font.render(player.epithet, True, FONT_COLOR)
         bar.blit(ep_txt, (settings.SCREEN_WIDTH // 2 - ep_txt.get_width() // 2, 6))
+    seed_total = sum(player.resources.get(f"{n}_seeds", 0) for n in CROPS)
+    produce_total = sum(player.resources.get(n, 0) for n in CROPS)
     res_txt = font.render(
         f"M:{player.resources.get('metal', 0)} "
         f"C:{player.resources.get('cloth', 0)} "
         f"H:{player.resources.get('herbs', 0)} "
-        f"S:{player.resources.get('seeds', 0)} "
-        f"P:{player.resources.get('produce', 0)}",
+        f"S:{seed_total} P:{produce_total}",
         True,
         FONT_COLOR,
     )
     bar.blit(res_txt, (16, 20))
-    name_txt = font.render(player.name, True, FONT_COLOR)
-    bar.blit(name_txt, (16, 32))
+    crops_line = " ".join(
+        f"{c['type']}:{min(player.day - c['planted_day'], CROPS[c['type']]['growth_days'])}/{CROPS[c['type']]['growth_days']}"
+        for c in player.crops
+    )
+    if crops_line:
+        crop_txt = font.render(crops_line, True, FONT_COLOR)
+        bar.blit(crop_txt, (16, 32))
     card_stat = font.render(
         f"Cards: {len(player.cards)}/10",
         True,
@@ -632,11 +638,12 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
         surface.blit(bg, bg_rect.topleft)
         surface.blit(txt, (bg_rect.x + 4, bg_rect.y + 20))
 
+    produce_total = sum(player.resources.get(n, 0) for n in CROPS)
     res = (
         f"Metal:{player.resources.get('metal', 0)} "
         f"Cloth:{player.resources.get('cloth', 0)} "
         f"Herbs:{player.resources.get('herbs', 0)} "
-        f"Produce:{player.resources.get('produce', 0)}"
+        f"Produce:{produce_total}"
     )
     res_txt = font.render(res, True, FONT_COLOR)
     surface.blit(res_txt, (100, settings.SCREEN_HEIGHT - 120))
