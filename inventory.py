@@ -428,8 +428,12 @@ CRAFT_EXP_BASE = 50
 COMPANION_TRAIN_COST = 30
 
 
-def upgrade_companion_ability(player: Player, index: int) -> str:
-    """Upgrade one of the current companion's abilities."""
+def upgrade_companion_ability(player: Player, index: int, free: bool = False) -> str:
+    """Upgrade one of the current companion's abilities.
+
+    Set ``free`` to True to skip cost and energy requirements (used for
+    quest rewards).
+    """
     if not player.companion:
         return "No pet to train"
     abilities = COMPANION_ABILITIES.get(player.companion)
@@ -441,12 +445,13 @@ def upgrade_companion_ability(player: Player, index: int) -> str:
     if level >= PERK_MAX_LEVEL:
         return "Ability at max level"
     cost = COMPANION_TRAIN_COST * (level + 1)
-    if player.money < cost:
-        return f"Need ${cost}"
-    if player.energy < 5:
-        return "Too tired"
-    player.money -= cost
-    player.energy -= energy_cost(player, 5)
+    if not free:
+        if player.money < cost:
+            return f"Need ${cost}"
+        if player.energy < 5:
+            return "Too tired"
+        player.money -= cost
+        player.energy -= energy_cost(player, 5)
     levels[name] = level + 1
     if stat == "defense":
         player.defense += 1

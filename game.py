@@ -1716,7 +1716,7 @@ def main():
         if show_craft_menu:
             draw_workshop_menu(screen, font, player, RECIPES)
         if show_log:
-            draw_quest_log(screen, font, QUESTS, STORY_QUESTS)
+            draw_quest_log(screen, font, QUESTS, player, STORY_QUESTS)
         if show_help:
             draw_help_screen(screen, font)
 

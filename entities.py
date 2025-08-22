@@ -205,6 +205,8 @@ class SideQuest:
     description: str
     target: str  # building type or NPC to complete
     reward: Callable[["Player"], None]
+    dialogue: List[str] = field(default_factory=list)
+    objectives: List[str] = field(default_factory=list)
 
 
 @dataclass

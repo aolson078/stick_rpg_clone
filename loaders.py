@@ -4,7 +4,7 @@ import pygame
 from typing import List, Dict
 
 from entities import Building, Quest, SideQuest
-from inventory import HOME_UPGRADES
+from inventory import HOME_UPGRADES, COMPANION_ABILITIES, upgrade_companion_ability
 import settings
 from tilemap import BUS_STOP_BUILDINGS
 
@@ -76,8 +76,28 @@ def load_sidequests(path: str = "data/sidequests.json") -> Dict[str, SideQuest]:
         name = sq["name"]
         desc = sq["description"]
         target = sq["target"]
-        reward_amt = sq.get("reward", 0)
+        dialogue = sq.get("dialogue", [])
+        objectives = sq.get("objectives", [])
+        comp = sq.get("companion")
+        reward_cfg = sq.get("reward", 0)
+        if isinstance(reward_cfg, dict) and reward_cfg.get("ability") and comp:
+            ability = reward_cfg["ability"]
+
+            def reward_func(p, c=comp, abil=ability):
+                if p.companion != c:
+                    return
+                abilities = COMPANION_ABILITIES.get(c, [])
+                idx = next((i for i, a in enumerate(abilities) if a[0] == abil), None)
+                if idx is not None:
+                    upgrade_companion_ability(p, idx, free=True)
+
+        else:
+            amt = reward_cfg if isinstance(reward_cfg, (int, float)) else 0
+
+            def reward_func(p, amt=amt):
+                setattr(p, "money", p.money + amt)
+
         side_list.append(
-            SideQuest(name, desc, target, lambda p, amt=reward_amt: setattr(p, "money", p.money + amt))
+            SideQuest(name, desc, target, reward_func, dialogue, objectives)
         )
     return {q.name: q for q in side_list}

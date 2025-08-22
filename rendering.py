@@ -37,6 +37,7 @@ from careers import get_job_title, job_progress
 from inventory import crafting_exp_needed, CROPS
 from constants import PERK_MAX_LEVEL
 from helpers import scaled_font
+from quests import SIDE_QUESTS, COMPANION_QUESTS
 
 PLAYER_SPRITES = []
 PLAYER_SPRITE_COLOR = None
@@ -569,12 +570,16 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     surface.blit(bar, (0, 0))
 
     # Show current quest below the stat bar
-    quest_text = next((q.description for q in quests if not q.completed), None)
     quest_text = None
-    if story_quests and player.story_stage < len(story_quests):
-        quest_text = story_quests[player.story_stage].description
-    elif player.current_quest < len(quests):
-        quest_text = quests[player.current_quest].description
+    if player.side_quest:
+        sq = SIDE_QUESTS.get(player.side_quest)
+        if sq:
+            quest_text = sq.description
+    if quest_text is None:
+        if story_quests and player.story_stage < len(story_quests):
+            quest_text = story_quests[player.story_stage].description
+        elif player.current_quest < len(quests):
+            quest_text = quests[player.current_quest].description
     if quest_text:
         qsurf = font.render(f"Quest: {quest_text}", True, FONT_COLOR)
         qbg = pygame.Surface(
@@ -714,23 +719,30 @@ def draw_companion_menu(surface, font, player, abilities):
     surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
     levels = player.companion_abilities.get(player.companion, {})
-    morale_txt = font.render(
-        f"Morale: {player.companion_morale}", True, FONT_COLOR
+    y = 100
+    active = next(
+        (q for q in COMPANION_QUESTS.values() if q and q.name == player.side_quest),
+        None,
     )
-    surface.blit(morale_txt, (100, 100))
+    if active:
+        qtxt = font.render(f"Quest: {active.description}", True, FONT_COLOR)
+        surface.blit(qtxt, (100, y))
+        y += 20
+    morale_txt = font.render(f"Morale: {player.companion_morale}", True, FONT_COLOR)
+    surface.blit(morale_txt, (100, y))
     offset = 20
     for i, (name, desc, _stat) in enumerate(abilities):
         lvl = levels.get(name, 0)
         txt = font.render(
             f"{i+1}: {name} Lv{lvl}/{PERK_MAX_LEVEL} - {desc}", True, FONT_COLOR
         )
-        surface.blit(txt, (100, 120 + i * 40 + offset))
+        surface.blit(txt, (100, y + 20 + i * 40))
 
     info = font.render("[Q] Exit", True, FONT_COLOR)
-    surface.blit(info, (100, 120 + len(abilities) * 40 + offset + 20))
+    surface.blit(info, (100, y + 20 + len(abilities) * 40 + offset))
 
 
-def draw_quest_log(surface, font, quests, story_quests=None):
+def draw_quest_log(surface, font, quests, player, story_quests=None):
     """Show completed and active quests."""
     overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
 
@@ -745,6 +757,15 @@ def draw_quest_log(surface, font, quests, story_quests=None):
     surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
 
     y = 120
+    if player.side_quest:
+        hdr = font.render("Side Quest", True, FONT_COLOR)
+        surface.blit(hdr, (100, y))
+        y += 30
+        sq = SIDE_QUESTS.get(player.side_quest)
+        if sq:
+            txt = font.render(f"[ ] {sq.description}", True, FONT_COLOR)
+            surface.blit(txt, (120, y))
+            y += 40
     if story_quests:
         hdr = font.render("Story Quests", True, FONT_COLOR)
         surface.blit(hdr, (100, y))
