@@ -76,6 +76,18 @@ RELATIONSHIP_QUESTS = {
     "Chris": CHRIS_REL_QUEST,
 }
 
+# Companion-specific quests triggered by high morale
+COMPANION_QUESTS = {
+    "Dog": SIDE_QUESTS.get("Dog Walk"),
+    "Cat": SIDE_QUESTS.get("Cat Curiosity"),
+    "Parrot": SIDE_QUESTS.get("Parrot Echo"),
+    "Llama": SIDE_QUESTS.get("Llama Trek"),
+    "Peacock": SIDE_QUESTS.get("Peacock Parade"),
+    "Rhino": SIDE_QUESTS.get("Rhino Charge"),
+}
+
+COMPANION_QUEST_THRESHOLD = 80
+
 # Seasonal side quests triggered at the start of each season
 SEASONAL_QUESTS = {
     "Spring": SIDE_QUESTS.get("Spring Festival"),
@@ -369,8 +381,21 @@ def _in_schedule(hour: int, start: int, end: int) -> bool:
     return hour >= start or hour < end
 
 
+def check_companion_quest(player: Player) -> None:
+    """Assign a companion quest when morale is high enough."""
+    if (
+        player.companion
+        and player.side_quest is None
+        and player.companion_morale >= COMPANION_QUEST_THRESHOLD
+    ):
+        quest = COMPANION_QUESTS.get(player.companion)
+        if quest:
+            player.side_quest = quest.name
+
+
 def update_npcs(player: Player, buildings: List[Building]) -> None:
     """Move NPCs toward their scheduled locations."""
+    check_companion_quest(player)
     hour = int(player.time) // 60
     for npc in NPCS:
         target = npc.home

@@ -1,13 +1,19 @@
 [
-    {"name": "Bank Delivery", "description": "Deliver paperwork from the Bank to the Library", "target": "library", "reward": 50},
-    {"name": "Courier Errand", "description": "Deliver a package from Sam to the Gym", "target": "gym", "reward": 30},
-    {"name": "Beach Delivery", "description": "Pick up sunglasses from the Mall and bring them to the Beach", "target": "beach", "reward": 40},
-    {"name": "Mayor Letter", "description": "Take a letter from the Mayor to the Library", "target": "library", "reward": 60}
-    ,{"name": "Alice's Concert", "description": "Attend a show with Alice at the Theater", "target": "theater", "reward": 100}
-    ,{"name": "Bella's Necklace", "description": "Find Bella's lost necklace near the Forest", "target": "forest", "reward": 80}
-    ,{"name": "Chris's Training", "description": "Spar with Chris at the Gym", "target": "gym", "reward": 70}
-    ,{"name": "Spring Festival", "description": "Join the planting contest at the Farm", "target": "farm", "reward": 50}
-    ,{"name": "Summer Festival", "description": "Win tokens at the Beach party", "target": "beach", "reward": 50}
-    ,{"name": "Fall Festival", "description": "Help harvest crops for the town", "target": "farm", "reward": 50}
-    ,{"name": "Winter Festival", "description": "Enter the ice fishing tournament", "target": "park", "reward": 50}
+  {"name": "Bank Delivery", "description": "Deliver paperwork from the Bank to the Library", "target": "library", "reward": 50},
+  {"name": "Courier Errand", "description": "Deliver a package from Sam to the Gym", "target": "gym", "reward": 30},
+  {"name": "Beach Delivery", "description": "Pick up sunglasses from the Mall and bring them to the Beach", "target": "beach", "reward": 40},
+  {"name": "Mayor Letter", "description": "Take a letter from the Mayor to the Library", "target": "library", "reward": 60},
+  {"name": "Alice's Concert", "description": "Attend a show with Alice at the Theater", "target": "theater", "reward": 100},
+  {"name": "Bella's Necklace", "description": "Find Bella's lost necklace near the Forest", "target": "forest", "reward": 80},
+  {"name": "Chris's Training", "description": "Spar with Chris at the Gym", "target": "gym", "reward": 70},
+  {"name": "Spring Festival", "description": "Join the planting contest at the Farm", "target": "farm", "reward": 50},
+  {"name": "Summer Festival", "description": "Win tokens at the Beach party", "target": "beach", "reward": 50},
+  {"name": "Fall Festival", "description": "Help harvest crops for the town", "target": "farm", "reward": 50},
+  {"name": "Winter Festival", "description": "Enter the ice fishing tournament", "target": "park", "reward": 50},
+  {"name": "Dog Walk", "description": "Take your Dog for a joyful run in the Park", "target": "park", "dialogue": ["Your dog looks eager to stretch its legs.", "Maybe the park would be fun."], "objectives": ["Visit the park with your Dog"], "companion": "Dog", "reward": {"ability": "Fetch"}},
+  {"name": "Cat Curiosity", "description": "Let your Cat explore the mysteries of the Library", "target": "library", "dialogue": ["Your cat gazes toward the shelves.", "Perhaps a trip to the library?"], "objectives": ["Study at the library with your Cat"], "companion": "Cat", "reward": {"ability": "Sneak"}},
+  {"name": "Parrot Echo", "description": "Teach your Parrot new words at the Shop", "target": "shop", "dialogue": ["The parrot squawks, mimicking shoppers.", "Maybe it's time for lessons."], "objectives": ["Visit the shop with your Parrot"], "companion": "Parrot", "reward": {"ability": "Mimic"}},
+  {"name": "Llama Trek", "description": "Go on a countryside trek with your Llama", "target": "farm", "dialogue": ["The llama stomps impatiently.", "A long walk could help."], "objectives": ["Travel to the farm with your Llama"], "companion": "Llama", "reward": {"ability": "Sprint"}},
+  {"name": "Peacock Parade", "description": "Show off your Peacock at the Town Hall", "target": "townhall", "dialogue": ["Feathers sparkle brilliantly.", "An audience is needed."], "objectives": ["Visit the town hall with your Peacock"], "companion": "Peacock", "reward": {"ability": "Strut"}},
+  {"name": "Rhino Charge", "description": "Train your Rhino's charge at the Gym", "target": "gym", "dialogue": ["The rhino paws at the ground.", "The gym could handle this."], "objectives": ["Work out at the gym with your Rhino"], "companion": "Rhino", "reward": {"ability": "Charge"}}
 ]
