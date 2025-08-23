@@ -47,6 +47,8 @@ CLOUDS = []
 RAINDROPS = []
 SNOWFLAKES = []
 CITY_MAP = None
+DUNGEON_TRAP_IMAGE = None
+DUNGEON_PUZZLE_IMAGE = None
 
 
 def load_player_sprites(color=None):
@@ -156,6 +158,60 @@ def draw_quest_marker(surface, player_rect, target_rect, cam_x, cam_y):
         y + 8 * math.sin(angle - math.pi * 0.75),
     )
     pygame.draw.polygon(surface, (255, 50, 50), [tip, left, right])
+
+
+def load_dungeon_assets():
+    """Load simple images for traps and puzzles in the dungeon."""
+    global DUNGEON_TRAP_IMAGE, DUNGEON_PUZZLE_IMAGE
+    if DUNGEON_TRAP_IMAGE and DUNGEON_PUZZLE_IMAGE:
+        return
+
+    trap_path = os.path.join(settings.IMAGE_DIR, "trap.png")
+    puzzle_path = os.path.join(settings.IMAGE_DIR, "puzzle.png")
+
+    if os.path.exists(trap_path):
+        DUNGEON_TRAP_IMAGE = pygame.image.load(trap_path).convert_alpha()
+    else:
+        DUNGEON_TRAP_IMAGE = pygame.Surface((20, 20), pygame.SRCALPHA)
+        pygame.draw.polygon(
+            DUNGEON_TRAP_IMAGE, (200, 0, 0), [(10, 0), (20, 20), (0, 20)]
+        )
+
+    if os.path.exists(puzzle_path):
+        DUNGEON_PUZZLE_IMAGE = pygame.image.load(puzzle_path).convert_alpha()
+    else:
+        DUNGEON_PUZZLE_IMAGE = pygame.Surface((20, 20), pygame.SRCALPHA)
+        pygame.draw.rect(DUNGEON_PUZZLE_IMAGE, (0, 100, 200), (0, 0, 20, 20))
+        font = scaled_font(14)
+        q = font.render("?", True, (255, 255, 255))
+        DUNGEON_PUZZLE_IMAGE.blit(q, (5, 2))
+
+
+def draw_dungeon_room(surface, room, position, font=None):
+    """Visualize a dungeon room with traps, enemies, and exits."""
+    load_dungeon_assets()
+    x, y = position
+    pygame.draw.circle(surface, (180, 180, 180), (x, y), 30, 2)
+    if font is None:
+        font = scaled_font(14)
+
+    if room.trap:
+        img = (
+            DUNGEON_TRAP_IMAGE
+            if "trap" in room.trap
+            else DUNGEON_PUZZLE_IMAGE
+        )
+        surface.blit(img, (x - img.get_width() // 2, y - img.get_height() // 2))
+
+    if room.enemies:
+        txt = font.render(str(len(room.enemies)), True, (255, 0, 0))
+        surface.blit(txt, (x - txt.get_width() // 2, y - txt.get_height() // 2))
+
+    for i, _ in enumerate(room.exits):
+        angle = (i / max(1, len(room.exits))) * math.tau
+        ex_x = x + 35 * math.cos(angle)
+        ex_y = y + 35 * math.sin(angle)
+        pygame.draw.line(surface, (255, 255, 0), (x, y), (ex_x, ex_y), 2)
 
 
 def building_color(btype):
