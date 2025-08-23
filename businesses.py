@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple, Optional
 
 from entities import Player
 from combat import energy_cost
+import factions
 
 
 @dataclass
@@ -62,8 +63,13 @@ def manage_business(player: Player, name: str) -> str:
         return "Too tired"
     player.energy -= energy_cost(player, 5)
     chance = player.charisma + random.randint(0, 10)
+    rewards = factions.business_rewards(player)
+    if "Loyal Customers" in rewards:
+        chance += 5
     if chance > 10:
         bonus = random.randint(10, 30)
+        if "Investor" in rewards:
+            bonus = int(bonus * 1.5)
         player.business_bonus[name] = player.business_bonus.get(name, 0) + bonus
         return f"Great promotion! +${bonus}"
     return "Slow day at the shop"

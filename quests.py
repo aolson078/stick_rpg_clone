@@ -17,6 +17,7 @@ from inventory import (
     harvest_crops,
 )
 from combat import BRAWLER_COUNT
+import factions
 
 # Epithets awarded for certain achievements
 ACHIEVEMENT_EPITHETS = {
@@ -75,6 +76,35 @@ RELATIONSHIP_QUESTS = {
     "Bella": BELLA_REL_QUEST,
     "Chris": CHRIS_REL_QUEST,
 }
+
+# Faction reputation side quests unlocked at reputation thresholds
+MAYOR_FACTION_QUEST = SideQuest(
+    "Mayor Favor",
+    "Assist the mayor with city paperwork.",
+    "townhall",
+    lambda p: factions.change_reputation(p, "mayor", 10),
+)
+BUSINESS_FACTION_QUEST = SideQuest(
+    "Business Boost",
+    "Help the local shop increase sales.",
+    "shop",
+    lambda p: factions.change_reputation(p, "business", 10),
+)
+GANG_FACTION_QUEST = SideQuest(
+    "Gang Job",
+    "Run an errand for the gang.",
+    "dungeon",
+    lambda p: factions.change_reputation(p, "gang", 10),
+)
+
+FACTION_QUESTS = {
+    "mayor": (MAYOR_FACTION_QUEST, 20),
+    "business": (BUSINESS_FACTION_QUEST, 20),
+    "gang": (GANG_FACTION_QUEST, 20),
+}
+
+for fq in [MAYOR_FACTION_QUEST, BUSINESS_FACTION_QUEST, GANG_FACTION_QUEST]:
+    SIDE_QUESTS[fq.name] = fq
 
 # Companion-specific quests triggered by high morale
 COMPANION_QUESTS = {
@@ -393,9 +423,20 @@ def check_companion_quest(player: Player) -> None:
             player.side_quest = quest.name
 
 
+def check_faction_quest(player: Player) -> None:
+    """Assign faction side quests when reputation thresholds are met."""
+    if player.side_quest is not None:
+        return
+    for faction, (quest, threshold) in FACTION_QUESTS.items():
+        if player.reputation.get(faction, 0) >= threshold:
+            player.side_quest = quest.name
+            break
+
+
 def update_npcs(player: Player, buildings: List[Building]) -> None:
     """Move NPCs toward their scheduled locations."""
     check_companion_quest(player)
+    check_faction_quest(player)
     hour = int(player.time) // 60
     for npc in NPCS:
         target = npc.home
@@ -438,9 +479,13 @@ def advance_story(player: Player) -> None:
     if player.story_branch == "mayor" and player.story_stage == 2:
         if player.enemies_defeated >= 3:
             player.story_stage = 3
+            factions.change_reputation(player, "mayor", 10)
+            factions.change_reputation(player, "gang", -5)
     if player.story_branch == "gang" and player.story_stage == 2:
         if player.gang_package_done:
             player.story_stage = 3
+            factions.change_reputation(player, "gang", 10)
+            factions.change_reputation(player, "mayor", -5)
 
 
 def check_story(player: Player) -> bool:
@@ -482,6 +527,13 @@ def check_quests(player: Player) -> bool:
             new = True
             if q.reward:
                 q.reward(player)
+            # Adjust faction reputation for certain missions
+            if player.current_quest == 0:
+                factions.change_reputation(player, "business", 5)
+            elif player.current_quest == 5:
+                factions.change_reputation(player, "gang", 5)
+            elif player.current_quest == 6:
+                factions.change_reputation(player, "mayor", 5)
             if q.next_index is not None:
                 player.current_quest = q.next_index
             else:
