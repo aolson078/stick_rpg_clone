@@ -137,7 +137,8 @@ def get_shop_price(player: Player, index: int) -> int:
     season_mult = SEASON_PRICE_MODIFIERS.get(player.season, 1.0)
     day_mult = _daily_price_multiplier(player.day)
     cost = int(round(base_cost * season_mult * day_mult))
-    return factions.business_price(player, cost)
+    discount = factions.get_business_discount(player)
+    return int(round(cost * discount))
 
 # Upgrades available for purchase inside the home
 HOME_UPGRADES: List[Tuple[str, int, str, int]] = [

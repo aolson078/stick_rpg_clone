@@ -1,5 +1,5 @@
 """Faction and reputation helpers."""
-from typing import Dict
+from typing import Dict, List
 
 from entities import Player
 
@@ -14,16 +14,53 @@ def change_reputation(player: Player, faction: str, amount: int) -> None:
     player.reputation[faction] = max(-100, min(100, rep))
 
 
+def get_business_discount(player: Player) -> float:
+    """Return cost multiplier based on business reputation."""
+    rep = player.reputation.get("business", 0)
+    if rep >= 50:
+        return 0.8
+    if rep >= 20:
+        return 0.9
+    if rep <= -50:
+        return 1.25
+    if rep <= -20:
+        return 1.1
+    return 1.0
+
+
 def business_price(player: Player, cost: int) -> int:
     """Return item cost adjusted by business reputation."""
-    rep = player.reputation.get("business", 0)
-    multiplier = 1.0
+    return int(round(cost * get_business_discount(player)))
+
+
+def mayor_rewards(player: Player) -> List[str]:
+    """Return rewards unlocked from mayor reputation."""
+    rep = player.reputation.get("mayor", 0)
+    rewards: List[str] = []
     if rep >= 50:
-        multiplier = 0.8
+        rewards.append("City Key")
     elif rep >= 20:
-        multiplier = 0.9
-    elif rep <= -50:
-        multiplier = 1.25
-    elif rep <= -20:
-        multiplier = 1.1
-    return int(round(cost * multiplier))
+        rewards.append("Town Hall Access")
+    return rewards
+
+
+def business_rewards(player: Player) -> List[str]:
+    """Return rewards unlocked from business reputation."""
+    rep = player.reputation.get("business", 0)
+    rewards: List[str] = []
+    if rep >= 50:
+        rewards.append("Investor")
+    elif rep >= 20:
+        rewards.append("Loyal Customers")
+    return rewards
+
+
+def gang_rewards(player: Player) -> List[str]:
+    """Return rewards unlocked from gang reputation."""
+    rep = player.reputation.get("gang", 0)
+    rewards: List[str] = []
+    if rep >= 50:
+        rewards.append("Gang Backup")
+    elif rep >= 20:
+        rewards.append("Black Market")
+    return rewards
