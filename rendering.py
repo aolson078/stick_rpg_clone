@@ -38,6 +38,7 @@ from inventory import crafting_exp_needed, CROPS
 from constants import PERK_MAX_LEVEL
 from helpers import scaled_font
 from quests import SIDE_QUESTS, COMPANION_QUESTS
+import factions
 
 PLAYER_SPRITES = []
 PLAYER_SPRITE_COLOR = None
@@ -574,6 +575,20 @@ def draw_ui(surface, font, player, quests, story_quests=None):
     if crops_line:
         crop_txt = font.render(crops_line, True, FONT_COLOR)
         bar.blit(crop_txt, (16, 32))
+    rep_line = (
+        f"Mayor:{player.reputation.get('mayor', 0)} "
+        f"Biz:{player.reputation.get('business', 0)} "
+        f"Gang:{player.reputation.get('gang', 0)}"
+    )
+    rewards = (
+        factions.mayor_rewards(player)
+        + factions.business_rewards(player)
+        + factions.gang_rewards(player)
+    )
+    if rewards:
+        rep_line += " " + ", ".join(rewards)
+    rep_txt = font.render(rep_line, True, FONT_COLOR)
+    bar.blit(rep_txt, (16, 44))
     card_stat = font.render(
         f"Cards: {len(player.cards)}/10",
         True,
