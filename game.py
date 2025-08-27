@@ -329,12 +329,15 @@ def main():
         show_bus_menu = False
         bus_options = []
     else:
-        name, color, head_color = character_creation(screen, font)
+        name, color, head_color, pants_color, has_hat, hat_color = character_creation(screen, font)
         player = Player(
             pygame.Rect(MAP_WIDTH // 2, MAP_HEIGHT // 2, PLAYER_SIZE, PLAYER_SIZE),
             name=name,
             color=color,
             head_color=head_color,
+            pants_color=pants_color,
+            has_hat=has_hat,
+            hat_color=hat_color,
         )
         show_inventory = False
         show_perk_menu = False
@@ -377,12 +380,15 @@ def main():
         if loaded:
             self.player = loaded
         else:
-            name, color, head_color = character_creation(self.screen, self.font)
+            name, color, head_color, pants_color, has_hat, hat_color = character_creation(self.screen, self.font)
             self.player = Player(
                 pygame.Rect(MAP_WIDTH // 2, MAP_HEIGHT // 2, PLAYER_SIZE, PLAYER_SIZE),
                 name=name,
                 color=color,
                 head_color=head_color,
+                pants_color=pants_color,
+                has_hat=has_hat,
+                hat_color=hat_color,
             )
 
 
@@ -1678,6 +1684,9 @@ def main():
             player.facing_left,
             player.color,
             player.head_color,
+            player.pants_color,
+            player.has_hat,
+            player.hat_color,
         )
 
         target_building = quest_target_building(player, BUILDINGS)

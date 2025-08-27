@@ -534,6 +534,9 @@ def save_game(player: Player) -> None:
         "name": player.name,
         "color": list(player.color),
         "head_color": list(player.head_color),
+        "pants_color": list(player.pants_color),
+        "hat_color": list(player.hat_color),
+        "has_hat": player.has_hat,
         "money": player.money,
         "energy": player.energy,
         "health": player.health,
@@ -656,6 +659,9 @@ def load_game() -> Optional[Player]:
     player.name = data.get("name", player.name)
     player.color = tuple(data.get("color", list(player.color)))
     player.head_color = tuple(data.get("head_color", list(player.head_color)))
+    player.pants_color = tuple(data.get("pants_color", list(player.pants_color)))
+    player.hat_color = tuple(data.get("hat_color", list(player.hat_color)))
+    player.has_hat = data.get("has_hat", player.has_hat)
     player.money = data.get("money", player.money)
     player.energy = data.get("energy", player.energy)
     player.health = data.get("health", player.health)

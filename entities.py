@@ -19,6 +19,9 @@ class Player:
     name: str = "Player"
     color: Tuple[int, int, int] = settings.PLAYER_COLOR
     head_color: Tuple[int, int, int] = settings.PLAYER_HEAD_COLOR
+    pants_color: Tuple[int, int, int] = (50, 50, 150)
+    hat_color: Tuple[int, int, int] = (200, 200, 0)
+    has_hat: bool = False
     money: float = 50
     energy: float = 100
     health: float = 100
