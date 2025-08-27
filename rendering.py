@@ -662,8 +662,21 @@ def draw_ui(surface, font, player, quests, story_quests=None):
 
 
 
-def draw_inventory_screen(surface, font, player, slot_rects, item_rects, dragging, hotkey_rects=None, furn_rects=None):
-    """Display the inventory screen with equipment and items."""
+def draw_inventory_screen(
+    surface,
+    font,
+    player,
+    slot_rects,
+    item_rects,
+    dragging,
+    sort_mode="",
+    hotkey_rects=None,
+    furn_rects=None,
+):
+    """Display the inventory screen with equipment and items.
+
+    ``sort_mode`` describes the active inventory sorting method.
+    """
     overlay = pygame.Surface((settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT), pygame.SRCALPHA)
 
     overlay.fill((0, 0, 0, 160))
@@ -675,6 +688,9 @@ def draw_inventory_screen(surface, font, player, slot_rects, item_rects, draggin
 
     title = font.render("Inventory", True, FONT_COLOR)
     surface.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 70))
+    if sort_mode:
+        mode_txt = font.render(f"Sorted by: {sort_mode.title()}", True, FONT_COLOR)
+        surface.blit(mode_txt, (100, 110))
 
     for slot, rect in slot_rects.items():
         pygame.draw.rect(surface, (210, 210, 210), rect)
