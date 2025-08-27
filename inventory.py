@@ -285,6 +285,26 @@ def adopt_companion(player: Player, index: int) -> str:
     return f"Adopted {name}!"
 
 
+def sort_inventory(player: Player, key: str) -> None:
+    """Sort ``player.inventory`` in-place.
+
+    ``key`` can be ``"name"``, ``"type"``, or ``"stat"``.  Name sorts
+    alphabetically, type sorts by equipment slot then name, and stat sorts by
+    the combined attack/defense/speed values in descending order.
+    """
+
+    if key == "name":
+        player.inventory.sort(key=lambda i: i.name.lower())
+    elif key == "type":
+        player.inventory.sort(key=lambda i: (i.slot, i.name.lower()))
+    elif key == "stat":
+        player.inventory.sort(
+            key=lambda i: i.attack + i.defense + i.speed,
+            reverse=True,
+        )
+
+
+
 def plant_seed(player: Player, crop_type: Optional[str] = None) -> str:
     """Plant a seed of the given crop type if available."""
     # Determine crop if not specified: pick first seed available

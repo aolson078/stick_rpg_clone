@@ -46,6 +46,7 @@ from inventory import (
     train_companion,
     upgrade_companion_ability,
     COMPANION_ABILITIES,
+    sort_inventory,
     plant_seed,
     harvest_crops,
     sell_produce,
@@ -318,6 +319,7 @@ def main():
         show_log = False
         show_help = False
         show_minimap = False
+        inventory_sort = ""
         dragging_item = None
         drag_rotation = 0
         shop_message = ""
@@ -343,6 +345,7 @@ def main():
         show_log = False
         show_help = False
         show_minimap = False
+        inventory_sort = ""
         dragging_item = None
         drag_rotation = 0
         shop_message = ""
@@ -503,6 +506,15 @@ def main():
                     shop_message_timer = 60
                 elif event.key == pygame.K_TAB:
                     show_minimap = not show_minimap
+                elif show_inventory and event.key == pygame.K_n:
+                    sort_inventory(player, "name")
+                    inventory_sort = "name"
+                elif show_inventory and event.key == pygame.K_t:
+                    sort_inventory(player, "type")
+                    inventory_sort = "type"
+                elif show_inventory and event.key == pygame.K_s:
+                    sort_inventory(player, "stat")
+                    inventory_sort = "stat"
                 elif (
                     event.key == pygame.K_h
                     and not show_inventory
@@ -1705,6 +1717,7 @@ def main():
                 slot_rects,
                 item_rects,
                 (dragging_item, drag_pos) if dragging_item else None,
+                inventory_sort,
                 hotkey_rects,
                 compute_furniture_rects(player) if inside_home else None,
             )
