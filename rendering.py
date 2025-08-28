@@ -81,11 +81,29 @@ def load_player_sprites(color=None):
 
 
 def draw_player_sprite(
-    surface, rect, frame=0, facing_left=False, color=None, head_color=None
+    surface,
+    rect,
+    frame=0,
+    facing_left=False,
+    color=None,
+    head_color=None,
+    pants_color=None,
+    has_hat=False,
+    hat_color=None,
 ):
     sprites = load_player_sprites(color)
     if not sprites:
-        return draw_player(surface, rect, frame, facing_left, color, head_color)
+        return draw_player(
+            surface,
+            rect,
+            frame,
+            facing_left,
+            color,
+            head_color,
+            pants_color,
+            has_hat,
+            hat_color,
+        )
     image = sprites[frame % len(sprites)]
     if facing_left:
         image = pygame.transform.flip(image, True, False)
@@ -96,9 +114,22 @@ def draw_player_sprite(
     surface.blit(shadow, (x + image.get_width() // 2 - 20, y + image.get_height() - 6))
 
     surface.blit(image, (x, y))
+    if has_hat:
+        pygame.draw.rect(surface, hat_color or color, (x + image.get_width() // 2 - 12, y - 6, 24, 4))
+        pygame.draw.rect(surface, hat_color or color, (x + image.get_width() // 2 - 8, y - 16, 16, 10))
 
 
-def draw_player(surface, rect, frame=0, facing_left=False, color=None, head_color=None):
+def draw_player(
+    surface,
+    rect,
+    frame=0,
+    facing_left=False,
+    color=None,
+    head_color=None,
+    pants_color=None,
+    has_hat=False,
+    hat_color=None,
+):
     """Fallback stick figure drawing if sprites fail to load."""
     x = rect.x + rect.width // 2
     y = rect.y + rect.height
@@ -109,6 +140,8 @@ def draw_player(surface, rect, frame=0, facing_left=False, color=None, head_colo
     swing = math.sin(frame / 6) * 7 if frame else 0
     color = color or PLAYER_COLOR
     head_color = head_color or PLAYER_HEAD_COLOR
+    pants_color = pants_color or color
+    hat_color = hat_color or color
     pygame.draw.circle(surface, head_color, (x, y - 24), 10)
     pygame.draw.circle(surface, color, (x, y - 24), 10, 2)
     pygame.draw.line(surface, color, (x, y - 14), (x, y), 3)
@@ -120,8 +153,15 @@ def draw_player(surface, rect, frame=0, facing_left=False, color=None, head_colo
     pygame.draw.line(
         surface, color, (x, y - 10), (x - arm_offset, y - 2 - int(swing)), 3
     )
-    pygame.draw.line(surface, color, (x, y), (x + leg_offset, y + 16 + int(swing)), 3)
-    pygame.draw.line(surface, color, (x, y), (x - leg_offset, y + 16 - int(swing)), 3)
+    pygame.draw.line(
+        surface, pants_color, (x, y), (x + leg_offset, y + 16 + int(swing)), 3
+    )
+    pygame.draw.line(
+        surface, pants_color, (x, y), (x - leg_offset, y + 16 - int(swing)), 3
+    )
+    if has_hat:
+        pygame.draw.rect(surface, hat_color, (x - 12, y - 36, 24, 4))
+        pygame.draw.rect(surface, hat_color, (x - 8, y - 46, 16, 10))
 
 
 def draw_npc(surface, npc, font, offset=(0, 0)):
@@ -986,7 +1026,15 @@ def draw_home_interior(surface, font, player, frame, bed_rect, door_rect, furn_r
             )
 
     draw_player_sprite(
-        surface, player.rect, frame, player.facing_left, player.color, player.head_color
+        surface,
+        player.rect,
+        frame,
+        player.facing_left,
+        player.color,
+        player.head_color,
+        player.pants_color,
+        player.has_hat,
+        player.hat_color,
     )
 
 
@@ -1019,7 +1067,15 @@ def draw_forest_area(surface, font, player, frame, enemy_rects, door_rect):
         surface.blit(img, rect)
 
     draw_player_sprite(
-        surface, player.rect, frame, player.facing_left, player.color, player.head_color
+        surface,
+        player.rect,
+        frame,
+        player.facing_left,
+        player.color,
+        player.head_color,
+        player.pants_color,
+        player.has_hat,
+        player.hat_color,
     )
 
 
@@ -1120,5 +1176,13 @@ def draw_bar_interior(
     pygame.draw.circle(surface, (220, 210, 120), (knob_x, door_rect.centery), knob_r)
 
     draw_player_sprite(
-        surface, player.rect, frame, player.facing_left, player.color, player.head_color
+        surface,
+        player.rect,
+        frame,
+        player.facing_left,
+        player.color,
+        player.head_color,
+        player.pants_color,
+        player.has_hat,
+        player.hat_color,
     )

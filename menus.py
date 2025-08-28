@@ -196,7 +196,7 @@ def draw_workshop_menu(surface: pygame.Surface, font: pygame.font.Font, player, 
 
 
 def character_creation(screen: pygame.Surface, font: pygame.font.Font):
-    """Prompt for name and colors."""
+    """Prompt for name and appearance options."""
     name = ""
     colors = [(40, 40, 40), (200, 50, 50), (50, 90, 200)]
     color_names = ["Black", "Red", "Blue"]
@@ -204,7 +204,10 @@ def character_creation(screen: pygame.Surface, font: pygame.font.Font):
     head_color_names = ["Light", "Tan", "Brown"]
     body_idx = 0
     head_idx = 0
-    selecting_head = False
+    pants_idx = 0
+    hat_idx = 0
+    has_hat = False
+    selecting = 0  # 0=body,1=head,2=pants,3=hat
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -212,21 +215,38 @@ def character_creation(screen: pygame.Surface, font: pygame.font.Font):
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
-                    return (name or "Player"), colors[body_idx], head_colors[head_idx]
+                    return (
+                        name or "Player",
+                        colors[body_idx],
+                        head_colors[head_idx],
+                        colors[pants_idx],
+                        has_hat,
+                        colors[hat_idx],
+                    )
                 if event.key == pygame.K_BACKSPACE:
                     name = name[:-1]
                 elif event.key == pygame.K_TAB:
-                    selecting_head = not selecting_head
+                    selecting = (selecting + 1) % 4
                 elif event.key == pygame.K_LEFT:
-                    if selecting_head:
-                        head_idx = (head_idx - 1) % len(head_colors)
-                    else:
+                    if selecting == 0:
                         body_idx = (body_idx - 1) % len(colors)
+                    elif selecting == 1:
+                        head_idx = (head_idx - 1) % len(head_colors)
+                    elif selecting == 2:
+                        pants_idx = (pants_idx - 1) % len(colors)
+                    elif selecting == 3 and has_hat:
+                        hat_idx = (hat_idx - 1) % len(colors)
                 elif event.key == pygame.K_RIGHT:
-                    if selecting_head:
-                        head_idx = (head_idx + 1) % len(head_colors)
-                    else:
+                    if selecting == 0:
                         body_idx = (body_idx + 1) % len(colors)
+                    elif selecting == 1:
+                        head_idx = (head_idx + 1) % len(head_colors)
+                    elif selecting == 2:
+                        pants_idx = (pants_idx + 1) % len(colors)
+                    elif selecting == 3 and has_hat:
+                        hat_idx = (hat_idx + 1) % len(colors)
+                elif event.key == pygame.K_SPACE and selecting == 3:
+                    has_hat = not has_hat
                 elif event.unicode and event.unicode.isprintable() and len(name) < 12:
                     name += event.unicode
         screen.fill((0, 0, 0))
@@ -242,21 +262,39 @@ def character_creation(screen: pygame.Surface, font: pygame.font.Font):
             True,
             head_colors[head_idx],
         )
+        pants_txt = font.render(
+            f"Pants Color: {color_names[pants_idx]} (\u2190/\u2192)",
+            True,
+            colors[pants_idx],
+        )
+        hat_status = "On" if has_hat else "Off"
+        hat_color = colors[hat_idx]
+        hat_txt = font.render(
+            f"Hat: {hat_status} ({color_names[hat_idx]}) (Space)",
+            True,
+            hat_color if has_hat else (200, 200, 200),
+        )
         toggle_txt = font.render("Press TAB to switch", True, (230, 230, 230))
         confirm = font.render("Press Enter to Start", True, (230, 230, 230))
-        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 240))
-        screen.blit(prompt, (settings.SCREEN_WIDTH // 2 - prompt.get_width() // 2, 280))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 220))
+        screen.blit(prompt, (settings.SCREEN_WIDTH // 2 - prompt.get_width() // 2, 260))
         screen.blit(
-            body_txt, (settings.SCREEN_WIDTH // 2 - body_txt.get_width() // 2, 320)
+            body_txt, (settings.SCREEN_WIDTH // 2 - body_txt.get_width() // 2, 300)
         )
         screen.blit(
-            head_txt, (settings.SCREEN_WIDTH // 2 - head_txt.get_width() // 2, 350)
+            head_txt, (settings.SCREEN_WIDTH // 2 - head_txt.get_width() // 2, 330)
         )
         screen.blit(
-            toggle_txt, (settings.SCREEN_WIDTH // 2 - toggle_txt.get_width() // 2, 380)
+            pants_txt, (settings.SCREEN_WIDTH // 2 - pants_txt.get_width() // 2, 360)
         )
         screen.blit(
-            confirm, (settings.SCREEN_WIDTH // 2 - confirm.get_width() // 2, 410)
+            hat_txt, (settings.SCREEN_WIDTH // 2 - hat_txt.get_width() // 2, 390)
+        )
+        screen.blit(
+            toggle_txt, (settings.SCREEN_WIDTH // 2 - toggle_txt.get_width() // 2, 420)
+        )
+        screen.blit(
+            confirm, (settings.SCREEN_WIDTH // 2 - confirm.get_width() // 2, 450)
         )
         pygame.display.flip()
         pygame.time.wait(20)
