@@ -7,7 +7,7 @@ import os
 import sys
 import pygame
 
-from helpers import recalc_layouts, compute_slot_rects, scaled_font
+from helpers import recalc_layouts, compute_slot_rects, scaled_font, save_game, load_game
 from quests import LEADERBOARD_FILE
 import settings
 from inventory import crafting_exp_needed
@@ -78,6 +78,58 @@ def controls_menu(screen: pygame.Surface, font: pygame.font.Font) -> None:
             screen.blit(txt, (100, 120 + i * 40))
         info = font.render("Enter to rebind, Esc to exit", True, (200, 200, 200))
         screen.blit(info, (100, settings.SCREEN_HEIGHT - 80))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
+
+def pause_menu(
+    screen: pygame.Surface, font: pygame.font.Font, player
+):
+    """Display the pause menu and handle save/load/options.
+
+    Returns the (potentially replaced) player instance when resuming.
+    """
+    options = ["Resume", "Save Game", "Load Game", "Options"]
+    idx = 0
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return player
+                if event.key == pygame.K_UP:
+                    idx = (idx - 1) % len(options)
+                elif event.key == pygame.K_DOWN:
+                    idx = (idx + 1) % len(options)
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    choice = options[idx]
+                    if choice == "Resume":
+                        return player
+                    if choice == "Save Game":
+                        save_game(player)
+                    elif choice == "Load Game":
+                        loaded = load_game()
+                        if loaded:
+                            player = loaded
+                    elif choice == "Options":
+                        controls_menu(screen, font)
+
+        screen.fill((0, 0, 0))
+        title = font.render("Paused", True, (255, 255, 255))
+        screen.blit(
+            title,
+            (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 120),
+        )
+        for i, opt in enumerate(options):
+            color = (255, 255, 0) if i == idx else (200, 200, 200)
+            txt = font.render(opt, True, color)
+            screen.blit(
+                txt,
+                (settings.SCREEN_WIDTH // 2 - txt.get_width() // 2, 200 + i * 40),
+            )
         pygame.display.flip()
         pygame.time.wait(20)
 
