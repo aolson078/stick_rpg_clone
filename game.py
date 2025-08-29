@@ -155,7 +155,7 @@ from helpers import (
     FOREST_DOOR_RECT,
     scaled_font,
 )
-from menus import start_menu, character_creation, draw_workshop_menu
+from menus import start_menu, character_creation, draw_workshop_menu, pause_menu
 
 recalc_layouts()
 
@@ -399,31 +399,6 @@ def main():
     last_autosave_hour = player.time // 60
     while True:
         frame += 1
-        player.time += MINUTES_PER_FRAME
-        if player.time >= 1440:
-            player.time -= 1440
-            advance_day(player)
-        current_hour = player.time // 60
-        if current_hour != last_autosave_hour:
-            last_autosave_hour = current_hour
-            auto_save(player)
-        update_npcs(player, BUILDINGS)
-        for ab, cd in player.ability_cooldowns.items():
-            if cd > 0:
-                player.ability_cooldowns[ab] -= 1
-        advance_story(player)
-        check_story(player)
-        if check_perk_unlocks(player):
-            shop_message = "Gained a perk point! Press P to spend"
-            shop_message_timer = 90
-        secret = check_hidden_perks(player)
-        if secret:
-            shop_message = secret
-            shop_message_timer = 90
-        achieve = check_achievements(player)
-        if achieve:
-            shop_message = achieve
-            shop_message_timer = 90
         item_rects = []
         if show_inventory:
             for i, item in enumerate(player.inventory):
@@ -432,6 +407,7 @@ def main():
                 item_rects.append(
                     (pygame.Rect(320 + col * 120, 150 + row * 70, 100, 60), item)
                 )
+        paused = False
         for event in pygame.event.get():
             if show_help:
                 if event.type == pygame.KEYDOWN and event.key in (
@@ -468,6 +444,11 @@ def main():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    player = pause_menu(screen, font, player)
+                    last_autosave_hour = player.time // 60
+                    paused = True
+                    break
                 if event.key == pygame.K_F5:
                     save_game(player)
                     shop_message = "Game saved!"
@@ -1279,6 +1260,43 @@ def main():
                             shop_message = "Already healthy"
                         shop_message_timer = 60
     
+        if paused:
+            continue
+
+        player.time += MINUTES_PER_FRAME
+        if player.time >= 1440:
+            player.time -= 1440
+            advance_day(player)
+        current_hour = player.time // 60
+        if current_hour != last_autosave_hour:
+            last_autosave_hour = current_hour
+            auto_save(player)
+        update_npcs(player, BUILDINGS)
+        for ab, cd in player.ability_cooldowns.items():
+            if cd > 0:
+                player.ability_cooldowns[ab] -= 1
+        advance_story(player)
+        check_story(player)
+        if check_perk_unlocks(player):
+            shop_message = "Gained a perk point! Press P to spend"
+            shop_message_timer = 90
+        secret = check_hidden_perks(player)
+        if secret:
+            shop_message = secret
+            shop_message_timer = 90
+        achieve = check_achievements(player)
+        if achieve:
+            shop_message = achieve
+            shop_message_timer = 90
+        item_rects = []
+        if show_inventory:
+            for i, item in enumerate(player.inventory):
+                col = i % 5
+                row = i // 5
+                item_rects.append(
+                    (pygame.Rect(320 + col * 120, 150 + row * 70, 100, 60), item)
+                )
+
         dx = dy = 0
         keys = pygame.key.get_pressed()
         speed = PLAYER_SPEED
