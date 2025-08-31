@@ -115,6 +115,7 @@ class Player:
     # Crafting resources
     resources: Dict[str, int] = field(
         default_factory=lambda: {
+            "ore": 0,
             "metal": 0,
             "cloth": 0,
             "herbs": 0,

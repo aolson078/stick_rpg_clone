@@ -552,3 +552,20 @@ def repair_equipment(player: Player) -> str:
             item.durability = item.max_durability
     lvl_msg = gain_crafting_exp(player, "smithing")
     return "Equipment repaired" + (f"  {lvl_msg}" if lvl_msg else "")
+
+
+def mine_ore(player: Player, amount: int = 1) -> str:
+    """Collect ore and gain mining experience."""
+    player.resources["ore"] = player.resources.get("ore", 0) + amount
+    lvl_msg = gain_crafting_exp(player, "mining", amount * 5)
+    return f"Mined {amount} ore" + (f"  {lvl_msg}" if lvl_msg else "")
+
+
+def smelt_ore(player: Player, amount: int = 1) -> str:
+    """Convert ore into metal using smithing."""
+    if player.resources.get("ore", 0) < amount:
+        return f"Need {amount} ore"
+    player.resources["ore"] -= amount
+    player.resources["metal"] = player.resources.get("metal", 0) + amount
+    lvl_msg = gain_crafting_exp(player, "smithing", amount * 5)
+    return f"Smelted {amount} metal" + (f"  {lvl_msg}" if lvl_msg else "")
