@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import os
 import sys
+from typing import TYPE_CHECKING
+
 import pygame
 
 from helpers import recalc_layouts, compute_slot_rects, scaled_font, save_game, load_game
@@ -12,13 +14,25 @@ from quests import LEADERBOARD_FILE
 import settings
 from inventory import crafting_exp_needed
 
+if TYPE_CHECKING:  # pragma: no cover - only for type hints
+    from game import Game
+
 
 def _binding_name(code: int) -> str:
     return pygame.key.name(code) if code >= 0 else f"Button {-code-1}"
 
 
-def controls_menu(screen: pygame.Surface, font: pygame.font.Font) -> None:
-    """Allow the player to remap key bindings."""
+def controls_menu(
+    game: "Game", screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
+) -> None:
+    """Allow the player to remap key bindings.
+
+    The menu normally uses the screen and font stored on the provided
+    :class:`~game.Game` instance.  ``screen`` and ``font`` parameters are kept
+    for backward compatibility and ease of testing.
+    """
+    screen = screen or game.screen
+    font = font or game.font
     actions = list(settings.KEY_BINDINGS.keys())
     idx = 0
 
@@ -83,12 +97,14 @@ def controls_menu(screen: pygame.Surface, font: pygame.font.Font) -> None:
 
 
 def pause_menu(
-    screen: pygame.Surface, font: pygame.font.Font, player
+    game: "Game", player, screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
 ):
     """Display the pause menu and handle save/load/options.
 
     Returns the (potentially replaced) player instance when resuming.
     """
+    screen = screen or game.screen
+    font = font or game.font
     options = ["Resume", "Save Game", "Load Game", "Options"]
     idx = 0
 
@@ -115,7 +131,7 @@ def pause_menu(
                         if loaded:
                             player = loaded
                     elif choice == "Options":
-                        controls_menu(screen, font)
+                        controls_menu(game, screen, font)
 
         screen.fill((0, 0, 0))
         title = font.render("Paused", True, (255, 255, 255))
@@ -134,8 +150,12 @@ def pause_menu(
         pygame.time.wait(20)
 
 
-def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
-    """Display the start menu. Returns True if load was chosen."""
+def start_menu(
+    game: "Game", screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
+) -> bool:
+    """Display the start menu. Returns ``True`` if load was chosen."""
+    screen = screen or game.screen
+    font = font or game.font
     board = []
     if os.path.exists(LEADERBOARD_FILE):
         with open(LEADERBOARD_FILE) as f:
@@ -151,16 +171,20 @@ def start_menu(screen: pygame.Surface, font: pygame.font.Font) -> bool:
             if event.type == pygame.VIDEORESIZE:
                 settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT = event.w, event.h
                 screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
+                if game:
+                    game.screen = screen
                 recalc_layouts()
-                slot_rects = compute_slot_rects()
+                compute_slot_rects()
                 font = scaled_font(28)
+                if game:
+                    game.font = font
             if event.type == pygame.KEYDOWN:
                 if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     return False
                 if event.key == pygame.K_l:
                     return True
                 if event.key == pygame.K_c:
-                    controls_menu(screen, font)
+                    controls_menu(game, screen, font)
         screen.fill((0, 0, 0))
         title = font.render("Stick RPG Clone", True, (255, 255, 255))
         start_txt = font.render("Press Enter to Start", True, (230, 230, 230))
@@ -247,8 +271,12 @@ def draw_workshop_menu(surface: pygame.Surface, font: pygame.font.Font, player, 
     surface.blit(info, (100, info_y))
 
 
-def character_creation(screen: pygame.Surface, font: pygame.font.Font):
+def character_creation(
+    game: "Game", screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
+):
     """Prompt for name and appearance options."""
+    screen = screen or game.screen
+    font = font or game.font
     name = ""
     colors = [(40, 40, 40), (200, 50, 50), (50, 90, 200)]
     color_names = ["Black", "Red", "Blue"]
