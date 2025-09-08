@@ -8,13 +8,11 @@ import settings
 from entities import Player
 from helpers import recalc_layouts, scaled_font, load_game
 from loaders import load_buildings
-from menus import start_menu, character_creation, pause_menu
-from rendering import draw_player_sprite
+from menus import start_menu, character_creation
 from settings import (
     MAP_HEIGHT,
     MAP_WIDTH,
     PLAYER_SIZE,
-    MINUTES_PER_FRAME,
     MUSIC_FILE,
     STEP_SOUND_FILE,
     ENTER_SOUND_FILE,
@@ -22,6 +20,8 @@ from settings import (
     MUSIC_VOLUME,
     SFX_VOLUME,
 )
+from state_manager import StateManager
+from states import PlayState
 
 
 class Game:
@@ -94,34 +94,20 @@ class Game:
         self.running = True
         self.frame = 0
 
+        # Initialize state manager with the default gameplay state
+        self.state_manager = StateManager()
+        self.state_manager.change_state(PlayState(self))
+
     # ------------------------------------------------------------------
-    # Game loop sections
+    # Main game loop
     # ------------------------------------------------------------------
-    def handle_events(self) -> None:
-        """Process all pending pygame events."""
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                self.player = pause_menu(self, self.player)
-
-    def update(self) -> None:
-        """Update game state for the current frame."""
-        self.frame += 1
-        self.player.time = (self.player.time + MINUTES_PER_FRAME) % 1440
-
-    def render(self) -> None:
-        """Render the current frame to the window."""
-        self.screen.fill((0, 0, 0))
-        draw_player_sprite(self.screen, self.player.rect, frame=self.frame)
-        pygame.display.flip()
-
     def run(self) -> None:
         """Run the main game loop."""
         while self.running:
-            self.handle_events()
-            self.update()
-            self.render()
+            events = pygame.event.get()
+            self.state_manager.handle_events(events)
+            self.state_manager.update()
+            self.state_manager.render(self.screen)
             self.clock.tick(60)
 
 
