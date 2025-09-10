@@ -9,6 +9,8 @@ from entities import Player
 from helpers import recalc_layouts, scaled_font, load_game
 from loaders import load_buildings
 from menus import start_menu, character_creation
+from quests import NPCS
+from types import SimpleNamespace
 from settings import (
     MAP_HEIGHT,
     MAP_WIDTH,
@@ -52,6 +54,13 @@ class Game:
         self.clock = pygame.time.Clock()
         self.font = scaled_font(28)
         self.buildings = load_buildings()
+        self.npcs = NPCS
+        self.tilemap = SimpleNamespace(
+            width=settings.MAP_WIDTH // 40,
+            height=settings.MAP_HEIGHT // 40,
+            tilewidth=40,
+            tileheight=40,
+        )
 
         # Load audio assets if possible
         self.step_sound = self.enter_sound = self.quest_sound = None

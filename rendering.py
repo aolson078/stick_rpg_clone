@@ -165,7 +165,7 @@ def draw_player(
 
 
 def draw_npc(surface, npc, font, offset=(0, 0)):
-    """Draw an NPC with optional speech bubble."""
+    """Draw an NPC using its current position and optional speech bubble."""
     rect = npc.rect.move(offset)
     pygame.draw.rect(surface, (60, 120, 220), rect)
     if npc.bubble_timer > 0 and npc.bubble_message:
