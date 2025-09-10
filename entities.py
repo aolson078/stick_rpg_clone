@@ -229,6 +229,26 @@ class NPC:
     work: Optional[str] = None
     work_start: int = 9
     work_end: int = 17
+    # movement state
+    destination: Optional[Tuple[int, int]] = None
+    path: List[Tuple[int, int]] = field(default_factory=list)
+    speed: int = 4
+
+    def move(self) -> None:
+        """Advance the NPC along its path one step."""
+        if not self.path:
+            return
+        target_x, target_y = self.path[0]
+        if self.rect.x < target_x:
+            self.rect.x += min(self.speed, target_x - self.rect.x)
+        elif self.rect.x > target_x:
+            self.rect.x -= min(self.speed, self.rect.x - target_x)
+        if self.rect.y < target_y:
+            self.rect.y += min(self.speed, target_y - self.rect.y)
+        elif self.rect.y > target_y:
+            self.rect.y -= min(self.speed, self.rect.y - target_y)
+        if self.rect.x == target_x and self.rect.y == target_y:
+            self.path.pop(0)
 
 
 @dataclass
