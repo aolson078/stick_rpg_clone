@@ -141,6 +141,8 @@ class Player:
 
     # Collection of discovered trading cards
     cards: List[str] = field(default_factory=list)
+    # Active deck used for card duels (up to 30 card names)
+    deck: List[str] = field(default_factory=list)
 
     # Current honorific title earned through achievements
     epithet: str = ""

@@ -96,6 +96,54 @@ def controls_menu(
         pygame.time.wait(20)
 
 
+def deck_build_menu(
+    game: "Game", player, screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
+) -> None:
+    """Simple deck building interface to assemble up to 30 cards.
+
+    Uses arrow keys to navigate the player's card collection and Enter to add
+    cards to the active deck.  Backspace removes the last added card.  Esc exits
+    the menu saving the current deck selection.
+    """
+
+    screen = screen or game.screen
+    font = font or game.font
+    available = player.cards
+    deck = list(player.deck)
+    idx = 0
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    player.deck = deck
+                    return
+                if event.key == pygame.K_UP:
+                    idx = (idx - 1) % len(available) if available else 0
+                elif event.key == pygame.K_DOWN:
+                    idx = (idx + 1) % len(available) if available else 0
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    if len(deck) < 30 and available:
+                        deck.append(available[idx])
+                elif event.key == pygame.K_BACKSPACE and deck:
+                    deck.pop()
+
+        screen.fill((0, 0, 0))
+        title = font.render("Deck Builder", True, (255, 255, 255))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 60))
+        for i, name in enumerate(available):
+            color = (255, 255, 0) if i == idx else (200, 200, 200)
+            txt = font.render(name, True, color)
+            screen.blit(txt, (100, 120 + i * 30))
+        deck_txt = font.render(f"Deck: {len(deck)}/30", True, (200, 200, 200))
+        screen.blit(deck_txt, (settings.SCREEN_WIDTH - deck_txt.get_width() - 20, 80))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
+
 def pause_menu(
     game: "Game", player, screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
 ):
