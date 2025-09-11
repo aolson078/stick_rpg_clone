@@ -81,6 +81,11 @@ SHOP_ITEMS: List[Tuple[str, int, any]] = [
             InventoryItem("Crossbow", "weapon", attack=4, combo=2, weapon_type="ranged")
         ),
     ),
+    (
+        "Booster Pack",
+        15,
+        lambda p: __import__('cardgame').open_booster_pack(p),
+    ),
 ]
 
 # Loaded crop data
