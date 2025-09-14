@@ -133,14 +133,53 @@ def hire_staff(player: Player, name: str, count: int = 1) -> str:
     return f"Hired {count} staff for {name}"
 
 
-def collect_profits(player: Player) -> int:
+def random_event(player: Player, name: str) -> tuple[int, str]:
+    """Apply a random business event and return its profit modifier and message.
+
+    The event can positively or negatively impact daily profits and also adjust
+    the player's reputation with the business faction.  The returned tuple is
+    ``(profit_delta, message)`` where ``profit_delta`` should be added to the
+    day's profit and ``message`` describes the event (empty if no event).
+    """
+
+    roll = random.random()
+    message = ""
+    profit_delta = 0
+    rep_delta = 0
+
+    # 10% chance of a health inspection resulting in fines
+    if roll < 0.1:
+        profit_delta -= 20
+        rep_delta -= 5
+        message = f"Inspection at {name} resulted in a fine"
+    # 10% chance of a sales boom
+    elif roll < 0.2:
+        profit_delta += 50
+        rep_delta += 5
+        message = f"{name} saw a huge sales boom"
+    # 10% chance of staff strike
+    elif roll < 0.3:
+        profit_delta -= 30
+        rep_delta -= 5
+        message = f"Workers at {name} went on strike"
+
+    if rep_delta:
+        player.reputation["business"] = player.reputation.get("business", 0) + rep_delta
+
+    return profit_delta, message
+
+
+def collect_profits(player: Player) -> tuple[int, list[str]]:
     """Return and add profits from all owned businesses.
 
     Profits are influenced by charisma and staff. Each staff member adds
     a small profit boost but also incurs wages. There is also a chance of a
-    robbery which results in no profit for that business on that day.
+    robbery which results in no profit for that business on that day.  Random
+    events may further modify profits or reputation and their messages are
+    returned for display.
     """
     total = 0
+    events: List[str] = []
     for name, base in player.businesses.items():
         data = BUSINESS_DATA.get(name)
         bonus = player.business_bonus.get(name, 0)
@@ -152,12 +191,19 @@ def collect_profits(player: Player) -> int:
         profit = base + player.charisma * 2 + bonus + staff_profit - wages + reputation
         # Risk of robbery mitigated by staff presence and skill
         risk = max(0.1 - 0.02 * staff - 0.02 * skill, 0.02)
+        robbed = False
         if random.random() < risk:
             profit = 0
+            robbed = True
+        if not robbed:
+            delta, msg = random_event(player, name)
+            profit += delta
+            if msg:
+                events.append(msg)
         total += profit
         player.business_bonus[name] = 0
         player.business_reputation[name] = 0
         player.business_skill[name] = 0
     player.money += total
-    return total
+    return total, events
 

@@ -39,7 +39,7 @@ def test_staff_affects_profits():
     orig_random = random.random
     random.random = lambda: 1.0  # avoid robbery
     try:
-        profit = collect_profits(p)
+        profit, _ = collect_profits(p)
     finally:
         random.random = orig_random
 
@@ -57,7 +57,7 @@ def test_robbery_zeroes_profit():
     orig_random = random.random
     random.random = lambda: 0.0  # force robbery
     try:
-        profit = collect_profits(p)
+        profit, _ = collect_profits(p)
     finally:
         random.random = orig_random
 
@@ -78,7 +78,7 @@ def test_marketing_campaign_boosts_profit():
     orig_random = random.random
     random.random = lambda: 1.0
     try:
-        profit = collect_profits(p)
+        profit, _ = collect_profits(p)
     finally:
         random.random = orig_random
     data = BUSINESS_DATA["Store"]
@@ -94,7 +94,7 @@ def test_train_staff_reduces_robbery_risk():
     orig_random = random.random
     random.random = lambda: 0.05
     try:
-        profit = collect_profits(p)
+        profit, _ = collect_profits(p)
     finally:
         random.random = orig_random
     assert profit == 0
@@ -106,7 +106,7 @@ def test_train_staff_reduces_robbery_risk():
         random.randint = orig_randint
     random.random = lambda: 0.05
     try:
-        profit_after = collect_profits(p)
+        profit_after, _ = collect_profits(p)
     finally:
         random.random = orig_random
     assert profit_after > 0
