@@ -10,6 +10,12 @@ from typing import TYPE_CHECKING
 import pygame
 
 from helpers import recalc_layouts, compute_slot_rects, scaled_font, save_game, load_game
+from businesses import (
+    manage_business,
+    hire_staff,
+    run_marketing_campaign,
+    train_staff,
+)
 from quests import LEADERBOARD_FILE
 import settings
 from inventory import crafting_exp_needed
@@ -140,6 +146,77 @@ def deck_build_menu(
             screen.blit(txt, (100, 120 + i * 30))
         deck_txt = font.render(f"Deck: {len(deck)}/30", True, (200, 200, 200))
         screen.blit(deck_txt, (settings.SCREEN_WIDTH - deck_txt.get_width() - 20, 80))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
+
+def business_menu(
+    game: "Game", player, screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
+) -> None:
+    """Menu for managing player owned businesses.
+
+    Displays a list of owned businesses and allows the player to perform
+    actions such as managing for bonus profit, hiring staff, running
+    marketing campaigns, or training staff.  Arrow keys navigate the list and
+    the following hotkeys trigger actions::
+
+        M - Manage
+        H - Hire one staff
+        C - Run marketing campaign
+        T - Train staff
+        Esc - Exit
+
+    The menu is intentionally simple since tests call the underlying
+    business functions directly; the UI exists mainly for completeness when
+    running the game manually.
+    """
+
+    screen = screen or game.screen
+    font = font or game.font
+
+    if not player.businesses:
+        return
+
+    names = list(player.businesses.keys())
+    idx = 0
+    message = ""
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                if event.key == pygame.K_UP:
+                    idx = (idx - 1) % len(names)
+                elif event.key == pygame.K_DOWN:
+                    idx = (idx + 1) % len(names)
+                elif event.key == pygame.K_m:
+                    message = manage_business(player, names[idx])
+                elif event.key == pygame.K_h:
+                    message = hire_staff(player, names[idx])
+                elif event.key == pygame.K_c:
+                    message = run_marketing_campaign(player, names[idx])
+                elif event.key == pygame.K_t:
+                    message = train_staff(player, names[idx])
+
+        screen.fill((0, 0, 0))
+        title = font.render("Businesses", True, (255, 255, 255))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 60))
+        for i, name in enumerate(names):
+            staff = player.business_staff.get(name, 0)
+            color = (255, 255, 0) if i == idx else (200, 200, 200)
+            txt = font.render(f"{name} (staff {staff})", True, color)
+            screen.blit(txt, (100, 120 + i * 40))
+        if message:
+            msg_txt = font.render(message, True, (200, 200, 200))
+            screen.blit(msg_txt, (100, settings.SCREEN_HEIGHT - 80))
+        info = font.render(
+            "M:Manage H:Hire C:Campaign T:Train Esc:Exit", True, (200, 200, 200)
+        )
+        screen.blit(info, (100, settings.SCREEN_HEIGHT - 40))
         pygame.display.flip()
         pygame.time.wait(20)
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 
-from menus import pause_menu
+from menus import pause_menu, business_menu
 from rendering import draw_player_sprite, draw_npc
 from settings import MINUTES_PER_FRAME
 from state_manager import GameState
@@ -32,6 +32,12 @@ class PlayState(GameState):
                 self.game.running = False
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.game.state_manager.change_state(PauseState(self.game))
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+                for b in self.game.buildings:
+                    if b.rect.colliderect(self.game.player.rect):
+                        if b.btype == "business":
+                            business_menu(self.game, self.game.player)
+                        break
 
     def update(self) -> None:
         self.game.frame += 1

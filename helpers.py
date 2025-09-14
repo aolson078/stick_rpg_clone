@@ -342,9 +342,10 @@ def sleep(player: Player) -> Optional[str]:
     if "Arcade Room" in player.home_upgrades and random.random() < 0.3:
         player.tokens += 1
         messages.append("Won a token in your arcade")
-    profits = collect_profits(player)
+    profits, events = collect_profits(player)
     if profits:
         messages.append(f"Your businesses earned ${profits}")
+    messages.extend(events)
     if interest:
         messages.append(f"Earned ${interest} interest")
     return " ".join(messages) if messages else None
