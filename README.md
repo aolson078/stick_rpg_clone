@@ -209,8 +209,7 @@ starts. Press **F1** at any time for a quick reminder of the controls.
 ## Getting Started
 
 1. **Obtain the code**
-   Clone your own copy of this repository or simply use the source files from
-   this conversation. If you cloned it, `cd` into the new folder.
+   Clone your own copy of this repository or simply use the source files. If you cloned it, `cd` into the new folder.
 2. **Install Python 3**
    Make sure you have Python 3.10 or newer installed.
 3. **Install dependencies**
