@@ -36,7 +36,7 @@ from tilemap import TileMap
 from careers import get_job_title, job_progress
 from inventory import crafting_exp_needed, CROPS
 from constants import PERK_MAX_LEVEL
-from helpers import scaled_font
+from helpers import scaled_font, WEEKDAY_NAMES
 from quests import SIDE_QUESTS, COMPANION_QUESTS
 import factions
 
@@ -645,7 +645,11 @@ def draw_ui(surface, font, player, quests, story_quests=None):
         craft_prog = "No Crafting"
     craft_txt = font.render(f"Craft XP: {craft_prog}", True, FONT_COLOR)
     bar.blit(craft_txt, (settings.SCREEN_WIDTH - craft_txt.get_width() - 20, 32))
-    season_txt = font.render(f"{player.season} - {player.weather}", True, FONT_COLOR)
+    season_txt = font.render(
+        f"{WEEKDAY_NAMES[player.weekday]} - {player.season} - {player.weather}",
+        True,
+        FONT_COLOR,
+    )
     bar.blit(season_txt, (settings.SCREEN_WIDTH // 2 - season_txt.get_width() // 2, 32))
     if player.companion:
         ctxt = font.render(f"Pet: {player.companion}", True, FONT_COLOR)

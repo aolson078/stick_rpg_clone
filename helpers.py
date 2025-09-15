@@ -6,7 +6,7 @@ import json
 import os
 import random
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable, Tuple
 
 import pygame
 
@@ -251,11 +251,31 @@ OPEN_HOURS = {
     "boss": (0, 24),
 }
 
+# Optional override hours for weekends (Saturday/Sunday)
+WEEKEND_HOURS: Dict[str, Tuple[int, int]] = {}
+
 SEASONS = ["Spring", "Summer", "Fall", "Winter"]
 WEATHERS = ["Clear", "Rain", "Snow"]
+
+# Names of the days of the week used throughout the game
+WEEKDAY_NAMES = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+
+# Mapping from weekday name to event callbacks triggered on that day
+WEEKLY_EVENTS: Dict[str, List[Callable[[Player], None]]] = {}
 def building_open(btype: str, minutes: float, player: Player) -> bool:
     """Check if a building type is open at the given time."""
-    start, end = OPEN_HOURS.get(btype, (0, 24))
+    hours = OPEN_HOURS.get(btype, (0, 24))
+    if player.weekday >= 5:  # Saturday or Sunday
+        hours = WEEKEND_HOURS.get(btype, hours)
+    start, end = hours
     hour = (minutes / 60) % 24
     if start <= end:
         open_now = start <= hour < end
@@ -299,6 +319,10 @@ def update_weather(player: Player) -> None:
 def advance_day(player: Player) -> int:
     """Increment the day counter and apply daily effects."""
     player.day += 1
+    player.weekday = (player.weekday + 1) % 7
+    day_name = WEEKDAY_NAMES[player.weekday]
+    for callback in WEEKLY_EVENTS.get(day_name, []):
+        callback(player)
     update_weather(player)
     interest = int(player.bank_balance * 0.01)
     player.bank_balance += interest
