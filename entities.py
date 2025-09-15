@@ -26,6 +26,7 @@ class Player:
     energy: float = 100
     health: float = 100
     day: int = 1
+    weekday: int = 0  # 0=Monday
 
     time: float = 8 * 60  # minutes in the day
     strength: int = 1
