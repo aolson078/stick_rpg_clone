@@ -158,6 +158,14 @@ class Player:
     # Quick item hotkey slots
     hotkeys: List[Optional["InventoryItem"]] = field(default_factory=lambda: [None] * 5)
 
+    # Temporary bonuses gained from events keyed by bonus name
+    temporary_bonuses: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    # Short notes about dream events experienced by the player
+    dream_journal: List[str] = field(default_factory=list)
+
+    # Reference to the active game instance (not persisted to save files)
+    game: Any = field(default=None, repr=False, compare=False)
+
     # Furniture placed inside the home
     furniture: Dict[str, Optional["InventoryItem"]] = field(
         default_factory=lambda: {f"slot{i}": None for i in range(1, 10)}

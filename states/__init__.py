@@ -108,3 +108,8 @@ class PauseState(GameState):
 
     def render(self, screen) -> None:  # pragma: no cover - never called
         pass
+
+
+from .dream_state import DreamState  # noqa: E402
+
+__all__ = ["PlayState", "PauseState", "DreamState", "update_npcs"]

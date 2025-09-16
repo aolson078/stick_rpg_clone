@@ -6,7 +6,7 @@ import json
 import os
 import random
 import time
-from typing import Dict, List, Optional, Callable, Tuple
+from typing import Dict, List, Optional, Callable, Tuple, Any
 
 import pygame
 
@@ -41,6 +41,39 @@ FURNITURE_RECTS: List[pygame.Rect] = []
 FURNITURE_BONUSES: Dict[str, Dict[str, int]] = {
     "Decor Chair": {"charisma": 1},
 }
+
+
+DREAM_CHANCE = 0.25
+
+DREAM_EVENTS: List[Dict[str, Any]] = [
+    {
+        "id": "clarity",
+        "title": "Sea of Clarity",
+        "description": "Moonlit waves whisper forgotten knowledge.",
+        "summary": "A lucid dream grants you a clarity bonus for the new day.",
+        "bonuses": {"clarity": 1},
+        "color": (40, 80, 160),
+        "duration": 240,
+    },
+    {
+        "id": "ember",
+        "title": "Forge of Embers",
+        "description": "A spirit reforges your resolve in shimmering fire.",
+        "summary": "You awaken with renewed grit that bolsters your fortitude today.",
+        "bonuses": {"fortitude": 1},
+        "color": (120, 60, 30),
+        "duration": 200,
+    },
+    {
+        "id": "fortune",
+        "title": "Garden of Fortune",
+        "description": "Glittering petals drift around you as fate bends to your will.",
+        "summary": "Dream blessing grants a stroke of fortune for upcoming encounters.",
+        "bonuses": {"fortune": 1},
+        "color": (70, 140, 90),
+        "duration": 260,
+    },
+]
 
 BAR_WIDTH = settings.SCREEN_WIDTH
 BAR_HEIGHT = settings.SCREEN_HEIGHT
@@ -330,6 +363,34 @@ def advance_day(player: Player) -> int:
     return interest
 
 
+def enter_dreamscape(player: Player) -> Optional[str]:
+    """Switch the game into a dream state and record the resulting bonuses."""
+
+    event = random.choice(DREAM_EVENTS)
+    expiry = player.day
+    bonuses = event.get("bonuses", {})
+    if isinstance(bonuses, dict):
+        for bonus_name, amount in bonuses.items():
+            current = player.temporary_bonuses.get(bonus_name, {"value": 0, "expires": expiry})
+            if current.get("expires") != expiry:
+                current = {"value": 0, "expires": expiry}
+            current["value"] = int(current.get("value", 0)) + int(amount)  # type: ignore[arg-type]
+            current["expires"] = expiry
+            player.temporary_bonuses[bonus_name] = current
+
+    summary = event.get("summary")
+    if isinstance(summary, str) and summary:
+        player.dream_journal.append(summary)
+
+    game = getattr(player, "game", None)
+    if game and getattr(game, "state_manager", None):
+        from states import DreamState  # Local import to avoid circular dependency
+
+        game.state_manager.change_state(DreamState(game, event))
+
+    return summary if isinstance(summary, str) and summary else None
+
+
 def sleep(player: Player) -> Optional[str]:
     """Restore energy, advance the day, and handle home bonuses."""
     player.energy = 100
@@ -338,6 +399,9 @@ def sleep(player: Player) -> Optional[str]:
     player.energy += 10 * player.perk_levels.get("Night Owl", 0)
     player.time = 8 * 60
     interest = advance_day(player)
+    dream_message: Optional[str] = None
+    if random.random() < DREAM_CHANCE:
+        dream_message = enter_dreamscape(player)
     if "Decorations" in player.home_upgrades:
         player.charisma += 1
     if "Study Desk" in player.home_upgrades:
@@ -354,6 +418,8 @@ def sleep(player: Player) -> Optional[str]:
             for stat, val in FURNITURE_BONUSES[item.name].items():
                 setattr(player, stat, getattr(player, stat) + val)
     messages: List[str] = []
+    if dream_message:
+        messages.append(dream_message)
     if player.companion == "Dog":
         chance = 0.2 + 0.2 * (player.companion_level - 1)
         amount = 5 * player.companion_level
