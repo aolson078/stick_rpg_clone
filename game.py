@@ -100,6 +100,8 @@ class Game:
                 hat_color=hat_color,
             )
 
+        self.player.game = self
+
         self.running = True
         self.frame = 0
 
