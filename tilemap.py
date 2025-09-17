@@ -2,6 +2,7 @@
 import os
 import xml.etree.ElementTree as ET
 import pygame
+from asset_utils import load_image
 
 BUS_STOP_BUILDINGS = [
     {"rect": [260, 180, 40, 40], "name": "Downtown", "type": "bus_stop"},
@@ -41,7 +42,7 @@ class TileMap:
                 ts_root = ts
             image = ts_root.find("image").attrib["source"]
             image_path = os.path.join(base_dir, image)
-            tileset_image = pygame.image.load(image_path).convert_alpha()
+            tileset_image = load_image(image_path)
             columns = int(ts_root.attrib["columns"])
             tilecount = int(ts_root.attrib["tilecount"])
             tiles = []

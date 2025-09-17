@@ -4,6 +4,7 @@ import os
 import random
 import pygame
 import settings
+from asset_utils import load_image
 from settings import (
     PLAYER_HEAD_COLOR,
     PLAYER_COLOR,
@@ -69,10 +70,10 @@ def load_player_sprites(color=None):
     PLAYER_SPRITE_COLOR = color
     i = 0
     while True:
-        path = os.path.join(settings.IMAGE_DIR, f"player_{i}.png")
+        path = os.path.join(settings.IMAGE_DIR, f"player_{i}.svg")
         if not os.path.exists(path):
             break
-        img = pygame.image.load(path).convert_alpha()
+        img = load_image(path)
         if color:
             img = tint(img, color)
         PLAYER_SPRITES.append(img)
@@ -207,11 +208,11 @@ def load_dungeon_assets():
     if DUNGEON_TRAP_IMAGE and DUNGEON_PUZZLE_IMAGE:
         return
 
-    trap_path = os.path.join(settings.IMAGE_DIR, "trap.png")
-    puzzle_path = os.path.join(settings.IMAGE_DIR, "puzzle.png")
+    trap_path = os.path.join(settings.IMAGE_DIR, "trap.svg")
+    puzzle_path = os.path.join(settings.IMAGE_DIR, "puzzle.svg")
 
     if os.path.exists(trap_path):
-        DUNGEON_TRAP_IMAGE = pygame.image.load(trap_path).convert_alpha()
+        DUNGEON_TRAP_IMAGE = load_image(trap_path)
     else:
         DUNGEON_TRAP_IMAGE = pygame.Surface((20, 20), pygame.SRCALPHA)
         pygame.draw.polygon(
@@ -219,7 +220,7 @@ def load_dungeon_assets():
         )
 
     if os.path.exists(puzzle_path):
-        DUNGEON_PUZZLE_IMAGE = pygame.image.load(puzzle_path).convert_alpha()
+        DUNGEON_PUZZLE_IMAGE = load_image(puzzle_path)
     else:
         DUNGEON_PUZZLE_IMAGE = pygame.Surface((20, 20), pygame.SRCALPHA)
         pygame.draw.rect(DUNGEON_PUZZLE_IMAGE, (0, 100, 200), (0, 0, 20, 20))
@@ -1047,9 +1048,9 @@ def load_forest_enemy_images():
     if FOREST_ENEMY_IMAGES:
         return FOREST_ENEMY_IMAGES
     for i in range(3):
-        path = os.path.join(settings.IMAGE_DIR, f"enemy_{i}.png")
+        path = os.path.join(settings.IMAGE_DIR, f"enemy_{i}.svg")
         if os.path.exists(path):
-            FOREST_ENEMY_IMAGES.append(pygame.image.load(path).convert_alpha())
+            FOREST_ENEMY_IMAGES.append(load_image(path))
         else:
             s = pygame.Surface((60, 60))
             s.fill((200, 0, 0))
