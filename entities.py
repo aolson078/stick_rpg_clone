@@ -104,6 +104,10 @@ class Player:
     business_reputation: Dict[str, int] = field(default_factory=dict)
     # Temporary staff skill training to reduce robberies
     business_skill: Dict[str, int] = field(default_factory=dict)
+    # Speculative futures contracts keyed by business name
+    business_futures: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    # Narrative log of resolved futures deals
+    business_future_log: List[str] = field(default_factory=list)
 
     # Tracks per-NPC interaction states
     npc_progress: Dict[str, int] = field(default_factory=dict)

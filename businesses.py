@@ -100,6 +100,130 @@ def train_staff(player: Player, name: str) -> str:
     return f"Staff trained +{gain}"
 
 
+def _future_margin(data: BusinessType) -> int:
+    """Return the upfront margin required for a futures position."""
+
+    return max(50, int(data.base_profit * 0.6))
+
+
+def schedule_future_contract(player: Player, name: str) -> str:
+    """Arrange a futures contract for the selected business."""
+
+    if name not in player.businesses:
+        return "No such business"
+    if name in player.business_futures:
+        contract = player.business_futures[name]
+        due = contract.get("day_due", player.day)
+        return f"Existing future matures day {due}"
+
+    data = BUSINESS_DATA.get(name)
+    if not data:
+        return "No market data"
+
+    margin = _future_margin(data)
+    if player.money < margin:
+        return f"Need ${margin} margin to tempt the futures clerks"
+
+    player.money -= margin
+
+    roll_bonus = random.randint(0, 8)
+    charisma_score = player.charisma + roll_bonus
+    days_out = random.randint(2, 4)
+    day_due = player.day + days_out
+
+    if charisma_score < 8:
+        risk = "speculative"
+        payout = random.randint(-data.base_profit * 3, data.base_profit * 4)
+        reputation_bonus = 6
+        flavour = (
+            f"A shadow broker for {name} scribbles a paradox hedge while laughing at causality."
+        )
+    elif charisma_score < 14:
+        risk = "hedged"
+        payout = random.randint(int(data.base_profit * 0.5), int(data.base_profit * 1.5))
+        reputation_bonus = 0
+        flavour = (
+            f"You secure a measured hedge for {name}, wagering reality will mostly behave."
+        )
+    else:
+        risk = "premium"
+        payout = random.randint(int(data.base_profit * 1.5), data.base_profit * 3)
+        reputation_bonus = 2
+        flavour = (
+            f"Your charisma dazzles the exchange, granting {name} a premium timeline arbitrage."
+        )
+
+    contract = {
+        "payout": int(payout),
+        "day_due": day_due,
+        "risk": risk,
+        "margin": margin,
+        "flavour": flavour,
+        "reputation_bonus": reputation_bonus,
+        "charisma_score": charisma_score,
+    }
+    player.business_futures[name] = contract
+
+    summary = (
+        f"{flavour} Margin ${margin} committed for a projected ${payout} on day {day_due}."
+    )
+    player.business_future_log.append(summary)
+    return summary
+
+
+def _resolve_future_contract(player: Player, name: str) -> tuple[int, str]:
+    """Remove and settle a futures contract, returning payout and narration."""
+
+    contract = player.business_futures.pop(name, None)
+    if not contract:
+        return 0, "No futures contract found"
+
+    payout = int(contract.get("payout", 0))
+    risk = contract.get("risk", "hedged")
+    flavour = contract.get("flavour", f"The future of {name} unravels.")
+    message_parts = [flavour]
+
+    if payout >= 0:
+        message_parts.append(f"The {risk} futures on {name} crystallise ${payout}.")
+        if risk == "speculative" and payout > 0:
+            rep_gain = contract.get("reputation_bonus", 5)
+            player.reputation["business"] = player.reputation.get("business", 0) + rep_gain
+            message_parts.append(f" Brokers applaud your audacity (+{rep_gain} business rep).")
+        elif risk != "hedged":
+            rep_gain = contract.get("reputation_bonus", 0)
+            if rep_gain:
+                player.reputation["business"] = player.reputation.get("business", 0) + rep_gain
+                message_parts.append(f" Reputation nudges up by {rep_gain}.")
+        message_parts.append("Reality briefly cooperates.")
+    else:
+        loss = abs(payout)
+        message_parts.append(
+            f"The {risk} futures on {name} implode, vaporising ${loss} and smudging the ledgers."
+        )
+        message_parts.append("Accountants whisper about negative space balance sheets.")
+
+    player.money += payout
+
+    message = " ".join(message_parts)
+    player.business_future_log.append(message)
+    return payout, message
+
+
+def cash_out_future(player: Player, name: str) -> str:
+    """Attempt to cash out a futures contract if it has matured."""
+
+    if name not in player.businesses:
+        return "No such business"
+    contract = player.business_futures.get(name)
+    if not contract:
+        return "No futures contract active"
+    if player.day < contract.get("day_due", player.day):
+        return f"Contract matures day {contract['day_due']}; patience may yet pay"
+
+    _, message = _resolve_future_contract(player, name)
+    return message
+
+
 def upgrade_business(player: Player, name: str) -> str:
     """Upgrade a business to its next tier if possible."""
     if name not in player.businesses:
@@ -180,6 +304,13 @@ def collect_profits(player: Player) -> tuple[int, list[str]]:
     """
     total = 0
     events: List[str] = []
+
+    for name, contract in list(player.business_futures.items()):
+        if player.day >= contract.get("day_due", player.day):
+            _, message = _resolve_future_contract(player, name)
+            if message:
+                events.append(message)
+
     for name, base in player.businesses.items():
         data = BUSINESS_DATA.get(name)
         bonus = player.business_bonus.get(name, 0)
