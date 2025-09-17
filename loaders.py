@@ -7,6 +7,7 @@ from entities import Building, Quest, SideQuest
 from inventory import HOME_UPGRADES, COMPANION_ABILITIES, upgrade_companion_ability
 import settings
 from tilemap import BUS_STOP_BUILDINGS
+from asset_utils import load_image
 
 
 def load_buildings(path: str = "data/buildings.json") -> List[Building]:
@@ -26,8 +27,8 @@ def load_buildings(path: str = "data/buildings.json") -> List[Building]:
             )
             img_path = os.path.join(settings.BUILDING_IMAGE_DIR, filename)
             try:
-                image = pygame.image.load(img_path).convert_alpha()
-            except pygame.error:
+                image = load_image(img_path)
+            except (pygame.error, FileNotFoundError):
                 image = None
         buildings.append(Building(rect, name, btype, image))
     return buildings
