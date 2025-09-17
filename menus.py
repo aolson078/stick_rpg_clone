@@ -14,7 +14,9 @@ from businesses import (
     manage_business,
     hire_staff,
     run_marketing_campaign,
+    schedule_future_contract,
     train_staff,
+    cash_out_future,
 )
 from quests import LEADERBOARD_FILE
 import settings
@@ -201,6 +203,12 @@ def business_menu(
                     message = run_marketing_campaign(player, names[idx])
                 elif event.key == pygame.K_t:
                     message = train_staff(player, names[idx])
+                elif event.key == pygame.K_f:
+                    name = names[idx]
+                    if name in player.business_futures:
+                        message = cash_out_future(player, name)
+                    else:
+                        message = schedule_future_contract(player, name)
 
         screen.fill((0, 0, 0))
         title = font.render("Businesses", True, (255, 255, 255))
@@ -208,13 +216,23 @@ def business_menu(
         for i, name in enumerate(names):
             staff = player.business_staff.get(name, 0)
             color = (255, 255, 0) if i == idx else (200, 200, 200)
-            txt = font.render(f"{name} (staff {staff})", True, color)
+            label = f"{name} (staff {staff})"
+            contract = player.business_futures.get(name)
+            if contract:
+                due = contract.get("day_due", player.day)
+                if player.day >= due:
+                    label += " [Future ready]"
+                else:
+                    label += f" [Future day {due}]"
+            txt = font.render(label, True, color)
             screen.blit(txt, (100, 120 + i * 40))
         if message:
             msg_txt = font.render(message, True, (200, 200, 200))
             screen.blit(msg_txt, (100, settings.SCREEN_HEIGHT - 80))
         info = font.render(
-            "M:Manage H:Hire C:Campaign T:Train Esc:Exit", True, (200, 200, 200)
+            "M:Manage H:Hire C:Campaign T:Train F:Futures Esc:Exit",
+            True,
+            (200, 200, 200),
         )
         screen.blit(info, (100, settings.SCREEN_HEIGHT - 40))
         pygame.display.flip()
