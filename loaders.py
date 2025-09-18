@@ -21,6 +21,7 @@ def load_buildings(path: str = "data/buildings.json") -> List[Building]:
         name = b["name"]
         btype = b["type"]
         image = None
+        window_layers: List[pygame.Surface] = []
         if btype != "bus_stop":
             filename = settings.BUILDING_SPRITES.get(
                 btype, settings.BUILDING_SPRITES["default"]
@@ -30,7 +31,18 @@ def load_buildings(path: str = "data/buildings.json") -> List[Building]:
                 image = load_image(img_path)
             except (pygame.error, FileNotFoundError):
                 image = None
-        buildings.append(Building(rect, name, btype, image))
+            layer_filename = getattr(settings, "BUILDING_WINDOW_LAYER", "")
+            if layer_filename:
+                layer_path = os.path.join(settings.BUILDING_IMAGE_DIR, layer_filename)
+                if os.path.exists(layer_path):
+                    try:
+                        base_layer = load_image(layer_path)
+                        window_layers = [base_layer, base_layer.copy(), base_layer.copy()]
+                    except (pygame.error, FileNotFoundError):
+                        window_layers = []
+        buildings.append(
+            Building(rect, name, btype, image=image, window_layers=window_layers)
+        )
     return buildings
 
 

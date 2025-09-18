@@ -39,6 +39,7 @@ ASSETS_DIR = "assets"
 IMAGE_DIR = os.path.join(ASSETS_DIR, "images")
 SOUND_DIR = os.path.join(ASSETS_DIR, "sounds")
 BUILDING_IMAGE_DIR = os.path.join(IMAGE_DIR, "buildings")
+BUILDING_WINDOW_LAYER = "window_layer.svg"
 
 # Mapping of building types to sprite filenames
 BUILDING_SPRITES = {
