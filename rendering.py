@@ -289,7 +289,70 @@ def building_color(btype):
     return BUILDING_COLOR
 
 
-def draw_building(surface, building, highlight=False):
+def _draw_window_layers(surface, building, window_rect, player, cam_x, frame, night_alpha):
+    """Composite cached window layers with tinting and subtle motion."""
+
+    if not building.window_layers:
+        return
+
+    minutes = getattr(player, "time", 12 * 60) % 1440
+    day_phase = minutes / 1440.0
+    # 1.0 at midday, 0.0 at midnight
+    day_cycle = (math.cos(day_phase * math.tau) + 1) / 2
+    warm = (255, 200, 140)
+    cool = (180, 220, 255)
+    base_color = tuple(
+        int(cool[i] * day_cycle + warm[i] * (1 - day_cycle)) for i in range(3)
+    )
+
+    night_factor = min(1.0, night_alpha / 120.0) if night_alpha else 0.0
+    player_rect = getattr(player, "rect", None)
+    building_screen_x = building.rect.centerx - cam_x
+    if player_rect:
+        player_screen_x = player_rect.centerx - cam_x
+    else:
+        player_screen_x = building_screen_x
+    relative_x = (player_screen_x - building_screen_x) / 80.0
+
+    layer_count = len(building.window_layers)
+    for idx, layer in enumerate(building.window_layers):
+        if layer.get_width() == 0 or layer.get_height() == 0:
+            continue
+        depth = idx / max(1, layer_count - 1)
+        scale = 0.86 + 0.18 * depth
+        target_w = max(1, int(window_rect.width * scale))
+        target_h = max(1, int(window_rect.height * scale))
+        scaled = pygame.transform.smoothscale(layer, (target_w, target_h))
+        tinted = scaled.copy()
+        shade = 0.7 + 0.25 * depth
+        tint_color = tuple(min(255, int(base_color[i] * shade)) for i in range(3))
+        tinted.fill((*tint_color, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+        night_visibility = (1 - day_cycle) * 0.7 + night_factor * 0.6 + 0.15
+        night_visibility = max(0.1, min(1.0, night_visibility))
+        alpha = int((60 + depth * 55) * night_visibility)
+        tinted.set_alpha(max(0, min(255, alpha)))
+
+        parallax = int(relative_x * (1 - depth) * 5)
+        scroll = math.sin((frame / 90.0) + depth * 2.7) * (1.5 + depth)
+        drift = math.cos((frame / 140.0) + idx) * 0.8
+        x_offset = (window_rect.width - target_w) // 2 + parallax + int(scroll)
+        y_offset = (window_rect.height - target_h) // 2 + int(drift)
+
+        layer_surface = pygame.Surface(window_rect.size, pygame.SRCALPHA)
+        layer_surface.blit(tinted, (x_offset, y_offset))
+        surface.blit(layer_surface, window_rect.topleft)
+
+
+def draw_building(
+    surface,
+    building,
+    highlight=False,
+    cam_x=0,
+    player=None,
+    frame=0,
+    night_alpha=0,
+):
     """Draw a city building, optionally highlighted."""
     b = building.rect
     if building.image:
@@ -334,7 +397,17 @@ def draw_building(surface, building, highlight=False):
             for i in range(2, b.width // 50):
                 wx = b.x + 18 + i * 50
                 wy = b.y + 28
-                pygame.draw.rect(surface, WINDOW_COLOR, (wx, wy, 22, 22), border_radius=4)
+                window_rect = pygame.Rect(wx, wy, 22, 22)
+                pygame.draw.rect(surface, WINDOW_COLOR, window_rect, border_radius=4)
+                _draw_window_layers(
+                    surface,
+                    building,
+                    window_rect,
+                    player,
+                    cam_x,
+                    frame,
+                    night_alpha,
+                )
             dx = b.x + b.width // 2 - 18
             dy = b.y + b.height - 38
             pygame.draw.rect(surface, DOOR_COLOR, (dx, dy, 36, 38), border_radius=5)
@@ -497,7 +570,7 @@ def draw_sky(surface, current_time):
 
 
 def draw_day_night(surface, current_time):
-    """Darken the city during nighttime hours."""
+    """Darken the city during nighttime hours and report the overlay alpha."""
     hour = int(current_time) // 60
     alpha = 0
     if hour >= 18 or hour < 6:
@@ -509,6 +582,7 @@ def draw_day_night(surface, current_time):
         overlay = pygame.Surface((settings.SCREEN_WIDTH, MAP_HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, alpha))
         surface.blit(overlay, (0, 0))
+    return alpha
 
 
 def draw_weather(surface, weather):

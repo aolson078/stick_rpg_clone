@@ -11,6 +11,7 @@ class Building:
     name: str
     btype: str
     image: Optional[pygame.Surface] = None
+    window_layers: List[pygame.Surface] = field(default_factory=list)
 
 
 @dataclass
