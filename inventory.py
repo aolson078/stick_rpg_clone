@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Callable
 from entities import Player, InventoryItem
 from combat import energy_cost
 import factions
@@ -87,6 +87,12 @@ SHOP_ITEMS: List[Tuple[str, int, any]] = [
         lambda p: __import__('cardgame').open_booster_pack(p),
     ),
 ]
+
+DREAM_SHOP_EFFECTS: Dict[str, Callable[[Player], None]] = {
+    "lucid_focus": lambda p: setattr(p, "intelligence", p.intelligence + 1),
+    "lucid_charm": lambda p: setattr(p, "charisma", p.charisma + 1),
+    "lucid_token": lambda p: setattr(p, "tokens", p.tokens + 1),
+}
 
 # Loaded crop data
 CROPS_PATH = Path(__file__).parent / "data" / "crops.json"
@@ -215,6 +221,66 @@ def buy_shop_item(player: Player, index: int) -> str:
         return "Not enough money!"
     player.money -= cost
     effect(player)
+    return f"Bought {name}"
+
+
+def _apply_dream_shop_effect(player: Player, effect: Any) -> bool:
+    """Execute a dream shop effect regardless of representation."""
+
+    if callable(effect):
+        effect(player)
+        return True
+    if isinstance(effect, str):
+        handler = DREAM_SHOP_EFFECTS.get(effect)
+        if handler:
+            handler(player)
+            return True
+        return False
+    if isinstance(effect, dict):
+        etype = effect.get("type")
+        if etype == "stat":
+            stat = effect.get("stat")
+            amount = int(effect.get("amount", 0))
+            if stat and hasattr(player, str(stat)):
+                current = getattr(player, str(stat))
+                try:
+                    setattr(player, str(stat), current + amount)
+                    return True
+                except TypeError:
+                    return False
+        elif etype == "item":
+            name = effect.get("name")
+            slot = effect.get("slot", "consumable")
+            if name:
+                extra_kwargs = {
+                    key: value
+                    for key, value in effect.items()
+                    if key not in {"type", "name", "slot"}
+                }
+                player.inventory.append(InventoryItem(name, slot, **extra_kwargs))
+                return True
+    return False
+
+
+def dream_shop_purchase(player: Player, shop_inventory: List[Dict[str, Any]], index: int) -> str:
+    """Purchase an item from a dream shop inventory using dream shards."""
+
+    if index < 0 or index >= len(shop_inventory):
+        return "Invalid item"
+    offer = shop_inventory[index]
+    if offer.get("purchased"):
+        return "Sold out"
+    cost = int(offer.get("cost", 0))
+    if player.dream_shards < cost:
+        return "Not enough dream shards"
+    effect = offer.get("effect")
+    if effect is None:
+        return "Nothing happens"
+    if not _apply_dream_shop_effect(player, effect):
+        return "Nothing happens"
+    player.dream_shards -= cost
+    offer["purchased"] = True
+    name = str(offer.get("name", "Dream Relic"))
     return f"Bought {name}"
 
 

@@ -45,6 +45,10 @@ class Player:
     dealer_exp: int = 0
     clinic_exp: int = 0
     tokens: int = 0
+    # Currency found within lucid dreams
+    dream_shards: int = 0
+    # Pending dream shop offers available after waking
+    pending_dream_shop: List[Dict[str, Any]] = field(default_factory=list)
     # Crafting skills and experience per skill
     crafting_skills: Dict[str, int] = field(default_factory=dict)
     crafting_exp: Dict[str, int] = field(default_factory=dict)
