@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from entities import Player, InventoryItem
 from combat import energy_cost
 import factions
@@ -447,6 +447,31 @@ def train_companion(player: Player) -> str:
         player.strength += 1
     return f"{player.companion} reached level {player.companion_level}!"
 
+# Mining vein configuration describing available deposits and rewards.
+MINING_VEINS: Dict[str, Dict[str, Any]] = {
+    "shallow": {
+        "label": "Shallow Vein",
+        "level": 1,
+        "ore_range": (1, 2),
+        "xp": 5,
+        "byproducts": {"stone": (1, 2)},
+    },
+    "rich": {
+        "label": "Rich Seam",
+        "level": 3,
+        "ore_range": (2, 4),
+        "xp": 12,
+        "byproducts": {"stone": (2, 3), "gems": (0, 1)},
+    },
+    "deep": {
+        "label": "Deep Core",
+        "level": 5,
+        "ore_range": (3, 5),
+        "xp": 20,
+        "byproducts": {"stone": (3, 4), "gems": (1, 2)},
+    },
+}
+
 
 CRAFT_EXP_BASE = 50
 
@@ -559,11 +584,52 @@ def repair_equipment(player: Player) -> str:
     return "Equipment repaired" + (f"  {lvl_msg}" if lvl_msg else "")
 
 
-def mine_ore(player: Player, amount: int = 1) -> str:
-    """Collect ore and gain mining experience."""
-    player.resources["ore"] = player.resources.get("ore", 0) + amount
-    lvl_msg = gain_crafting_exp(player, "mining", amount * 5)
-    return f"Mined {amount} ore" + (f"  {lvl_msg}" if lvl_msg else "")
+def _vein_yield(level: int, required_level: int, resource_range: Tuple[int, int]) -> int:
+    """Return the deterministic resource yield for a single mining swing."""
+    low, high = resource_range
+    if high <= low:
+        return low
+    bonus_levels = max(0, level - required_level)
+    extra = min(high - low, bonus_levels // 2)
+    return low + extra
+
+
+def mine_ore(player: Player, swings: int = 1, vein: str = "shallow") -> str:
+    """Collect ore from a mining vein and gain experience and byproducts."""
+
+    config = MINING_VEINS.get(vein)
+    if not config:
+        return "Unknown mining vein"
+
+    level = player.crafting_skills.get("mining", 1)
+    required = config["level"]
+    if level < required:
+        return f"Need Mining Lv{required}"
+
+    swings = max(1, swings)
+    ore_per_swing = _vein_yield(level, required, config["ore_range"])
+    ore_gained = ore_per_swing * swings
+    player.resources["ore"] = player.resources.get("ore", 0) + ore_gained
+
+    extras: Dict[str, int] = {}
+    for resource, rng in config.get("byproducts", {}).items():
+        gained = _vein_yield(level, required, rng) * swings
+        if gained:
+            player.resources[resource] = player.resources.get(resource, 0) + gained
+            extras[resource] = gained
+
+    xp_gain = config["xp"] * swings
+    lvl_msg = gain_crafting_exp(player, "mining", xp_gain)
+
+    vein_name = config.get("label", vein.title())
+    message_parts = [f"Mined {ore_gained} ore from {vein_name}"]
+    if extras:
+        extras_str = ", ".join(f"{amt} {res}" for res, amt in extras.items())
+        message_parts.append(f"Found {extras_str}")
+    message = ". ".join(message_parts)
+    if lvl_msg:
+        message += f"  {lvl_msg}"
+    return message
 
 
 def smelt_ore(player: Player, amount: int = 1) -> str:

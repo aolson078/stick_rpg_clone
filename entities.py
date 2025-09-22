@@ -123,6 +123,8 @@ class Player:
         default_factory=lambda: {
             "ore": 0,
             "metal": 0,
+            "stone": 0,
+            "gems": 0,
             "cloth": 0,
             "herbs": 0,
             "eggs": 0,
