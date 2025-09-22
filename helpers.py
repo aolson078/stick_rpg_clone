@@ -6,6 +6,7 @@ import json
 import os
 import random
 import time
+import copy
 from typing import Dict, List, Optional, Callable, Tuple, Any
 
 import pygame
@@ -72,6 +73,25 @@ DREAM_EVENTS: List[Dict[str, Any]] = [
         "bonuses": {"fortune": 1},
         "color": (70, 140, 90),
         "duration": 260,
+    },
+    {
+        "id": "lucid_bazaar",
+        "title": "Lucid Bazaar",
+        "description": "Market stalls woven from starlight line an endless pier.",
+        "flavor": "A somnolent merchant offers ephemeral goods in exchange for dream shards.",
+        "summary": "You awaken with shimmering shards and memories of strange wares.",
+        "color": (90, 40, 110),
+        "duration": 320,
+        "shard_bonus": 2,
+        "shop_inventory": [
+            {"name": "Astral Focus Tea", "cost": 2, "effect": "lucid_focus"},
+            {"name": "Moonlit Charm", "cost": 3, "effect": "lucid_charm"},
+            {
+                "name": "Echoed Resolve",
+                "cost": 4,
+                "effect": {"type": "stat", "stat": "strength", "amount": 1},
+            },
+        ],
     },
 ]
 
@@ -366,7 +386,7 @@ def advance_day(player: Player) -> int:
 def enter_dreamscape(player: Player) -> Optional[str]:
     """Switch the game into a dream state and record the resulting bonuses."""
 
-    event = random.choice(DREAM_EVENTS)
+    event = copy.deepcopy(random.choice(DREAM_EVENTS))
     expiry = player.day
     bonuses = event.get("bonuses", {})
     if isinstance(bonuses, dict):
@@ -377,6 +397,15 @@ def enter_dreamscape(player: Player) -> Optional[str]:
             current["value"] = int(current.get("value", 0)) + int(amount)  # type: ignore[arg-type]
             current["expires"] = expiry
             player.temporary_bonuses[bonus_name] = current
+
+    shop_inventory = event.get("shop_inventory")
+    if isinstance(shop_inventory, list):
+        shard_bonus = int(event.get("shard_bonus", 0))
+        if shard_bonus:
+            player.dream_shards += shard_bonus
+        player.pending_dream_shop = shop_inventory
+    else:
+        player.pending_dream_shop = []
 
     summary = event.get("summary")
     if isinstance(summary, str) and summary:
