@@ -208,6 +208,104 @@ COMPANION_ABILITIES: Dict[str, List[Tuple[str, str, str]]] = {
     ],
 }
 
+COMPANION_ERRAND_FEE = 15
+MIN_COMPANION_MORALE_FOR_ERRAND = 40
+COMPANION_ERRAND_BASE_ODDS = {
+    "Dog": 0.65,
+    "Cat": 0.55,
+    "Parrot": 0.6,
+    "Llama": 0.5,
+    "Peacock": 0.45,
+    "Rhino": 0.55,
+}
+
+
+def _companion_errand_success_chance(player: Player) -> float:
+    base = COMPANION_ERRAND_BASE_ODDS.get(player.companion, 0.5)
+    base += 0.05 * max(player.companion_level - 1, 0)
+    morale_bonus = (player.companion_morale - 50) / 200
+    base += morale_bonus
+    return max(0.1, min(0.95, base))
+
+
+def _companion_errand_penalty(item_cost: int) -> Dict[str, Any]:
+    money_loss = max(5, min(25, item_cost // 2))
+    return {
+        "money": money_loss,
+        "morale": 10,
+        "reputation": ("mayor", 1),
+    }
+
+
+def companion_errand_success_chance(player: Player) -> float:
+    """Public wrapper for displaying the current errand success chance."""
+
+    if not player.companion:
+        return 0.0
+    return _companion_errand_success_chance(player)
+
+
+def schedule_companion_errand(player: Player, item_index: int) -> str:
+    """Schedule a companion errand to fetch a shop item."""
+
+    if not player.companion:
+        return "No companion available"
+    if item_index < 0 or item_index >= len(SHOP_ITEMS):
+        return "Invalid errand"
+    if player.companion_morale < MIN_COMPANION_MORALE_FOR_ERRAND:
+        return "Companion morale too low"
+    if player.money < COMPANION_ERRAND_FEE:
+        return f"Need ${COMPANION_ERRAND_FEE}"
+
+    item_name, item_cost, _effect = SHOP_ITEMS[item_index]
+    chance = _companion_errand_success_chance(player)
+    penalty = _companion_errand_penalty(item_cost)
+
+    player.money -= COMPANION_ERRAND_FEE
+    player.companion_errands.append(
+        {
+            "item_index": item_index,
+            "scheduled_day": player.day,
+            "companion": player.companion,
+            "chance": chance,
+            "penalty": penalty,
+            "fee": COMPANION_ERRAND_FEE,
+        }
+    )
+    return f"{player.companion} will attempt to fetch {item_name}."
+
+
+def resolve_companion_errands(player: Player) -> List[str]:
+    """Resolve all scheduled companion errands after the player rests."""
+
+    messages: List[str] = []
+    for errand in list(player.companion_errands):
+        item_index = errand.get("item_index")
+        if item_index is None or item_index < 0 or item_index >= len(SHOP_ITEMS):
+            continue
+        name, _cost, effect = SHOP_ITEMS[item_index]
+        chance = float(errand.get("chance", 0.0))
+        companion_name = errand.get("companion", player.companion or "Companion")
+        if random.random() < chance:
+            effect(player)
+            player.companion_morale = min(100, player.companion_morale + 5)
+            messages.append(f"{companion_name} fetched {name}.")
+        else:
+            penalty = errand.get("penalty", {})
+            money_loss = penalty.get("money", 0)
+            if money_loss:
+                player.money = max(0, player.money - money_loss)
+            morale_loss = penalty.get("morale", 0)
+            if morale_loss:
+                player.companion_morale = max(0, player.companion_morale - morale_loss)
+            reputation_penalty = penalty.get("reputation")
+            if reputation_penalty:
+                faction, amount = reputation_penalty
+                player.reputation[faction] = player.reputation.get(faction, 0) - amount
+            messages.append(f"{companion_name} failed to fetch {name}.")
+    player.companion_errands.clear()
+    return messages
+
 
 def buy_shop_item(player: Player, index: int) -> str:
     """Purchase an item from the shop list by index."""

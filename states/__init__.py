@@ -5,7 +5,7 @@ from __future__ import annotations
 import pygame
 import settings
 
-from menus import pause_menu, business_menu
+from menus import pause_menu, business_menu, pet_shop_menu
 from rendering import (
     draw_player_sprite,
     draw_npc,
@@ -72,6 +72,8 @@ class PlayState(GameState):
                                         self.game.enter_sound.play()
                                     except Exception:
                                         pass
+                        elif b.btype == "petshop":
+                            pet_shop_menu(self.game, self.game.player)
                         break
 
     def update(self) -> None:

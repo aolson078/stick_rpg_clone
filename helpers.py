@@ -24,6 +24,7 @@ from quests import (
 )
 from combat import energy_cost
 from businesses import collect_profits
+from inventory import resolve_companion_errands
 import settings
 
 
@@ -467,6 +468,8 @@ def sleep(player: Player) -> Optional[str]:
     messages.extend(events)
     if interest:
         messages.append(f"Earned ${interest} interest")
+    if player.companion_errands:
+        messages.extend(resolve_companion_errands(player))
     return " ".join(messages) if messages else None
 
 
