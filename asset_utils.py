@@ -7,7 +7,7 @@ import os
 import pygame
 try:
     import cairosvg  # type: ignore
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
+except Exception:  # pragma: no cover - optional dependency
     cairosvg = None
 
 
@@ -74,10 +74,13 @@ def load_image(path: str) -> pygame.Surface:
         if cairosvg is None:
             surface = _fallback_svg_surface(path)
         else:
-            with open(path, "rb") as svg_file:
-                svg_bytes = svg_file.read()
-            png_bytes = cairosvg.svg2png(bytestring=svg_bytes)
-            surface = pygame.image.load(io.BytesIO(png_bytes))
+            try:
+                with open(path, "rb") as svg_file:
+                    svg_bytes = svg_file.read()
+                png_bytes = cairosvg.svg2png(bytestring=svg_bytes)
+                surface = pygame.image.load(io.BytesIO(png_bytes))
+            except Exception:
+                surface = _fallback_svg_surface(path)
     else:
         surface = pygame.image.load(path)
 
