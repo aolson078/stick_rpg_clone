@@ -81,6 +81,8 @@ class Player:
     companion_morale: int = 100
     # Ability levels for each companion ability
     companion_abilities: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    # Pending errands companions will attempt after resting
+    companion_errands: List[Dict[str, Any]] = field(default_factory=list)
 
     home_upgrades: List[str] = field(default_factory=list)
     perk_points: int = 0
