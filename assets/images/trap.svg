@@ -1,6 +1,21 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'>
-  <rect width='96' height='96' rx='12' fill='#ffe8cc'/>
-  <polygon points='16,72 48,16 80,72' fill='#d62828'/>
-  <line x1='16' y1='72' x2='80' y2='72' stroke='#1d3557' stroke-width='6' stroke-linecap='round'/>
-  <circle cx='48' cy='60' r='10' fill='#f4f1de'/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="trapBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f3136"/>
+      <stop offset="1" stop-color="#0f1113"/>
+    </linearGradient>
+    <linearGradient id="trapGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8a5c"/>
+      <stop offset="1" stop-color="#ff4242"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="8" fill="url(#trapBg)"/>
+  <g stroke="#1a1c1f" stroke-width="2" stroke-linecap="round" fill="none">
+    <path d="M10 44l10-24 12 24 12-24 10 24"/>
+    <path d="M14 46h36"/>
+  </g>
+  <circle cx="32" cy="24" r="10" fill="url(#trapGlow)" opacity="0.85"/>
+  <path d="M32 16v16" stroke="#fff0e0" stroke-width="2" stroke-linecap="round"/>
+  <path d="M24 24h16" stroke="#fff0e0" stroke-width="2" stroke-linecap="round"/>
+  <path d="M19 52h26" stroke="#ff8a5c" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
 </svg>
