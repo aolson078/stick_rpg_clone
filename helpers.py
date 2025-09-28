@@ -572,11 +572,147 @@ def play_darts(player: Player, difficulty: str = "normal") -> str:
     return "Missed the board"
 
 
-def go_fishing(player: Player, difficulty: str = "normal") -> str:
-    """Fish at the park and possibly earn money or herbs.
+FISHING_TABLE: Dict[str, List[Dict[str, Any]]] = {
+    "easy": [
+        {
+            "name": "Minnow",
+            "rarity": 0.55,
+            "money_range": (5, 10),
+            "xp": 8,
+            "weight_divisor": 6,
+        },
+        {
+            "name": "Perch",
+            "rarity": 0.30,
+            "money_range": (8, 14),
+            "xp": 12,
+            "weight_divisor": 5,
+            "requires_level": 2,
+        },
+        {
+            "name": "Old Boot",
+            "rarity": 0.15,
+            "money_range": (0, 0),
+            "xp": 6,
+            "type": "junk",
+        },
+    ],
+    "normal": [
+        {
+            "name": "River Trout",
+            "rarity": 0.45,
+            "money_range": (10, 18),
+            "xp": 16,
+            "weight_divisor": 4,
+        },
+        {
+            "name": "Lake Bass",
+            "rarity": 0.35,
+            "money_range": (14, 22),
+            "xp": 20,
+            "weight_divisor": 3.5,
+            "requires_level": 2,
+        },
+        {
+            "name": "Tin Can",
+            "rarity": 0.20,
+            "money_range": (0, 3),
+            "xp": 6,
+            "type": "junk",
+        },
+    ],
+    "hard": [
+        {
+            "name": "Steelhead",
+            "rarity": 0.40,
+            "money_range": (18, 26),
+            "xp": 22,
+            "weight_divisor": 3,
+        },
+        {
+            "name": "King Salmon",
+            "rarity": 0.30,
+            "money_range": (24, 32),
+            "xp": 26,
+            "weight_divisor": 2.8,
+            "requires_level": 3,
+        },
+        {
+            "name": "Treasure Carp",
+            "rarity": 0.15,
+            "money_range": (26, 35),
+            "xp": 30,
+            "weight_divisor": 2.5,
+            "requires_level": 4,
+            "bonus_tokens": (1, 2),
+        },
+        {
+            "name": "Waterlogged Crate",
+            "rarity": 0.15,
+            "money_range": (5, 10),
+            "xp": 10,
+            "type": "junk",
+        },
+    ],
+}
 
-    Hard difficulty yields higher potential rewards but more failures.
-    Reeling in a big catch on hard unlocks a special card and achievement.
+
+def _fishing_xp_to_next(level: int) -> int:
+    """Amount of experience required to reach the next fishing level."""
+
+    return 40 + max(0, level - 1) * 25
+
+
+def _grant_fishing_xp(player: Player, amount: int) -> bool:
+    """Grant fishing experience and return ``True`` if a level was gained."""
+
+    player.fishing_exp += amount
+    leveled = False
+    while True:
+        threshold = _fishing_xp_to_next(player.fishing_skill)
+        if player.fishing_exp < threshold:
+            break
+        player.fishing_exp -= threshold
+        player.fishing_skill += 1
+        leveled = True
+    return leveled
+
+
+def _choose_fishing_result(
+    player: Player, difficulty: str, *, roll: Optional[float] = None
+) -> Dict[str, Any]:
+    """Pick a fishing table entry based on player skill and difficulty."""
+
+    table = copy.deepcopy(FISHING_TABLE[difficulty])
+    eligible: List[Dict[str, Any]] = []
+    total = 0.0
+    for entry in table:
+        required = entry.get("requires_level", 1)
+        if player.fishing_skill >= required:
+            eligible.append(entry)
+            total += entry["rarity"]
+    if not eligible:
+        eligible = [table[0]]
+        total = table[0]["rarity"]
+    if roll is None:
+        roll = random.random() * total
+    else:
+        roll *= total
+    upto = 0.0
+    for entry in eligible:
+        upto += entry["rarity"]
+        if roll <= upto:
+            return entry
+    return eligible[-1]
+
+
+def go_fishing(player: Player, difficulty: str = "normal") -> str:
+    """Go fishing at the park with progression, records, and rare rewards.
+
+    Casting now awards fishing experience, with higher levels unlocking new
+    species and reducing the chance of an empty hook. Catches are tracked in a
+    fishing log along with their heaviest weight. Rare treasure fish can award
+    casino tokens on top of their cash value.
     """
     if player.energy < 5:
         return "Too tired to fish!"
@@ -584,22 +720,96 @@ def go_fishing(player: Player, difficulty: str = "normal") -> str:
         raise ValueError("Invalid difficulty")
     player.energy -= energy_cost(player, 5)
 
-    no_bite_chance = 0.3
-    herb_chance = 0.2
-    min_reward, max_reward = 5, 20
+    skill_bonus = max(0.0, (player.fishing_skill - 1) * 0.03)
+    no_bite_chance = 0.3 - min(0.2, skill_bonus * 1.5)
+    herb_chance = 0.18 + min(0.12, skill_bonus)
+
     if difficulty == "easy":
-        no_bite_chance = 0.2
+        no_bite_chance -= 0.05
+        herb_chance += 0.05
     elif difficulty == "hard":
-        no_bite_chance = 0.5
-        min_reward, max_reward = 10, 30
+        no_bite_chance += 0.15
+        herb_chance += 0.05
+
+    if player.weather.lower() in {"rain", "rainy", "storm"}:
+        no_bite_chance = max(0.05, no_bite_chance - 0.05)
+        herb_chance += 0.05
+    if player.season == "Winter":
+        herb_chance = max(0.05, herb_chance - 0.08)
+
+    no_bite_chance = max(0.05, min(0.9, no_bite_chance))
+    herb_chance = max(0.05, min(0.7, herb_chance))
 
     if random.random() < no_bite_chance:
-        return "Nothing was biting"
+        xp_gain = 4 + max(0, player.fishing_skill - 1)
+        leveled = _grant_fishing_xp(player, xp_gain)
+        message = f"Nothing was biting, but you practiced your casting (+{xp_gain} XP)"
+        if leveled:
+            message += f" Fishing level up! (Lv {player.fishing_skill})"
+        return message
+
     if random.random() < herb_chance:
         player.resources["herbs"] = player.resources.get("herbs", 0) + 1
-        return "Found some herbs by the water"
+        xp_gain = 6 + max(0, player.fishing_skill - 1)
+        leveled = _grant_fishing_xp(player, xp_gain)
+        message = "Found some herbs by the water"
+        message += f" (+{xp_gain} XP)"
+        if leveled:
+            message += f" Fishing level up! (Lv {player.fishing_skill})"
+        return message
 
-    reward = random.randint(min_reward, max_reward)
+    result = _choose_fishing_result(player, difficulty)
+    money_min, money_max = result["money_range"]
+    base_reward = (
+        money_min
+        if money_min == money_max
+        else random.randint(money_min, money_max)
+    )
+    reward = base_reward + int((player.fishing_skill - 1) * 2)
+    if difficulty == "hard":
+        reward += 2
+    reward = max(0, reward)
+
+    xp_gain = result.get("xp", 10)
+    if difficulty == "hard":
+        xp_gain = int(xp_gain * 1.2)
+    elif difficulty == "easy":
+        xp_gain = max(4, int(xp_gain * 0.8))
+
+    leveled = _grant_fishing_xp(player, xp_gain)
+
+    record_note = ""
+    message: str
+    catch_type = result.get("type", "fish")
+    if catch_type == "fish":
+        weight = round(reward / result.get("weight_divisor", 4), 2)
+        message = f"Caught a {result['name']} ({weight} lbs)! +${reward} (+{xp_gain} XP)"
+        log_entry = player.fishing_log.setdefault(
+            result["name"], {"count": 0, "best_weight": 0.0, "best_reward": 0}
+        )
+        log_entry["count"] += 1
+        if weight > log_entry.get("best_weight", 0):
+            log_entry["best_weight"] = weight
+            record_note = " New record!"
+        if reward > log_entry.get("best_reward", 0):
+            log_entry["best_reward"] = reward
+    else:
+        message = f"Reeled in {result['name']} (+{xp_gain} XP)"
+
+    bonus_tokens = 0
+    if "bonus_tokens" in result:
+        low, high = result["bonus_tokens"]
+        bonus_tokens = (
+            low
+            if low == high
+            else random.randint(low, high)
+        )
+        if bonus_tokens > 0:
+            player.tokens += bonus_tokens
+            message += f" +{bonus_tokens} token"
+            if bonus_tokens > 1:
+                message += "s"
+
     player.money += reward
     if (
         difficulty == "hard"
@@ -609,7 +819,11 @@ def go_fishing(player: Player, difficulty: str = "normal") -> str:
         player.achievements.append("Master Angler")
         if "Fishing Legend" not in player.cards:
             player.cards.append("Fishing Legend")
-    return f"Caught a fish! +${reward}"
+
+    if leveled:
+        message += f" Fishing level up! (Lv {player.fishing_skill})"
+    message += record_note
+    return message
 
 
 def solve_puzzle(player: Player) -> str:
@@ -680,6 +894,9 @@ def save_game(player: Player) -> None:
         "dealer_exp": player.dealer_exp,
         "clinic_exp": player.clinic_exp,
         "tokens": player.tokens,
+        "fishing_skill": player.fishing_skill,
+        "fishing_exp": player.fishing_exp,
+        "fishing_log": player.fishing_log,
         "crafting_skills": player.crafting_skills,
         "crafting_exp": player.crafting_exp,
         "brawls_won": player.brawls_won,
@@ -805,6 +1022,9 @@ def load_game() -> Optional[Player]:
     player.clinic_shifts = data.get("clinic_shifts", player.clinic_shifts)
     player.clinic_exp = data.get("clinic_exp", 0)
     player.tokens = data.get("tokens", player.tokens)
+    player.fishing_skill = data.get("fishing_skill", player.fishing_skill)
+    player.fishing_exp = data.get("fishing_exp", 0)
+    player.fishing_log = data.get("fishing_log", {})
     player.crafting_skills = data.get("crafting_skills", {})
     player.crafting_exp = data.get("crafting_exp", {})
     player.brawls_won = data.get("brawls_won", 0)

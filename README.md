@@ -147,6 +147,12 @@ still offers a daily puzzle for a small money reward, and you can dig for
 buried treasure on the beach. Lucky diggers might uncover a **Golden Seashell**
 decoration or a stylish **Pearl Necklace**.
 
+Fishing now includes its own progression system. Each cast grants fishing
+experience that levels up your angling skill, unlocking tougher fish with
+better payouts and reducing empty-hook casts. Every species you land is logged
+with its heaviest weight so you can chase new records, and rare treasure carp
+can even cough up casino tokens alongside their cash value.
+
 Weather now changes each day with rain or snow possible. The world cycles
 through Spring, Summer, Fall, and Winter, each lasting about a month.
 Bad weather closes the park and deal spots, and special seasonal encounters
