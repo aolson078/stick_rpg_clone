@@ -158,6 +158,11 @@ class Player:
     # Active deck used for card duels (up to 30 card names)
     deck: List[str] = field(default_factory=list)
 
+    # Fishing progression and records
+    fishing_skill: int = 1
+    fishing_exp: int = 0
+    fishing_log: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+
     # Current honorific title earned through achievements
     epithet: str = ""
 
