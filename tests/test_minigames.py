@@ -35,10 +35,41 @@ def test_blackjack_perfect_score_unlocks_rewards():
 def test_fishing_hard_big_catch_rewards():
     player = make_player()
     player.energy = 50
+    player.fishing_skill = 3
+    king_salmon = {
+        "name": "King Salmon",
+        "rarity": 0.3,
+        "money_range": (30, 30),
+        "xp": 26,
+        "weight_divisor": 2.5,
+        "requires_level": 3,
+    }
     with patch('random.random', side_effect=[0.6, 0.6]):
-        with patch('random.randint', return_value=30):
+        with patch('helpers._choose_fishing_result', return_value=king_salmon):
             msg = go_fishing(player, difficulty='hard')
-    assert msg.startswith("Caught a fish")
+    assert msg.startswith("Caught a King Salmon")
     assert player.money >= 30
     assert "Master Angler" in player.achievements
     assert "Fishing Legend" in player.cards
+    assert player.fishing_log["King Salmon"]["count"] == 1
+
+
+def test_fishing_levels_up_and_logs_records():
+    player = make_player()
+    player.energy = 50
+    trout = {
+        "name": "River Trout",
+        "rarity": 0.45,
+        "money_range": (15, 15),
+        "xp": 50,
+        "weight_divisor": 4,
+    }
+    with patch('random.random', side_effect=[0.6, 0.6]):
+        with patch('helpers._choose_fishing_result', return_value=trout):
+            msg = go_fishing(player, difficulty='normal')
+    assert player.fishing_skill == 2
+    assert player.fishing_exp == 10
+    assert "Fishing level up" in msg
+    log = player.fishing_log["River Trout"]
+    assert log["count"] == 1
+    assert log["best_reward"] >= 15

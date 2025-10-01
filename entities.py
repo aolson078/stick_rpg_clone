@@ -81,6 +81,8 @@ class Player:
     companion_morale: int = 100
     # Ability levels for each companion ability
     companion_abilities: Dict[str, Dict[str, int]] = field(default_factory=dict)
+    # Pending errands companions will attempt after resting
+    companion_errands: List[Dict[str, Any]] = field(default_factory=list)
 
     home_upgrades: List[str] = field(default_factory=list)
     perk_points: int = 0
@@ -155,6 +157,11 @@ class Player:
     cards: List[str] = field(default_factory=list)
     # Active deck used for card duels (up to 30 card names)
     deck: List[str] = field(default_factory=list)
+
+    # Fishing progression and records
+    fishing_skill: int = 1
+    fishing_exp: int = 0
+    fishing_log: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
     # Current honorific title earned through achievements
     epithet: str = ""

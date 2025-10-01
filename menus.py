@@ -26,6 +26,11 @@ from inventory import (
     crafting_exp_needed,
     duplicate_card_rarity_counts,
     get_shop_price,
+    COMPANION_ERRAND_FEE,
+    MIN_COMPANION_MORALE_FOR_ERRAND,
+    crafting_exp_needed,
+    schedule_companion_errand,
+    companion_errand_success_chance,
 )
 
 if TYPE_CHECKING:  # pragma: no cover - only for type hints
@@ -337,6 +342,68 @@ def business_menu(
             (200, 200, 200),
         )
         screen.blit(info, (100, settings.SCREEN_HEIGHT - 40))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
+
+def pet_shop_menu(
+    game: "Game", player, screen: pygame.Surface | None = None, font: pygame.font.Font | None = None
+) -> None:
+    """Allow the player to schedule companion errands at the Pet Shop."""
+
+    screen = screen or game.screen
+    font = font or game.font
+    if not SHOP_ITEMS:
+        return
+
+    idx = 0
+    message = ""
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                if event.key == pygame.K_UP:
+                    idx = (idx - 1) % len(SHOP_ITEMS)
+                elif event.key == pygame.K_DOWN:
+                    idx = (idx + 1) % len(SHOP_ITEMS)
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    message = schedule_companion_errand(player, idx)
+
+        screen.fill((0, 0, 0))
+        title = font.render("Pet Shop Errands", True, (255, 255, 255))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 60))
+
+        chance = companion_errand_success_chance(player)
+        chance_txt = font.render(
+            f"Success chance: {int(chance * 100)}%", True, (200, 200, 200)
+        )
+        screen.blit(chance_txt, (100, 110))
+        fee_txt = font.render(
+            f"Fee: ${COMPANION_ERRAND_FEE}  Morale needed: {MIN_COMPANION_MORALE_FOR_ERRAND}",
+            True,
+            (200, 200, 200),
+        )
+        screen.blit(fee_txt, (100, 140))
+
+        max_visible = 12
+        start = max(0, min(len(SHOP_ITEMS) - max_visible, idx - max_visible // 2))
+        for i in range(start, min(len(SHOP_ITEMS), start + max_visible)):
+            item_name = SHOP_ITEMS[i][0]
+            color = (255, 255, 0) if i == idx else (200, 200, 200)
+            txt = font.render(f"{i + 1}. {item_name}", True, color)
+            screen.blit(txt, (100, 180 + (i - start) * 30))
+
+        info = font.render("Enter to schedule, Esc to exit", True, (200, 200, 200))
+        screen.blit(info, (100, settings.SCREEN_HEIGHT - 80))
+        if message:
+            msg_txt = font.render(message, True, (180, 220, 180))
+            screen.blit(msg_txt, (100, settings.SCREEN_HEIGHT - 120))
+
         pygame.display.flip()
         pygame.time.wait(20)
 
