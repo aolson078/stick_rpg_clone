@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import pygame
+
+from menus import pause_menu, business_menu, shop_menu
+from rendering import draw_player_sprite, draw_npc
+from settings import MINUTES_PER_FRAME
 import settings
 
 from menus import pause_menu, business_menu, pet_shop_menu
@@ -21,6 +25,7 @@ from rendering import (
 )
 from settings import MINUTES_PER_FRAME, SCREEN_WIDTH, SCREEN_HEIGHT, MAP_WIDTH, MAP_HEIGHT, KEY_BINDINGS
 from helpers import quest_target_building
+
 from state_manager import GameState
 from pathfinding import find_path
 from entities import Player, NPC, Building
@@ -51,6 +56,9 @@ class PlayState(GameState):
                     if b.rect.colliderect(self.game.player.rect):
                         if b.btype == "business":
                             business_menu(self.game, self.game.player)
+                        elif b.btype == "shop":
+                            shop_menu(self.game, self.game.player)
+
                         elif b.btype == "townhall":
                             # Progress story when visiting Town Hall
                             from quests import check_story, choose_story_branch
