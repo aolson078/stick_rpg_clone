@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 import pygame
 
@@ -20,7 +20,13 @@ from businesses import (
 )
 from quests import LEADERBOARD_FILE
 import settings
-from inventory import crafting_exp_needed
+from inventory import (
+    SHOP_ITEMS,
+    buy_shop_item,
+    crafting_exp_needed,
+    duplicate_card_rarity_counts,
+    get_shop_price,
+)
 
 if TYPE_CHECKING:  # pragma: no cover - only for type hints
     from game import Game
@@ -148,6 +154,102 @@ def deck_build_menu(
             screen.blit(txt, (100, 120 + i * 30))
         deck_txt = font.render(f"Deck: {len(deck)}/30", True, (200, 200, 200))
         screen.blit(deck_txt, (settings.SCREEN_WIDTH - deck_txt.get_width() - 20, 80))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
+
+def _format_card_requirements(card_cost: Dict[str, int]) -> str:
+    parts = [f"{rarity.title()} x{amount}" for rarity, amount in sorted(card_cost.items())]
+    return ", ".join(parts) if parts else ""
+
+
+def _format_duplicate_summary(duplicates: Dict[str, int]) -> str:
+    if not duplicates:
+        return "None"
+    return ", ".join(f"{rarity.title()} x{count}" for rarity, count in sorted(duplicates.items()))
+
+
+def shop_menu(
+    game: "Game",
+    player,
+    screen: pygame.Surface | None = None,
+    font: pygame.font.Font | None = None,
+) -> None:
+    """Display the general store inventory and allow purchases."""
+
+    screen = screen or game.screen
+    font = font or game.font
+
+    if not SHOP_ITEMS:
+        return
+
+    idx = 0
+    payment_mode = "cash"
+    message = ""
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                if event.key == pygame.K_UP:
+                    idx = (idx - 1) % len(SHOP_ITEMS)
+                elif event.key == pygame.K_DOWN:
+                    idx = (idx + 1) % len(SHOP_ITEMS)
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    message = buy_shop_item(player, idx, payment_mode)
+                elif event.key == pygame.K_p:
+                    payment_mode = "card" if payment_mode == "cash" else "cash"
+                    mode_name = "Cards" if payment_mode == "card" else "Cash"
+                    message = f"Payment mode: {mode_name}"
+
+        screen.fill((0, 0, 0))
+
+        title = font.render("General Store", True, (255, 255, 255))
+        screen.blit(title, (settings.SCREEN_WIDTH // 2 - title.get_width() // 2, 60))
+
+        money_txt = font.render(f"Money: ${player.money:.0f}", True, (200, 200, 200))
+        screen.blit(money_txt, (80, 110))
+
+        duplicates = duplicate_card_rarity_counts(player)
+        cards_txt = font.render(
+            f"Duplicate Cards: {_format_duplicate_summary(duplicates)}",
+            True,
+            (200, 200, 200),
+        )
+        screen.blit(cards_txt, (80, 140))
+
+        for i, item in enumerate(SHOP_ITEMS):
+            color = (255, 255, 0) if i == idx else (200, 200, 200)
+            price = get_shop_price(player, i)
+            card_cost = item.get("card_cost", {})
+            req_text = (
+                f"Cards: {_format_card_requirements(card_cost)}"
+                if card_cost
+                else "Cards: N/A"
+            )
+            text = font.render(
+                f"{item['name']} - ${price} | {req_text}",
+                True,
+                color,
+            )
+            screen.blit(text, (80, 180 + i * 30))
+
+        mode_name = "Cards" if payment_mode == "card" else "Cash"
+        info = font.render(
+            f"Mode: {mode_name}  Enter: Buy  P: Toggle payment  Esc: Exit",
+            True,
+            (200, 200, 200),
+        )
+        screen.blit(info, (80, settings.SCREEN_HEIGHT - 100))
+
+        if message:
+            msg = font.render(message, True, (180, 220, 180))
+            screen.blit(msg, (80, settings.SCREEN_HEIGHT - 60))
+
         pygame.display.flip()
         pygame.time.wait(20)
 

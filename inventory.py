@@ -1,92 +1,157 @@
 """Item and inventory handling extracted from game.py."""
 
 import json
+from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Any, Callable
-from entities import Player, InventoryItem
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 from combat import energy_cost
-import factions
 from constants import PERK_MAX_LEVEL
+from entities import InventoryItem, Player
+import factions
 import random
 
-# Items sold at the shop: name, cost, and effect
-SHOP_ITEMS: List[Tuple[str, int, any]] = [
-    ("Cola", 3, lambda p: p.inventory.append(InventoryItem("Cola", "consumable"))),
-    (
-        "Protein Bar",
-        7,
-        lambda p: p.inventory.append(InventoryItem("Protein Bar", "consumable")),
-    ),
-    ("Book", 10, lambda p: setattr(p, "intelligence", p.intelligence + 1)),
-    ("Gym Pass", 15, lambda p: setattr(p, "strength", p.strength + 1)),
-    ("Charm Pendant", 20, lambda p: setattr(p, "charisma", p.charisma + 1)),
-    ("Skateboard", 40, lambda p: setattr(p, "has_skateboard", True)),
-    (
-        "Leather Helmet",
-        25,
-        lambda p: p.inventory.append(
+# Items sold at the shop: name, cost, optional card collateral, and effect
+ShopItem = Dict[str, Any]
+
+SHOP_ITEMS: List[ShopItem] = [
+    {
+        "name": "Cola",
+        "cost": 3,
+        "effect": lambda p: p.inventory.append(InventoryItem("Cola", "consumable")),
+    },
+    {
+        "name": "Protein Bar",
+        "cost": 7,
+        "effect": lambda p: p.inventory.append(
+            InventoryItem("Protein Bar", "consumable")
+        ),
+    },
+    {
+        "name": "Book",
+        "cost": 10,
+        "effect": lambda p: setattr(p, "intelligence", p.intelligence + 1),
+    },
+    {
+        "name": "Gym Pass",
+        "cost": 15,
+        "effect": lambda p: setattr(p, "strength", p.strength + 1),
+    },
+    {
+        "name": "Charm Pendant",
+        "cost": 20,
+        "effect": lambda p: setattr(p, "charisma", p.charisma + 1),
+    },
+    {
+        "name": "Skateboard",
+        "cost": 40,
+        "effect": lambda p: setattr(p, "has_skateboard", True),
+    },
+    {
+        "name": "Leather Helmet",
+        "cost": 25,
+        "effect": lambda p: p.inventory.append(
             InventoryItem("Leather Helmet", "head", defense=1)
         ),
-    ),
-    (
-        "Leather Armor",
-        40,
-        lambda p: p.inventory.append(
+        "card_cost": {"common": 2},
+    },
+    {
+        "name": "Leather Armor",
+        "cost": 40,
+        "effect": lambda p: p.inventory.append(
             InventoryItem("Leather Armor", "chest", defense=2)
         ),
-    ),
-    (
-        "Leather Boots",
-        20,
-        lambda p: p.inventory.append(
+        "card_cost": {"common": 3},
+    },
+    {
+        "name": "Leather Boots",
+        "cost": 20,
+        "effect": lambda p: p.inventory.append(
             InventoryItem("Leather Boots", "legs", defense=1, speed=1)
         ),
-    ),
-    (
-        "Wooden Sword",
-        35,
-        lambda p: p.inventory.append(
+    },
+    {
+        "name": "Wooden Sword",
+        "cost": 35,
+        "effect": lambda p: p.inventory.append(
             InventoryItem("Wooden Sword", "weapon", attack=2, combo=1)
         ),
-    ),
-    (
-        "Spear",
-        55,
-        lambda p: p.inventory.append(
+    },
+    {
+        "name": "Spear",
+        "cost": 55,
+        "effect": lambda p: p.inventory.append(
             InventoryItem("Spear", "weapon", attack=3, combo=2)
         ),
-    ),
-    (
-        "Bow",
-        70,
-        lambda p: p.inventory.append(
+    },
+    {
+        "name": "Bow",
+        "cost": 70,
+        "effect": lambda p: p.inventory.append(
             InventoryItem(
                 "Bow", "weapon", attack=2, speed=1, combo=2, weapon_type="ranged"
             )
         ),
-    ),
-    (
-        "Magic Wand",
-        80,
-        lambda p: p.inventory.append(
+    },
+    {
+        "name": "Magic Wand",
+        "cost": 80,
+        "effect": lambda p: p.inventory.append(
             InventoryItem(
-                "Magic Wand", "weapon", attack=3, speed=1, combo=1, weapon_type="magic"
+                "Magic Wand",
+                "weapon",
+                attack=3,
+                speed=1,
+                combo=1,
+                weapon_type="magic",
             )
         ),
-    ),
-    (
-        "Crossbow",
-        90,
-        lambda p: p.inventory.append(
+        "card_cost": {"rare": 1, "common": 2},
+    },
+    {
+        "name": "Crossbow",
+        "cost": 90,
+        "effect": lambda p: p.inventory.append(
             InventoryItem("Crossbow", "weapon", attack=4, combo=2, weapon_type="ranged")
         ),
-    ),
-    (
-        "Booster Pack",
-        15,
-        lambda p: __import__('cardgame').open_booster_pack(p),
-    ),
+    },
+    {
+        "name": "Booster Pack",
+        "cost": 15,
+        "effect": lambda p: __import__("cardgame").open_booster_pack(p),
+    },
 ]
+
+
+def card_inventory_counts(player: Player) -> Counter[str]:
+    """Return a count of all cards owned by the player."""
+
+    return Counter(player.cards)
+
+
+def duplicate_card_counts(player: Player) -> Counter[str]:
+    """Return counts of cards beyond the first copy of each design."""
+
+    duplicates: Counter[str] = Counter()
+    for name, count in card_inventory_counts(player).items():
+        if count > 1:
+            duplicates[name] = count - 1
+    return duplicates
+
+
+def _card_rarity(name: str) -> str:
+    from cardgame import RARE_CARDS
+
+    return "rare" if name in RARE_CARDS else "common"
+
+
+def duplicate_card_rarity_counts(player: Player) -> Counter[str]:
+    """Aggregate duplicate card counts by rarity category."""
+
+    rarity_counts: Counter[str] = Counter()
+    for name, count in duplicate_card_counts(player).items():
+        rarity_counts[_card_rarity(name)] += count
+    return rarity_counts
 
 DREAM_SHOP_EFFECTS: Dict[str, Callable[[Player], None]] = {
     "lucid_focus": lambda p: setattr(p, "intelligence", p.intelligence + 1),
@@ -107,13 +172,13 @@ else:
 for _name, _data in CROPS.items():
     cost = _data.get("sell_price", 10)
     SHOP_ITEMS.append(
-        (
-            f"{_name} Seeds x3",
-            cost,
-            lambda p, n=_name: p.resources.__setitem__(
+        {
+            "name": f"{_name} Seeds x3",
+            "cost": cost,
+            "effect": lambda p, n=_name: p.resources.__setitem__(
                 f"{n}_seeds", p.resources.get(f"{n}_seeds", 0) + 3
             ),
-        )
+        }
     )
 
 # Loaded crafting recipes
@@ -144,7 +209,7 @@ def _daily_price_multiplier(day: int) -> float:
 
 def get_shop_price(player: Player, index: int) -> int:
     """Return the current price for a shop item considering season and day."""
-    base_cost = SHOP_ITEMS[index][1]
+    base_cost = int(SHOP_ITEMS[index]["cost"])
     season_mult = SEASON_PRICE_MODIFIERS.get(player.season, 1.0)
     day_mult = _daily_price_multiplier(player.day)
     cost = int(round(base_cost * season_mult * day_mult))
@@ -209,19 +274,91 @@ COMPANION_ABILITIES: Dict[str, List[Tuple[str, str, str]]] = {
 }
 
 
-def buy_shop_item(player: Player, index: int) -> str:
+def buy_shop_item(player: Player, index: int, payment: str = "cash") -> str:
     """Purchase an item from the shop list by index."""
+
     if index < 0 or index >= len(SHOP_ITEMS):
         return "Invalid item"
-    name, _base_cost, effect = SHOP_ITEMS[index]
+
+    item = SHOP_ITEMS[index]
+    name = str(item.get("name", "Item"))
+    effect = item.get("effect")
+    if not callable(effect):
+        return "Invalid item"
+
     if name == "Skateboard" and player.has_skateboard:
         return "Already have skateboard"
+
+    if str(payment).lower() == "card":
+        return buy_shop_item_with_cards(player, index)
+
     cost = get_shop_price(player, index)
     if player.money < cost:
         return "Not enough money!"
     player.money -= cost
     effect(player)
     return f"Bought {name}"
+
+
+def buy_shop_item_with_cards(player: Player, index: int) -> str:
+    """Purchase a shop item by sacrificing duplicate trading cards."""
+
+    item = SHOP_ITEMS[index]
+    card_cost = item.get("card_cost")
+    name = str(item.get("name", "Item"))
+    effect = item.get("effect")
+
+    if not card_cost:
+        return "Cards not accepted"
+    if not callable(effect):
+        return "Invalid item"
+
+    required = {
+        str(rarity).lower(): int(amount) for rarity, amount in card_cost.items() if amount
+    }
+    if not required:
+        return "Cards not accepted"
+
+    duplicates = duplicate_card_counts(player)
+    if not duplicates:
+        return "Need more duplicate cards"
+
+    rarity_pool = Counter()
+    for card_name, count in duplicates.items():
+        rarity_pool[_card_rarity(card_name)] += count
+
+    for rarity, amount in required.items():
+        if rarity_pool.get(rarity, 0) < amount:
+            return "Need more duplicate cards"
+
+    remaining = duplicates.copy()
+    sacrificed: List[str] = []
+    for rarity, amount in required.items():
+        needed = amount
+        for card_name in sorted(remaining):
+            if needed <= 0:
+                break
+            if _card_rarity(card_name) != rarity:
+                continue
+            available = remaining[card_name]
+            if available <= 0:
+                continue
+            take = min(available, needed)
+            sacrificed.extend([card_name] * take)
+            remaining[card_name] -= take
+            needed -= take
+        if needed > 0:
+            return "Need more duplicate cards"
+
+    for card_name in sacrificed:
+        player.cards.remove(card_name)
+
+    effect(player)
+
+    summary = ", ".join(
+        f"{card} x{count}" for card, count in sorted(Counter(sacrificed).items())
+    )
+    return f"Traded cards for {name} ({summary})"
 
 
 def _apply_dream_shop_effect(player: Player, effect: Any) -> bool:

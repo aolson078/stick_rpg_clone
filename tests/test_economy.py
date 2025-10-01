@@ -2,7 +2,7 @@ import random
 import pygame
 import settings
 from entities import Player
-from inventory import get_shop_price, SHOP_ITEMS, dream_shop_purchase
+from inventory import buy_shop_item, get_shop_price, SHOP_ITEMS, dream_shop_purchase
 
 
 def make_player():
@@ -11,7 +11,7 @@ def make_player():
 
 def test_shop_price_base():
     player = make_player()
-    base = SHOP_ITEMS[0][1]
+    base = SHOP_ITEMS[0]["cost"]
     assert get_shop_price(player, 0) == base
 
 
@@ -20,8 +20,56 @@ def test_shop_price_fluctuates():
     player.day = 2
     player.season = "Winter"
     r = random.Random(player.day).random()
-    expected = int(round(SHOP_ITEMS[0][1] * 1.2 * (0.8 + r * 0.4)))
+    expected = int(round(SHOP_ITEMS[0]["cost"] * 1.2 * (0.8 + r * 0.4)))
     assert get_shop_price(player, 0) == expected
+
+
+def find_shop_index(name: str) -> int:
+    for i, item in enumerate(SHOP_ITEMS):
+        if item["name"] == name:
+            return i
+    raise ValueError(name)
+
+
+def test_buy_shop_item_with_cards_success():
+    player = make_player()
+    idx = find_shop_index("Leather Helmet")
+    player.money = 0
+    player.cards = ["Slime", "Slime", "Goblin", "Goblin"]
+
+    message = buy_shop_item(player, idx, payment="card")
+
+    assert message.startswith("Traded cards for Leather Helmet")
+    assert player.cards.count("Slime") == 1
+    assert player.cards.count("Goblin") == 1
+    assert player.money == 0
+    assert player.inventory[-1].name == "Leather Helmet"
+
+
+def test_buy_shop_item_with_cards_requires_duplicates():
+    player = make_player()
+    idx = find_shop_index("Magic Wand")
+    player.money = 0
+    original_cards = ["Phoenix", "Slime", "Slime", "Goblin", "Goblin"]
+    player.cards = list(original_cards)
+
+    message = buy_shop_item(player, idx, payment="card")
+
+    assert message == "Need more duplicate cards"
+    assert player.cards == original_cards
+
+
+def test_buy_shop_item_cash_still_works():
+    player = make_player()
+    idx = find_shop_index("Leather Armor")
+    price = get_shop_price(player, idx)
+    player.money = price + 10
+
+    message = buy_shop_item(player, idx)
+
+    assert message == "Bought Leather Armor"
+    assert player.money == 10
+    assert player.inventory[-1].name == "Leather Armor"
 
 
 def test_dream_shop_purchase_applies_effect_and_deducts_shards():

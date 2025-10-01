@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pygame
 
-from menus import pause_menu, business_menu
+from menus import pause_menu, business_menu, shop_menu
 from rendering import draw_player_sprite, draw_npc
 from settings import MINUTES_PER_FRAME
 from state_manager import GameState
@@ -37,6 +37,8 @@ class PlayState(GameState):
                     if b.rect.colliderect(self.game.player.rect):
                         if b.btype == "business":
                             business_menu(self.game, self.game.player)
+                        elif b.btype == "shop":
+                            shop_menu(self.game, self.game.player)
                         break
 
     def update(self) -> None:
