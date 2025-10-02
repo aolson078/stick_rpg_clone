@@ -1,7 +1,8 @@
 import pygame
 import settings
 from entities import Player
-from helpers import play_darts, go_fishing, play_blackjack
+from helpers import play_darts, go_fishing, play_blackjack, building_open
+from inventory import buy_park_upgrade, PARK_UPGRADES
 from unittest.mock import patch
 
 
@@ -73,3 +74,57 @@ def test_fishing_levels_up_and_logs_records():
     log = player.fishing_log["River Trout"]
     assert log["count"] == 1
     assert log["best_reward"] >= 15
+
+
+def test_buy_park_upgrade():
+    player = make_player()
+    player.money = 500
+    msg = buy_park_upgrade(player, 0)
+    assert msg == "Built Fishing Pier"
+    assert "Fishing Pier" in player.park_upgrades
+    assert player.money == 300
+    assert buy_park_upgrade(player, 0) == "Already owned"
+    assert buy_park_upgrade(player, len(PARK_UPGRADES)) == "Invalid upgrade"
+
+
+def test_fishing_pier_blocks_empty_cast():
+    player = make_player()
+    player.energy = 50
+    player.park_upgrades.append("Fishing Pier")
+    fish = {
+        "name": "Test Carp",
+        "rarity": 1.0,
+        "money_range": (20, 20),
+        "xp": 10,
+        "weight_divisor": 4,
+    }
+    with patch('helpers.random.random', side_effect=[0.25, 0.6]):
+        with patch('helpers._choose_fishing_result', return_value=fish):
+            msg = go_fishing(player, difficulty='normal')
+    assert msg.startswith("Caught a Test Carp")
+
+
+def test_bait_shack_adds_bonus_rewards():
+    player = make_player()
+    player.energy = 50
+    player.park_upgrades.append("Bait Shack")
+    fish = {
+        "name": "Bonus Trout",
+        "rarity": 1.0,
+        "money_range": (20, 20),
+        "xp": 10,
+        "weight_divisor": 4,
+    }
+    with patch('helpers.random.random', side_effect=[0.6, 0.6]):
+        with patch('helpers._choose_fishing_result', return_value=fish):
+            msg = go_fishing(player, difficulty='normal')
+    assert "+$25" in msg
+    assert "(+13 XP)" in msg
+
+
+def test_heated_pavilion_keeps_park_open():
+    player = make_player()
+    player.park_upgrades.append("Heated Pavilion")
+    player.weather = "Snow"
+    player.season = "Winter"
+    assert building_open('park', 12 * 60, player)

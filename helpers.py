@@ -337,9 +337,12 @@ def building_open(btype: str, minutes: float, player: Player) -> bool:
         open_now = hour >= start or hour < end
     if not open_now:
         return False
+    park_upgrades = set(getattr(player, "park_upgrades", []))
+    pavilion = "Heated Pavilion" in park_upgrades
     if btype in ("park", "dealer") and player.weather in ("Rain", "Snow"):
-        return False
-    if btype == "park" and player.season == "Winter":
+        if not (btype == "park" and pavilion):
+            return False
+    if btype == "park" and player.season == "Winter" and not pavilion:
         return False
     if btype == "boss" and player.current_quest < len(QUESTS):
         return False
@@ -720,6 +723,8 @@ def go_fishing(player: Player, difficulty: str = "normal") -> str:
         raise ValueError("Invalid difficulty")
     player.energy -= energy_cost(player, 5)
 
+    park_upgrades = set(getattr(player, "park_upgrades", []))
+
     skill_bonus = max(0.0, (player.fishing_skill - 1) * 0.03)
     no_bite_chance = 0.3 - min(0.2, skill_bonus * 1.5)
     herb_chance = 0.18 + min(0.12, skill_bonus)
@@ -736,6 +741,11 @@ def go_fishing(player: Player, difficulty: str = "normal") -> str:
         herb_chance += 0.05
     if player.season == "Winter":
         herb_chance = max(0.05, herb_chance - 0.08)
+
+    if "Fishing Pier" in park_upgrades:
+        no_bite_chance -= 0.07
+    if "Bait Shack" in park_upgrades:
+        herb_chance += 0.05
 
     no_bite_chance = max(0.05, min(0.9, no_bite_chance))
     herb_chance = max(0.05, min(0.7, herb_chance))
@@ -775,12 +785,16 @@ def go_fishing(player: Player, difficulty: str = "normal") -> str:
         xp_gain = int(xp_gain * 1.2)
     elif difficulty == "easy":
         xp_gain = max(4, int(xp_gain * 0.8))
+    catch_type = result.get("type", "fish")
+    if "Bait Shack" in park_upgrades and catch_type == "fish":
+        reward += 5
+        xp_gain += 3
+        reward = max(0, reward)
 
     leveled = _grant_fishing_xp(player, xp_gain)
 
     record_note = ""
     message: str
-    catch_type = result.get("type", "fish")
     if catch_type == "fish":
         weight = round(reward / result.get("weight_divisor", 4), 2)
         message = f"Caught a {result['name']} ({weight} lbs)! +${reward} (+{xp_gain} XP)"
@@ -908,6 +922,7 @@ def save_game(player: Player) -> None:
         "companion_abilities": player.companion_abilities,
         "has_skateboard": player.has_skateboard,
         "home_upgrades": player.home_upgrades,
+        "park_upgrades": player.park_upgrades,
         "home_level": player.home_level,
         "bank_balance": player.bank_balance,
         "perk_points": player.perk_points,
@@ -1032,6 +1047,7 @@ def load_game() -> Optional[Player]:
     player.boss_defeated = data.get("boss_defeated", False)
     player.has_skateboard = data.get("has_skateboard", player.has_skateboard)
     player.home_upgrades = data.get("home_upgrades", [])
+    player.park_upgrades = data.get("park_upgrades", [])
     player.home_level = data.get("home_level", 1)
     player.businesses = data.get("businesses", {})
     player.business_bonus = data.get("business_bonus", {})

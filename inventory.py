@@ -229,6 +229,13 @@ HOME_UPGRADES: List[Tuple[str, int, str, int]] = [
     ("Private Library", 450, "Gain +2 INT each morning", 3),
 ]
 
+# Improvements that can be purchased for the city park
+PARK_UPGRADES: List[Tuple[str, int, str]] = [
+    ("Fishing Pier", 200, "Reduces empty casts when fishing"),
+    ("Bait Shack", 180, "Adds cash and XP to successful catches"),
+    ("Heated Pavilion", 350, "Keeps the park open during storms and winter"),
+]
+
 # Animal companions available at the Pet Shop
 COMPANIONS = [
     ("Dog", 120, "DEF +1, may find $5 when you sleep"),
@@ -537,6 +544,27 @@ def buy_home_upgrade(player: Player, index: int) -> str:
     elif name == "Mansion":
         player.home_level = 3
     return f"Bought {name}"
+
+
+def buy_park_upgrade(player: Player, index: int) -> str:
+    """Purchase a park improvement if affordable and not already owned."""
+
+    if index < 0 or index >= len(PARK_UPGRADES):
+        return "Invalid upgrade"
+    name, cost, _desc = PARK_UPGRADES[index]
+    if name in player.park_upgrades:
+        return "Already owned"
+    if player.money < cost:
+        return "Not enough money!"
+    player.money -= cost
+    player.park_upgrades.append(name)
+    return f"Built {name}"
+
+
+def available_park_upgrades(player: Player) -> List[Tuple[str, int, str]]:
+    """Return park upgrades that the player has not yet purchased."""
+
+    return [u for u in PARK_UPGRADES if u[0] not in player.park_upgrades]
 
 
 def available_home_upgrades(player: Player):

@@ -163,6 +163,9 @@ class Player:
     fishing_exp: int = 0
     fishing_log: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
+    # Upgrades purchased for the park fishing minigame
+    park_upgrades: List[str] = field(default_factory=list)
+
     # Current honorific title earned through achievements
     epithet: str = ""
 
