@@ -215,6 +215,29 @@ class Player:
         default_factory=lambda: {"mayor": 0, "business": 0, "gang": 0}
     )
 
+    def active_bonus(self, name: str) -> int:
+        """Return the value of an active temporary bonus."""
+
+        bonus = self.temporary_bonuses.get(name)
+        if not bonus:
+            return 0
+        expires = int(bonus.get("expires", self.day))
+        if expires < self.day:
+            self.temporary_bonuses.pop(name, None)
+            return 0
+        return int(bonus.get("value", 0))
+
+    def clear_expired_bonuses(self) -> None:
+        """Remove any temporary bonuses whose expiry date has passed."""
+
+        expired = [
+            key
+            for key, data in self.temporary_bonuses.items()
+            if int(data.get("expires", self.day)) < self.day
+        ]
+        for key in expired:
+            self.temporary_bonuses.pop(key, None)
+
 
 @dataclass
 class Quest:

@@ -278,6 +278,13 @@ EVENTS = [
     Event("You found a trading card!", _ev_found_card),
 ]
 
+NEGATIVE_EVENT_DESCRIPTIONS = {
+    "You tripped and hurt yourself. -5 health",
+    "A thief stole $10 from you!",
+    "Got soaked in the rain. -5 energy",
+    "A flash sale cost you $5",
+}
+
 SEASON_EVENTS = {
     "Spring": [
         Event(
@@ -384,7 +391,9 @@ EVENT_CHANCE = 0.0004
 
 def random_event(player: Player, location: str | None = None) -> str | None:
     """Possibly trigger a random event and return its description."""
-    if random.random() < EVENT_CHANCE:
+    fortune = player.active_bonus("fortune")
+    chance = EVENT_CHANCE * (1 + 0.5 * fortune)
+    if random.random() < chance:
         hour = int(player.time) // 60
         pool = EVENTS.copy()
         pool.extend(SEASON_EVENTS.get(player.season, []))
@@ -398,8 +407,21 @@ def random_event(player: Player, location: str | None = None) -> str | None:
             else:
                 if hour >= start or hour < end:
                     pool.append(tev)
-        ev = random.choice(pool)
+        if fortune > 0:
+            weights = [
+                1 + fortune if ev.description not in NEGATIVE_EVENT_DESCRIPTIONS else 1
+                for ev in pool
+            ]
+            ev = random.choices(pool, weights=weights, k=1)[0]
+        else:
+            ev = random.choice(pool)
         ev.apply(player)
+        if fortune and ev.description in NEGATIVE_EVENT_DESCRIPTIONS:
+            consolation = 5 * fortune
+            player.money += consolation
+            return (
+                f"{ev.description} Fortune softens the blow and you find ${consolation} afterward."
+            )
         return ev.description
     return None
 

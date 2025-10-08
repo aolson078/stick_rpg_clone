@@ -377,6 +377,7 @@ def advance_day(player: Player) -> int:
     """Increment the day counter and apply daily effects."""
     player.day += 1
     player.weekday = (player.weekday + 1) % 7
+    player.clear_expired_bonuses()
     day_name = WEEKDAY_NAMES[player.weekday]
     for callback in WEEKLY_EVENTS.get(day_name, []):
         callback(player)
