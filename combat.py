@@ -47,6 +47,9 @@ def energy_cost(player: Player, base: float) -> float:
     cost = base * (1 - 0.05 * level)
     if player.perk_levels.get("Perk Master"):
         cost *= 0.9
+    fortitude = player.active_bonus("fortitude")
+    if fortitude:
+        cost *= max(0.0, 1 - 0.1 * fortitude)
     return cost
 
 
@@ -72,6 +75,9 @@ def _combat_stats(player: Player) -> Tuple[float, float, float, int]:
         df += 1 * morale
     elif player.companion == "Rhino":
         atk += 1 * morale
+    fortitude = player.active_bonus("fortitude")
+    if fortitude:
+        df += fortitude
     for item in player.equipment.values():
         if item and item.durability > 0:
             atk += item.attack

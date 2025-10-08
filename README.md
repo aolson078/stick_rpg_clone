@@ -124,6 +124,10 @@ powerful Flaming Sword using extra resources.
 Successful crafting now grants **crafting XP**. Gaining levels unlocks
 advanced recipes like Energy Potions and the Flaming Sword.
 
+Lucid dream boons gathered during sleep finally have teeth: Clarity grants extra job
+experience, Fortitude reduces energy costs while toughening you in combat, and
+Fortune tips random city events and paydays in your favor.
+
 A small **Farm** south of town lets you grow crops. Buy seeds in the shop, plant
 them at the farm, harvest them three days later, then sell the produce or use it
 in crafting recipes. You can also keep chickens and cows there. Feeding them

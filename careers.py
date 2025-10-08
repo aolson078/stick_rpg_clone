@@ -75,7 +75,8 @@ def job_progress(player: Player, job_key: str) -> tuple[int, int]:
 def work_job(player: Player, job_key: str) -> str:
     """Handle working a shift and possible promotion."""
     data = JOB_DATA[job_key]
-    if player.energy < 20:
+    cost = energy_cost(player, 20)
+    if player.energy < cost:
         return "Too tired to work!"
 
     level_attr = data["level_attr"]
@@ -84,10 +85,20 @@ def work_job(player: Player, job_key: str) -> str:
     level = getattr(player, level_attr)
 
     pay = data["base_pay"] + data["pay_step"] * (level - 1)
+    fortune_bonus = player.active_bonus("fortune")
+    if fortune_bonus:
+        pay += 5 * fortune_bonus
+    pay = int(pay)
+
+    exp_gain = data["exp_per_shift"]
+    clarity_bonus = player.active_bonus("clarity")
+    if clarity_bonus:
+        exp_gain += 5 * clarity_bonus
+
     player.money += pay
-    player.energy -= energy_cost(player, 20)
+    player.energy -= cost
     setattr(player, shift_attr, getattr(player, shift_attr) + 1)
-    exp = getattr(player, exp_attr) + data["exp_per_shift"]
+    exp = getattr(player, exp_attr) + exp_gain
     setattr(player, exp_attr, exp)
 
     req1 = getattr(player, data["stats"][0])
@@ -106,7 +117,7 @@ def work_job(player: Player, job_key: str) -> str:
         return f"Promoted to {new_title}!"
 
     title = get_job_title(player, job_key)
-    return f"Worked as {title}! +${pay}, +{data['exp_per_shift']}xp"
+    return f"Worked as {title}! +${pay}, +{exp_gain}xp"
 
 
 def job_pay(player: Player, job_key: str) -> int:

@@ -329,7 +329,10 @@ def schedule_companion_errand(player: Player, item_index: int) -> str:
     if player.money < COMPANION_ERRAND_FEE:
         return f"Need ${COMPANION_ERRAND_FEE}"
 
-    item_name, item_cost, _effect = SHOP_ITEMS[item_index]
+    item = SHOP_ITEMS[item_index]
+    item_name = str(item.get("name", "Item"))
+    item_cost = int(item.get("cost", 0))
+    _effect = item.get("effect")
     chance = _companion_errand_success_chance(player)
     penalty = _companion_errand_penalty(item_cost)
 
@@ -355,7 +358,9 @@ def resolve_companion_errands(player: Player) -> List[str]:
         item_index = errand.get("item_index")
         if item_index is None or item_index < 0 or item_index >= len(SHOP_ITEMS):
             continue
-        name, _cost, effect = SHOP_ITEMS[item_index]
+        item = SHOP_ITEMS[item_index]
+        name = str(item.get("name", "Item"))
+        effect = item.get("effect")
         chance = float(errand.get("chance", 0.0))
         companion_name = errand.get("companion", player.companion or "Companion")
         if random.random() < chance:

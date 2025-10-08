@@ -27,3 +27,18 @@ def test_work_job_promotion():
     assert player.office_exp == 0
     assert player.intelligence == 6
 
+
+def test_work_job_temporary_bonuses():
+    player = Player(pygame.Rect(0, 0, settings.PLAYER_SIZE, settings.PLAYER_SIZE))
+    player.energy = 100
+    player.money = 0
+    player.temporary_bonuses["fortune"] = {"value": 2, "expires": player.day}
+    player.temporary_bonuses["clarity"] = {"value": 1, "expires": player.day}
+
+    result = work_job(player, "office")
+
+    assert result == "Worked as Intern! +$30, +15xp"
+    assert player.money == 30
+    assert player.office_exp == 15
+    assert player.energy == 80
+
